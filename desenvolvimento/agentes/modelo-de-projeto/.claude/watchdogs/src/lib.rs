@@ -4,4 +4,5 @@ pub mod ativar_issue;
 pub mod comum;
 pub mod hooks;
 pub mod pre_push;
+pub mod riscos;
 pub mod validador;

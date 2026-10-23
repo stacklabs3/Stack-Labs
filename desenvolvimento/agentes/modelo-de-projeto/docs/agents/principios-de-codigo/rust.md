@@ -45,6 +45,7 @@ exceção pontual é `#[expect(clippy::<lint>, reason = "...")]`, que avisa quan
 | P1, I | Privado por padrão, `pub(crate)` para o resto, `pub` só a interface; quem chama pede só o *bound* que usa | `unreachable_pub` |
 | P3, D | Domínio sem crate de infraestrutura; ambiente, relógio, acaso, `exit` e terminal só na montagem | ast-grep `dominio-sem-infra.yml`, `relogio-e-acaso-entram.yml`; `disallowed_methods` (`std::env::var`, `SystemTime::now`) com `#[expect]` no `main`; `exit`, `print_stdout`, `print_stderr` |
 | P3, D (mais forte) | Domínio num crate próprio do workspace, sem a dependência de infraestrutura no `Cargo.toml` dele | O compilador recusa; `cargo deny check bans` com `wrappers` |
+| P5 (obrigatório) | Todo `#[test]` cita o `RK<n>` (`fn rk2_recusa_cupom_vencido`, ou no `mod`); afirma com `assert*!` ou `#[should_panic]`; sem `#[ignore]` | `teste-cobre-risco`; ast-grep `teste-sem-afirmacao.yml`, `afirmacao-trivial.yml`, `teste-desligado.yml`; mutação no diff com `cargo-mutants` ([validador.md](../validador.md)) |
 | P5 | Teste de integração em `tests/` usa só a API pública; mock só no que não é nosso | ast-grep `dominio-sem-infra.yml` apontado para `tests/**` com `mockall` |
 | P7 | Dependência sem uso sai; código morto sai | `cargo machete`; `dead_code` com `-D warnings` |
 | P8 | Um formatador; uma versão de cada dependência; crates que o projeto exclui | `cargo fmt --all -- --check`; `cargo deny check bans` |

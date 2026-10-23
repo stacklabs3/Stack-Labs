@@ -7,6 +7,7 @@ mod sessao_inicio;
 mod vigia_parada;
 mod vigia_prompt;
 mod vigia_skill;
+mod vigia_teste;
 
 pub fn rodar(nome_do_hook: &str) -> i32 {
     match nome_do_hook {
@@ -16,8 +17,9 @@ pub fn rodar(nome_do_hook: &str) -> i32 {
         "guarda-edicao" => guarda_edicao::rodar(),
         "guarda-bash" => guarda_bash::rodar(),
         "vigia-parada" => vigia_parada::rodar(),
+        "vigia-teste" => vigia_teste::rodar(),
         _ => {
-            eprintln!("hook desconhecido: {nome_do_hook} (sessao-inicio, vigia-prompt, vigia-skill, guarda-edicao, guarda-bash, vigia-parada)");
+            eprintln!("hook desconhecido: {nome_do_hook} (sessao-inicio, vigia-prompt, vigia-skill, guarda-edicao, guarda-bash, vigia-parada, vigia-teste)");
             2
         }
     }

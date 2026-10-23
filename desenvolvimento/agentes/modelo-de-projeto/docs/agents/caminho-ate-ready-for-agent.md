@@ -35,7 +35,7 @@ ficou para a hora, teste manual em aparelho, ou dado que só uma pessoa tem. Na 
 ## Definição de pronto
 
 Antes de aplicar `ready-for-agent`, confira a issue contra cada item. Item que falha devolve a issue
-à etapa da rota que o resolve. Pronto quando os dez itens passam.
+à etapa da rota que o resolve. Pronto quando os onze itens passam.
 
 1. **Fatia vertical:** atravessa todas as camadas necessárias e é verificável sozinha. Refatoração
    larga segue expandir → migrar → contrair, como no `/to-tickets`.
@@ -50,6 +50,9 @@ Antes de aplicar `ready-for-agent`, confira a issue contra cada item. Item que f
 8. **Sem caminho de arquivo nem código**, salvo o trecho de protótipo que registra uma decisão.
 9. **Tela com protótipo aprovado**, quando toca interface: link do ticket com a aprovação explícita.
 10. **Sem humano no meio** (senão, `ready-for-human`).
+11. **Riscos nomeados:** a issue diz quais riscos de `docs/riscos.md` os testes dela cobrem
+    (`RK<n>`), e risco novo já está no registro com a aprovação do humano
+    ([riscos.md](riscos.md)). Fatia sem risco a cobrir diz isso, e não ganha teste.
 
 A implementação ainda depende dos mapas iniciais (regra 1).
 

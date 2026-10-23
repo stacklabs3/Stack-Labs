@@ -43,6 +43,7 @@ decisão volta quando o `typescript-eslint` aceitar o TS 7.
 | E8 | Número com significado vira constante; conjunto fechado vira união de literais | `@typescript-eslint/no-magic-numbers` |
 | P1 | Função exportada declara entrada e retorno | `explicit-module-boundary-types` (opcional); profundidade é do revisor |
 | P3, D | Domínio sem import de infraestrutura nem efeito global (`fetch`, `localStorage`, `Date.now()`, `Math.random()`) | ast-grep `dominio-sem-infra.yml`, `efeito-global-no-dominio.yml`, `ambiente-so-na-montagem.yml`; ou `no-restricted-imports` |
+| P5 (obrigatório) | Todo `it`/`test` cita o `RK<n>` (no nome ou no `describe`); afirma com `expect`; sem `.skip`, `.only`, `.todo`, `xit`, `fit` | `teste-cobre-risco`; ast-grep `teste-sem-afirmacao.yml`, `afirmacao-trivial.yml`, `teste-desligado.yml`; mutação no diff com Stryker ([validador.md](../validador.md)) |
 | P4 | Sem ciclo nem import cruzado entre pastas | `npx -p dependency-cruiser@18.7.0 depcruise --config .dependency-cruiser.cjs src` |
 | P8 | `import type`; nada de API `@deprecated`; um formatador | `verbatimModuleSyntax`, `no-deprecated`, Prettier ou Biome no `comando` |
 | O | `switch` sobre união cobre todo membro, sem `default` que esconda o novo | `@typescript-eslint/switch-exhaustiveness-check` (fora dos presets) |

@@ -1,0 +1,94 @@
+# Princípio P5 (regra 15 da constituição): todo teste falha quando o risco que ele cobre acontece. Teste
+# sem afirmação só falha se o código lançar erro: passa com qualquer resultado (o "Unknown Test" do
+# tsDetect). Copie para docs/regras-de-codigo/ast-grep/ e aponte `arquivos` para os testes; apague os
+# documentos das linguagens que o projeto não usa. Conta como afirmação qualquer chamada cujo nome
+# começa por expect, assert, verify ou conferir (o auxiliar de afirmação do projeto segue esse nome),
+# os macros assert*! do Rust e o #[should_panic]. Sem marcador a trocar.
+id: teste-sem-afirmacao
+language: TypeScript
+message: "P5: teste sem afirmação passa sem conferir nada. Afirme o que o risco muda (RK<n>) ou apague o teste."
+severity: error
+rule:
+  kind: call_expression
+  all:
+    - has: { field: function, regex: '^(it|test)\b' }
+    - has: { field: arguments, has: { any: [ { kind: arrow_function }, { kind: function_expression } ] } }
+    - not:
+        has:
+          stopBy: end
+          kind: identifier
+          regex: '^(expect|assert|verify|conferir)'
+---
+id: teste-sem-afirmacao-tsx
+language: Tsx
+message: "P5: teste sem afirmação passa sem conferir nada. Afirme o que o risco muda (RK<n>) ou apague o teste."
+severity: error
+rule:
+  kind: call_expression
+  all:
+    - has: { field: function, regex: '^(it|test)\b' }
+    - has: { field: arguments, has: { any: [ { kind: arrow_function }, { kind: function_expression } ] } }
+    - not:
+        has:
+          stopBy: end
+          kind: identifier
+          regex: '^(expect|assert|verify|conferir)'
+---
+id: teste-sem-afirmacao-js
+language: JavaScript
+message: "P5: teste sem afirmação passa sem conferir nada. Afirme o que o risco muda (RK<n>) ou apague o teste."
+severity: error
+rule:
+  kind: call_expression
+  all:
+    - has: { field: function, regex: '^(it|test)\b' }
+    - has: { field: arguments, has: { any: [ { kind: arrow_function }, { kind: function_expression } ] } }
+    - not:
+        has:
+          stopBy: end
+          kind: identifier
+          regex: '^(expect|assert|verify|conferir)'
+---
+id: teste-sem-afirmacao-rust
+language: Rust
+message: "P5: teste sem afirmação passa sem conferir nada. Afirme o que o risco muda (RK<n>) ou apague o teste."
+severity: error
+rule:
+  kind: function_item
+  all:
+    - follows:
+        stopBy: { not: { any: [ { kind: attribute_item }, { kind: line_comment } ] } }
+        kind: attribute_item
+        regex: '^#\[(\w+::)*test\]$'
+    - not:
+        follows:
+          stopBy: { not: { any: [ { kind: attribute_item }, { kind: line_comment } ] } }
+          kind: attribute_item
+          regex: '^#\[should_panic'
+    - not:
+        has:
+          stopBy: end
+          kind: macro_invocation
+          regex: '^(\w+::)*(assert|debug_assert|prop_assert|conferir)\w*!'
+    - not:
+        has:
+          stopBy: end
+          kind: identifier
+          regex: '^(assert|verify|expect|conferir)'
+
+---
+id: teste-sem-afirmacao-java
+language: Java
+message: "P5: teste sem afirmação passa sem conferir nada. Afirme o que o risco muda (RK<n>) ou apague o teste."
+severity: error
+rule:
+  kind: method_declaration
+  all:
+    - has: { kind: modifiers, has: { regex: '^@(Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate)\b' } }
+    - not:
+        has:
+          field: body
+          has:
+            stopBy: end
+            kind: identifier
+            regex: '^(assert|verify|expect|fail|conferir)'

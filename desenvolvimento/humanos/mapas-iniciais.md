@@ -73,17 +73,19 @@ régua do agente que implementa e do agente que revisa.
 
 **Perguntas que você vai ouvir:** os nomes no código são em português ou em inglês? Um termo do
 glossário vira o nome da classe? Quando vale criar uma interface? Onde se valida o que o usuário
-digita? O que se testa e o que se mocka? Qual lint e qual formatador?
+digita? O que, se der errado, causa dano e por isso merece teste? O que se mocka? Qual lint e qual
+formatador?
 
 **Como anda:** depois da Arquitetura. O grilling roda em torno dos
 [princípios de código](principios-de-codigo.md) da casa: primeiro as restrições, depois um ticket
 por grupo de princípios, e cada princípio sai adotado, adaptado ou deixado de fora, com o porquê.
-O E1, nome que diz o que é, nunca fica de fora: você decide só a língua e os termos.
+O E1, nome que diz o que é, nunca fica de fora: você decide só a língua e os termos. O P5, todo
+teste cobre um risco, também não: num ticket próprio, você aprova os riscos do `docs/riscos.md`.
 No ticket de lint, você decide também as práticas só da linguagem do projeto (TypeScript, Java ou
 Rust).
 
 **Fecha quando:** `docs/regras-de-codigo.md` está escrito, com os 22 princípios decididos na tabela
-de cobertura, e você aprovou. **Bloqueia a implementação.** Regra nova ou mudada depois passa por
+de cobertura, o `docs/riscos.md` tem os primeiros riscos, e você aprovou os dois. **Bloqueia a implementação.** Regra nova ou mudada depois passa por
 ticket.
 
 ## 5. Infra

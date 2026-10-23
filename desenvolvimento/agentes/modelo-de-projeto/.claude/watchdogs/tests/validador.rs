@@ -66,6 +66,8 @@ fn rand_sufixo() -> u128 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
 }
 
+// O P5 não se afasta e exige a checagem teste-cobre-risco: sem linha própria no teste, ele cita a
+// regra R90, que regras_de acrescenta.
 fn tabela_com(linhas: &[(&str, &str)]) -> String {
     let mut texto = String::from("| Princípio | Decisão | Onde ou por quê |\n|---|---|---|\n");
     for principio in PRINCIPIOS {
@@ -73,7 +75,13 @@ fn tabela_com(linhas: &[(&str, &str)]) -> String {
             .iter()
             .find(|(nome, _)| *nome == principio)
             .map(|(_, valor)| valor.to_string())
-            .unwrap_or_else(|| "afastado | fora do escopo deste teste".into());
+            .unwrap_or_else(|| {
+                if principio == "P5" {
+                    "adotado | R90".into()
+                } else {
+                    "afastado | fora do escopo deste teste".into()
+                }
+            });
         texto.push_str(&format!("| {principio} | {linha} |\n"));
     }
     texto
@@ -104,6 +112,11 @@ fn rodar_uma_regra(arquivos: &[(&str, &str)], verificacao: Value, principio: &st
 }
 
 fn regras_de(lista: Value) -> Vec<watchdogs::validador::Regra> {
+    let mut lista = lista;
+    let regras = lista.as_array_mut().unwrap();
+    if !regras.iter().any(|regra| regra["principio"] == "P5") {
+        regras.push(json!({ "id": "R90", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco" } }));
+    }
     ler_regras(&json!({ "versao": 1, "regras": lista })).unwrap_or_else(|erro| panic!("{}", erro.0))
 }
 
@@ -896,5 +909,193 @@ fn ast_grep_ausente_sugere_versao_fixa() {
         violacoes[0].2.contains("npm i -g @ast-grep/cli@0.51.0") && violacoes[0].2.contains("cargo install ast-grep --version 0.51.0 --locked"),
         "{}",
         violacoes[0].2
+    );
+}
+
+// ---------- P5: todo teste cobre um risco do registro ----------
+
+const REGISTRO: &str = "# Riscos\n\n| Risco | O que dá errado | Dano | Onde | Origem | Situação |\n|---|---|---|---|---|---|\n\
+| RK1 | Cobrar duas vezes o mesmo pedido | estorno e cliente perdido | pagamento | #12 | |\n\
+| RK2 | Cupom vencido aceito | margem perdida | cupom | docs/adr/0003-cupom.md | |\n\
+| RK3 | Mesa fechada recebe pedido | pedido perdido | comanda | #15 | pendente #31 |\n";
+
+fn riscos_cobertos(arquivos: &[(&str, &str)]) -> Vec<String> {
+    rodar_uma_regra(arquivos, json!({ "tipo": "teste-cobre-risco" }), "P5")
+        .into_iter()
+        .map(|(arquivo, linha, mensagem)| format!("{}:{} {mensagem}", arquivo.unwrap_or_default(), linha.unwrap_or(0)))
+        .collect()
+}
+
+#[test]
+fn teste_cobre_risco_aceita_risco_no_nome_no_comentario_e_no_bloco() {
+    let violacoes = riscos_cobertos(&[
+        ("docs/riscos.md", REGISTRO),
+        (
+            "src/pagamento.test.ts",
+            "describe(\"RK1: cobrança única\", () => {\n  it(\"cobra uma vez por pedido\", () => {\n    expect(cobrar(pedido)).toBe(1);\n  });\n});\n",
+        ),
+        (
+            "src/cupom.rs",
+            "fn aplicar() {}\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn rk2_recusa_cupom_vencido() {\n        assert!(aplicar().is_err());\n    }\n}\n",
+        ),
+        (
+            "src/test/java/CupomTest.java",
+            "class CupomTest {\n  // RK2: cupom vencido\n  @Test\n  void recusaVencido() { assertThrows(Erro.class, () -> aplicar()); }\n}\n",
+        ),
+    ]);
+    assert!(violacoes.is_empty(), "{violacoes:?}");
+}
+
+#[test]
+fn teste_cobre_risco_reprova_teste_sem_risco_e_risco_inexistente() {
+    let violacoes = riscos_cobertos(&[
+        ("docs/riscos.md", REGISTRO),
+        (
+            "src/pagamento.test.ts",
+            "// RK1\nit(\"cobra uma vez\", () => { expect(cobrar()).toBe(1); });\nit(\"soma\", () => { expect(somar(1, 2)).toBe(3); });\nit(\"RK9 algo\", () => { expect(1).toBe(1); });\n",
+        ),
+        ("src/cupom.rs", "#[test]\nfn rk2_recusa() { assert!(true); }\n"),
+    ]);
+    assert_eq!(
+        violacoes,
+        vec![
+            "src/pagamento.test.ts:3 o teste não cita o risco que cobre (RK<n> de docs/riscos.md); sem risco, o teste não entra",
+            "src/pagamento.test.ts:4 o teste cita RK9, que não está em docs/riscos.md",
+        ]
+    );
+}
+
+#[test]
+fn teste_cobre_risco_exige_teste_origem_e_issue_da_pendencia() {
+    let registro = "| RK1 | Cobrar duas vezes | estorno | pagamento | #12 | |\n| RK2 | Cupom vencido | margem | cupom | o time acha | |\n\
+                    | RK3 | Mesa fechada | pedido perdido | comanda | #15 | pendente |\n| RK1 | Repetido | x | y | #1 | |\n";
+    let violacoes = riscos_cobertos(&[
+        ("docs/riscos.md", registro),
+        ("src/cupom.test.ts", "it(\"RK2 recusa\", () => { expect(aplicar()).toBe(false); });\n"),
+    ]);
+    assert_eq!(
+        violacoes,
+        vec![
+            "docs/riscos.md:2 RK2 sem origem: cite a issue, o ticket ou a ADR em que o humano aprovou o risco",
+            "docs/riscos.md:3 RK3 pendente sem a issue que vai cobri-lo (pendente #<n>)",
+            "docs/riscos.md:4 RK1 aparece duas vezes no registro",
+            "docs/riscos.md:1 RK1 não tem teste que o cite; escreva o teste ou marque pendente #<issue que vai cobri-lo>",
+            "docs/riscos.md:4 RK1 não tem teste que o cite; escreva o teste ou marque pendente #<issue que vai cobri-lo>",
+        ]
+    );
+    assert_eq!(
+        riscos_cobertos(&[("src/a.test.ts", "it(\"RK1\", () => {});\n")]),
+        vec![":0 registro de riscos docs/riscos.md não existe (docs/agents/riscos.md diz como nasce)"]
+    );
+}
+
+#[test]
+fn teste_cobre_risco_nao_confunde_rk_no_meio_da_palavra() {
+    assert_eq!(
+        watchdogs::riscos::riscos_citados("TestRK3Recusa rk4_cobra (RK5) work1 MARK2 frk6"),
+        vec!["RK3", "RK4", "RK5"]
+    );
+}
+
+#[test]
+fn teste_cobre_risco_com_base_confere_so_os_testes_alterados_e_o_registro_inteiro() {
+    let repositorio = Repositorio::novo(&[
+        ("docs/riscos.md", REGISTRO),
+        (
+            "src/antigo.test.ts",
+            "it(\"sem risco, de antes\", () => { expect(somar(1, 2)).toBe(3); });\nit(\"RK2\", () => { expect(aplicar()).toBe(false); });\n",
+        ),
+    ]);
+    repositorio.escrever("src/novo.test.ts", "it(\"novo sem risco\", () => { expect(somar(1, 2)).toBe(3); });\n");
+    repositorio.commit("test: novo");
+    let config = json!({ "versao": 1, "projeto": { "codigo": ["src/**"] }, "regras": [{ "id": "R1", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco" } }] });
+    let violacoes: Vec<String> = violacoes_da(&repositorio.raiz, &config, &tabela_com(&[("P5", "adotado | R1")]), Some("HEAD~1"), "R1")
+        .into_iter()
+        .map(|(arquivo, linha, _)| format!("{}:{}", arquivo.unwrap_or_default(), linha.unwrap_or(0)))
+        .collect();
+    assert_eq!(violacoes, vec!["src/novo.test.ts:1", "docs/riscos.md:5"]);
+}
+
+#[test]
+fn cobertura_reprova_p5_afastado_ou_sem_a_checagem_de_risco() {
+    let regras = regras_de(json!([
+        { "id": "R1", "principio": "E1", "verificacao": { "tipo": "revisor" } },
+        { "id": "R2", "principio": "P5", "verificacao": { "tipo": "revisor" } }
+    ]));
+    let mensagens = |texto_md: String| {
+        checar_cobertura(&texto_md, &regras)
+            .into_iter()
+            .map(|violacao| violacao.mensagem)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        mensagens(tabela_com(&[("E1", "adotado | R1"), ("P5", "afastado | o time não testa")])),
+        vec![
+            "P5 é regra dura da constituição: adapte, mas não afaste",
+            "R2 está no .json e nenhuma linha da tabela de cobertura a cita"
+        ]
+    );
+    assert_eq!(
+        mensagens(tabela_com(&[("E1", "adotado | R1"), ("P5", "adotado | R2")])),
+        vec!["P5 precisa citar uma regra com a checagem teste-cobre-risco (regra da constituição)"]
+    );
+}
+
+#[test]
+fn ast_grep_modelos_de_teste_acham_teste_sem_valor() {
+    if !ast_grep_disponivel() {
+        eprintln!("ast-grep não instalado: teste pulado");
+        return;
+    }
+    let repositorio = Repositorio::novo(&[
+        ("regras/sem.yml", &preencher_modelo("teste-sem-afirmacao.yml", &[])),
+        ("regras/trivial.yml", &preencher_modelo("afirmacao-trivial.yml", &[])),
+        ("regras/desligado.yml", &preencher_modelo("teste-desligado.yml", &[])),
+        (
+            "src/cobranca.test.ts",
+            "describe(\"RK1\", () => {\n  it(\"cobra\", () => { expect(cobrar(10)).toBe(10); });\n  it(\"sem afirmação\", () => { cobrar(10); });\n  \
+             it(\"trivial\", () => { expect(total).toBe(total); expect(true).toBeTruthy(); });\n  it.skip(\"desligado\", () => { expect(cobrar(1)).toBe(1); });\n  \
+             test.each([[1, 2]])(\"dobra %i\", (entrada, saida) => { expect(dobrar(entrada)).toBe(saida); });\n});\n",
+        ),
+        (
+            "src/cupom.rs",
+            "#[cfg(test)]\nmod tests {\n    #[test]\n    fn rk2_recusa() { assert!(aplicar().is_err()); }\n    #[test]\n    fn rk2_sem() { aplicar(); }\n    \
+             #[test]\n    #[should_panic(expected = \"vencido\")]\n    fn rk2_entra_em_panico() { aplicar(); }\n    #[test]\n    fn rk2_trivial() { assert_eq!(total, total); }\n    \
+             #[test]\n    #[ignore]\n    fn rk2_desligado() { assert!(aplicar().is_err()); }\n    fn auxiliar() { aplicar(); }\n}\n",
+        ),
+        (
+            "src/test/java/CupomTest.java",
+            "class CupomTest {\n  @Test\n  void recusa() { assertThrows(Erro.class, () -> aplicar()); }\n  @Test\n  void sem() { aplicar(); }\n  \
+             @Test\n  void trivial() { assertTrue(true); }\n  @Disabled\n  @Test\n  void desligado() { verify(gateway).cobrar(1); }\n}\n",
+        ),
+    ]);
+    let config = json!({ "versao": 1, "regras": [
+        { "id": "R1", "principio": "P5", "verificacao": { "tipo": "ast-grep", "regras": "regras/sem.yml" } },
+        { "id": "R2", "principio": "P5", "verificacao": { "tipo": "ast-grep", "regras": "regras/trivial.yml" } },
+        { "id": "R3", "principio": "P5", "verificacao": { "tipo": "ast-grep", "regras": "regras/desligado.yml" } }
+    ] });
+    let texto_md = tabela_com(&[("P5", "adotado | R1, R2, R3")]);
+    let achados = |id: &str| {
+        violacoes_da(&repositorio.raiz, &config, &texto_md, None, id)
+            .into_iter()
+            .map(|violacao| format!("{}:{}", violacao.0.unwrap(), violacao.1.unwrap()))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        achados("R1"),
+        vec!["src/cobranca.test.ts:3", "src/cupom.rs:6", "src/test/java/CupomTest.java:4"]
+    );
+    assert_eq!(
+        achados("R2"),
+        vec![
+            "src/cobranca.test.ts:4",
+            "src/cobranca.test.ts:4",
+            "src/cupom.rs:11",
+            "src/test/java/CupomTest.java:7"
+        ]
+    );
+    assert_eq!(
+        achados("R3"),
+        vec!["src/cobranca.test.ts:5", "src/cupom.rs:13", "src/test/java/CupomTest.java:8"]
     );
 }

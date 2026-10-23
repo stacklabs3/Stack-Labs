@@ -17,10 +17,12 @@ issue, a branch da issue e a branch de integração.
    (a) requisito pedido que falta ou está pela metade;
    (b) comportamento no diff que ninguém pediu (escopo a mais);
    (c) requisito que parece feito, mas feito errado;
-   (d) critério de aceite da issue sem teste que o prove.
-   Pronto quando cada requisito e cada critério de aceite da issue foi conferido contra o diff.
+   (d) critério de aceite da issue sem teste que o prove;
+   (e) risco que a issue ou o spec diz cobrir (`RK<n>` de `docs/riscos.md`) sem teste que falharia se
+   ele acontecesse.
+   Pronto quando cada requisito, cada critério de aceite e cada risco da issue foi conferido contra o diff.
 
-**REPROVADO** quando há qualquer achado (a), (c) ou (d), ou um (b) que muda comportamento do produto.
+**REPROVADO** quando há qualquer achado (a), (c), (d) ou (e), ou um (b) que muda comportamento do produto.
 
 Responda com os achados numerados (máx. 400 palavras) e termine com uma destas linhas, exatamente:
 

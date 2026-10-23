@@ -341,3 +341,57 @@ fn pre_push_protege_a_main() {
         0
     );
 }
+
+#[test]
+fn vigia_teste_cobra_risco_e_afirmacao_no_teste_editado() {
+    let projeto = Projeto::novo("issue/7-x");
+    let editar = |caminho: &str| {
+        projeto.rodar(
+            &["hook", "vigia-teste"],
+            &json!({ "session_id": "s1", "tool_input": { "file_path": projeto.raiz.join(caminho).to_string_lossy() } }).to_string(),
+            &[],
+        )
+    };
+    let escrever = |caminho: &str, conteudo: &str| {
+        let destino = projeto.raiz.join(caminho);
+        fs::create_dir_all(destino.parent().unwrap()).unwrap();
+        fs::write(destino, conteudo).unwrap();
+    };
+    escrever("src/cupom.test.ts", "it(\"soma\", () => { expect(somar(1, 2)).toBe(3); });\n");
+    assert_eq!(
+        editar("src/cupom.test.ts"),
+        (0, String::new(), String::new()),
+        "sem regras de código decididas, passa"
+    );
+
+    escrever(
+        "docs/regras-de-codigo.json",
+        &json!({ "versao": 1, "regras": [{ "id": "R1", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco" } }] }).to_string(),
+    );
+    escrever(
+        "docs/riscos.md",
+        "| RK1 | Cupom vencido aceito | margem | cupom | #12 | |\n| RK2 | Outro | x | y | #13 | |\n",
+    );
+    let (codigo, saida, _) = editar("src/cupom.test.ts");
+    assert_eq!(codigo, 0);
+    let resposta: Value = serde_json::from_str(&saida).unwrap();
+    assert_eq!(resposta["decision"], "block");
+    let motivo = resposta["reason"].as_str().unwrap();
+    assert!(motivo.contains("linha 1: o teste não cita o risco"), "{motivo}");
+    assert!(!motivo.contains("RK2"), "risco sem teste é do validador, não do hook: {motivo}");
+
+    escrever(
+        "src/cupom.test.ts",
+        "// RK1\nit(\"recusa cupom vencido\", () => { expect(aplicar(vencido)).toBe(false); });\n",
+    );
+    assert_eq!(editar("src/cupom.test.ts").1, "");
+    assert_eq!(editar("src/cupom.ts").1, "", "código que não é teste passa");
+
+    escrever(".claude/metodo.json", "{\"etapaDeAdocao\": \"observacao\"}");
+    escrever("src/cupom.test.ts", "it(\"soma\", () => { expect(somar(1, 2)).toBe(3); });\n");
+    let (_, saida, _) = editar("src/cupom.test.ts");
+    assert!(
+        saida.contains("additionalContext") && !saida.contains("\"decision\""),
+        "na observação só avisa: {saida}"
+    );
+}

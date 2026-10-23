@@ -1,0 +1,81 @@
+# Princípio P5 (regra 15 da constituição): o esperado vem de uma fonte independente do código (um
+# exemplo do risco, um literal conhecido) e o obtido vem do código. Afirmação que compara um valor com
+# ele mesmo, ou que confere uma constante, passa por construção (o "Redundant Assertion" do tsDetect).
+# A tautologia que recalcula o esperado como o código calcula não tem forma fixa: fica com o revisor.
+# Copie para docs/regras-de-codigo/ast-grep/ e aponte `arquivos` para os testes; apague os documentos
+# das linguagens que o projeto não usa. Sem marcador a trocar.
+id: afirmacao-trivial
+language: TypeScript
+message: "P5: a afirmação compara um valor com ele mesmo ou confere uma constante: passa sempre. O esperado vem de um exemplo do risco (RK<n>), e o obtido, do código."
+severity: error
+constraints:
+  CONSTANTE: { any: [ { kind: number }, { kind: string }, { kind: 'true' }, { kind: 'false' }, { kind: 'null' }, { kind: undefined } ] }
+  VALOR: { not: { any: [ { kind: number }, { kind: string }, { kind: 'true' }, { kind: 'false' }, { kind: 'null' }, { kind: undefined } ] } }
+rule:
+  any:
+    - pattern: expect($CONSTANTE)
+    - pattern: expect($VALOR).$MATCHER($VALOR)
+    - pattern: assert($CONSTANTE)
+    - pattern: assert.$METODO($CONSTANTE)
+    - pattern: assert.$METODO($VALOR, $VALOR)
+---
+id: afirmacao-trivial-tsx
+language: Tsx
+message: "P5: a afirmação compara um valor com ele mesmo ou confere uma constante: passa sempre. O esperado vem de um exemplo do risco (RK<n>), e o obtido, do código."
+severity: error
+constraints:
+  CONSTANTE: { any: [ { kind: number }, { kind: string }, { kind: 'true' }, { kind: 'false' }, { kind: 'null' }, { kind: undefined } ] }
+  VALOR: { not: { any: [ { kind: number }, { kind: string }, { kind: 'true' }, { kind: 'false' }, { kind: 'null' }, { kind: undefined } ] } }
+rule:
+  any:
+    - pattern: expect($CONSTANTE)
+    - pattern: expect($VALOR).$MATCHER($VALOR)
+    - pattern: assert($CONSTANTE)
+    - pattern: assert.$METODO($CONSTANTE)
+    - pattern: assert.$METODO($VALOR, $VALOR)
+---
+id: afirmacao-trivial-js
+language: JavaScript
+message: "P5: a afirmação compara um valor com ele mesmo ou confere uma constante: passa sempre. O esperado vem de um exemplo do risco (RK<n>), e o obtido, do código."
+severity: error
+constraints:
+  CONSTANTE: { any: [ { kind: number }, { kind: string }, { kind: 'true' }, { kind: 'false' }, { kind: 'null' }, { kind: undefined } ] }
+  VALOR: { not: { any: [ { kind: number }, { kind: string }, { kind: 'true' }, { kind: 'false' }, { kind: 'null' }, { kind: undefined } ] } }
+rule:
+  any:
+    - pattern: expect($CONSTANTE)
+    - pattern: expect($VALOR).$MATCHER($VALOR)
+    - pattern: assert($CONSTANTE)
+    - pattern: assert.$METODO($CONSTANTE)
+    - pattern: assert.$METODO($VALOR, $VALOR)
+---
+# Rust: o macro guarda os argumentos como tokens. O padrão pega o mesmo nome dos dois lados e a regex,
+# literal contra literal; expressão longa repetida dos dois lados fica com o revisor.
+id: afirmacao-trivial-rust
+language: Rust
+message: "P5: a afirmação compara um valor com ele mesmo ou confere uma constante: passa sempre. O esperado vem de um exemplo do risco (RK<n>), e o obtido, do código."
+severity: error
+rule:
+  kind: macro_invocation
+  any:
+    - pattern: assert!(true)
+    - pattern: debug_assert!(true)
+    - pattern: assert_eq!($VALOR, $VALOR)
+    - pattern: assert_ne!($VALOR, $VALOR)
+    - regex: '^(\w+::)*(debug_)?assert_(eq|ne)!\(\s*(-?[\d.]+|"[^"]*"|true|false)\s*,\s*(-?[\d.]+|"[^"]*"|true|false)\s*(,|\))'
+
+---
+id: afirmacao-trivial-java
+language: Java
+message: "P5: a afirmação compara um valor com ele mesmo ou confere uma constante: passa sempre. O esperado vem de um exemplo do risco (RK<n>), e o obtido, do código."
+severity: error
+constraints:
+  CONSTANTE: { any: [ { kind: decimal_integer_literal }, { kind: string_literal }, { kind: 'true' }, { kind: 'false' }, { kind: null_literal } ] }
+rule:
+  any:
+    - pattern: assertTrue($CONSTANTE)
+    - pattern: assertFalse($CONSTANTE)
+    - pattern: assertEquals($VALOR, $VALOR)
+    - pattern: assertSame($VALOR, $VALOR)
+    - pattern: assertThat($CONSTANTE)
+    - pattern: assertThat($VALOR).$MATCHER($VALOR)
