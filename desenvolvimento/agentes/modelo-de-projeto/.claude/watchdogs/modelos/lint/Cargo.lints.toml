@@ -1,0 +1,74 @@
+# Bloco de lints de REFERÊNCIA para Rust (toolchain 1.97, Clippy 0.1.97, edição 2024). Adoção por
+# etapas: o projeto cola no Cargo.toml (ou em [workspace.lints.*] num workspace, com
+# `[lints] workspace = true` em cada crate) só as linhas que o grilling de Regras de código decidiu,
+# não o bloco inteiro. Cada lint traz o princípio que concretiza (E1-E8, P1-P9, S O L I D, RS1-RS6).
+#
+# Nível: sempre "deny" (ou "forbid"). O `lint-cobre` exige deny/forbid no TOML; "warn" não conta.
+# A prova de que o código cumpre é o `comando` `cargo clippy --all-targets --locked -- -D warnings`.
+# Limites (parâmetros, aninhamento, liberações em teste, métodos proibidos) ficam no clippy.toml.
+# Lint que um grupo já liga continua escrito aqui quando o docs/regras-de-codigo.json o delega: o
+# `lint-cobre` procura o nome. Liberação pontual no código: #[expect(clippy::<lint>, reason = "...")].
+# Não ligue tests_outside_test_module: empurra a testar por dentro da interface (P5).
+# [lints.cargo] ainda não funciona no estável (cargo 1.97); dependência sem uso: cargo-machete.
+
+[lints.rust]
+unsafe_code = "forbid" # RS1: sem unsafe no código da casa
+missing_debug_implementations = "deny" # RS6: tipo público implementa Debug
+unreachable_pub = "deny" # P1, I: pub só o que a interface precisa; o resto pub(crate)
+nonstandard_style = { level = "deny", priority = -1 } # E1: caixa da RFC 430
+unused_must_use = "deny" # E4: Result nunca descartado
+dead_code = "deny" # E6, P7: código morto sai
+unused_mut = "deny" # E5: mut só onde muda
+
+[lints.clippy]
+# Grupos com prioridade baixa, para os lints abaixo os sobrescreverem.
+all = { level = "deny", priority = -1 } # correção, estilo, complexidade e desempenho
+pedantic = { level = "deny", priority = -1 }
+must_use_candidate = "allow" # ruído: 31 achados nos watchdogs, quase nenhum útil
+
+# E2: até 3 parâmetros e aninhamento raso (limites no clippy.toml); saída cedo.
+too_many_arguments = "deny" # E2
+excessive_nesting = "deny" # E2: só age com excessive-nesting-threshold no clippy.toml
+manual_let_else = "deny" # E2
+# E2, opcional: o pedantic já liga too_many_lines (limite padrão 100; o clippy.toml muda). Para
+# deixar de fora, too_many_lines = "allow". Não crie função pública só para cumprir o limite.
+
+# E3: o argumento diz o que é pelo tipo; sem "saco genérico" (tipos proibidos no clippy.toml).
+fn_params_excessive_bools = "deny" # E3
+struct_excessive_bools = "deny" # E3
+disallowed_types = "deny" # E3
+
+# E4: erro esperado volta como Result; erro não é engolido; não calar o verificador.
+let_underscore_must_use = "deny" # E4: let _ = <Result>
+unused_result_ok = "deny" # E4: <Result>.ok();
+map_err_ignore = "deny" # E4: .map_err(|_| ...) perde a causa
+result_unit_err = "deny" # E4: Result<_, ()> não diz o que falhou
+allow_attributes_without_reason = "deny" # E4: #[allow] sempre com o porquê
+allow_attributes = "deny" # E4: prefira #[expect], que avisa quando o lint deixa de disparar
+
+# RS2: sem pânico por atalho (liberado em teste pelo clippy.toml).
+unwrap_used = "deny" # RS2, E4
+expect_used = "deny" # RS2, E4
+panic = "deny" # RS2, E4
+unwrap_in_result = "deny" # RS2, E4
+panic_in_result_fn = "deny" # RS2, E4
+indexing_slicing = "deny" # RS2: v[i] entra em pânico; use .get(i)
+string_slice = "deny" # RS2
+
+# RS5: conversão numérica sem perda silenciosa.
+cast_possible_truncation = "deny" # RS5
+cast_sign_loss = "deny" # RS5
+cast_possible_wrap = "deny" # RS5
+cast_precision_loss = "deny" # RS5
+
+# E6: comentário diz o porquê; nada de esqueleto esquecido.
+todo = "deny" # E6
+unimplemented = "deny" # E6, L: adapter cumpre o trait inteiro
+dbg_macro = "deny" # E6
+undocumented_unsafe_blocks = "deny" # E6, RS1: todo unsafe tem // SAFETY:
+
+# P3: dependência entra; ambiente, saída e encerramento só na borda (#[expect] no main/CLI).
+disallowed_methods = "deny" # P3: métodos proibidos no clippy.toml
+exit = "deny" # P3: std::process::exit só no main
+print_stdout = "deny" # P3
+print_stderr = "deny" # P3

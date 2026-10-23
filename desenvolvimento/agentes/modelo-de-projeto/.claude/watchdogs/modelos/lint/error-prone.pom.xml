@@ -1,0 +1,46 @@
+<!--
+  Trecho de REFERÊNCIA do pom.xml para o Error Prone 2.51.0 + NullAway 0.14.3, no JDK 21+. Adoção por
+  etapas: o projeto cola o <plugin> no <build><plugins> e deixa no -Xplugin só os -Xep que o grilling
+  de Regras de código decidiu. Cada regra traz o princípio que concretiza.
+
+  Por que listar cada regra com :ERROR: o warning do Error Prone não quebra o build, e regra ligada por
+  padrão não aparece no texto do pom.xml (o `lint-cobre` procura o nome, ex.: "-Xep:EmptyCatch:ERROR").
+  -XDaddTypeAnnotationsToSymbol=true é exigido no JDK 21. Dependência: org.jspecify:jspecify:1.0.0
+  (@NullMarked no package-info.java, @Nullable onde pode faltar).
+
+  O Error Prone no JDK 16+ exige o .mvn/jvm.config do projeto com as aberturas do jdk.compiler: copie
+  modelos/lint/error-prone.jvm.config para .mvn/jvm.config.
+
+  Comando: mvn -B -q compile (o Error Prone roda dentro do javac)
+  Gradle: plugin net.ltgt.errorprone 5.1.1; errorprone 'com.google.errorprone:error_prone_core:2.51.0' e
+  'com.uber.nullaway:nullaway:0.14.3'; options.errorprone.error('EmptyCatch', ...).
+-->
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <version>3.14.1</version>
+  <configuration>
+    <release>21</release>
+    <compilerArgs>
+      <arg>-XDcompilePolicy=simple</arg>
+      <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
+      <arg>--should-stop=ifError=FLOW</arg>
+      <!-- Um -Xep por linha não é aceito: o -Xplugin é um argumento só. Princípio de cada regra:
+           E3  NullAway (nulidade no tipo, só em pacote @NullMarked)
+           E4  EmptyCatch, CatchAndPrintStackTrace, NullOptional, ReturnValueIgnored, CheckReturnValue
+           E5  MutablePublicArray, MixedMutabilityReturnType
+           E6  UnusedVariable, UnusedMethod
+           O   MissingCasesInEnumSwitch
+           L   MissingOverride
+           P8  SystemOut, JavaUtilDate, JavaTimeDefaultTimeZone
+           JV2 EqualsHashCode
+           JV3 FutureReturnValueIgnored, InterruptedExceptionSwallowed
+           JV6 ReferenceEquality -->
+      <arg>-Xplugin:ErrorProne -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true -Xep:EmptyCatch:ERROR -Xep:CatchAndPrintStackTrace:ERROR -Xep:NullOptional:ERROR -Xep:ReturnValueIgnored:ERROR -Xep:CheckReturnValue:ERROR -Xep:MutablePublicArray:ERROR -Xep:MixedMutabilityReturnType:ERROR -Xep:UnusedVariable:ERROR -Xep:UnusedMethod:ERROR -Xep:MissingCasesInEnumSwitch:ERROR -Xep:MissingOverride:ERROR -Xep:SystemOut:ERROR -Xep:JavaUtilDate:ERROR -Xep:JavaTimeDefaultTimeZone:ERROR -Xep:EqualsHashCode:ERROR -Xep:FutureReturnValueIgnored:ERROR -Xep:InterruptedExceptionSwallowed:ERROR -Xep:ReferenceEquality:ERROR</arg>
+    </compilerArgs>
+    <annotationProcessorPaths>
+      <path><groupId>com.google.errorprone</groupId><artifactId>error_prone_core</artifactId><version>2.51.0</version></path>
+      <path><groupId>com.uber.nullaway</groupId><artifactId>nullaway</artifactId><version>0.14.3</version></path>
+    </annotationProcessorPaths>
+  </configuration>
+</plugin>

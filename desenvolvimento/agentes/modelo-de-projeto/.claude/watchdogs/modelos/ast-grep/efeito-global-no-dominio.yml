@@ -1,0 +1,74 @@
+# Princípios P3, D e P5: o domínio não chama rede, armazenamento, relógio nem aleatório direto. Esses
+# efeitos são globais (não têm import), então o dominio-sem-infra.yml não os vê. Pega fetch,
+# XMLHttpRequest, WebSocket, localStorage/sessionStorage, Date.now(), new Date() sem argumento,
+# Math.random(), crypto.randomUUID() e performance.now(). Copie para docs/regras-de-codigo/ast-grep/ e
+# troque <PASTA_DO_DOMINIO> (ex.: src/dominio; num frontend, também src/componentes se o grilling
+# decidiu que componente não busca dado direto). Relógio e aleatório entram como port. Um documento por
+# linguagem; apague os que o projeto não usa. Em Rust, o equivalente é relogio-e-acaso-entram.yml.
+id: efeito-global-no-dominio
+language: TypeScript
+message: "P3/P5: o domínio usa rede, armazenamento, relógio ou aleatório direto. Receba pela port."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  any:
+    - pattern: fetch($$$)
+    - pattern: window.fetch($$$)
+    - pattern: globalThis.fetch($$$)
+    - pattern: new XMLHttpRequest($$$)
+    - pattern: new WebSocket($$$)
+    - pattern: localStorage.$M($$$)
+    - pattern: sessionStorage.$M($$$)
+    - pattern: Date.now()
+    - kind: new_expression          # new Date() ou new Date, sem argumento: lê o relógio
+      has: { field: constructor, regex: ^Date$ }
+      not: { has: { field: arguments, has: { regex: "^[^()]" } } }
+    - pattern: Math.random()
+    - pattern: crypto.randomUUID()
+    - pattern: performance.now()
+
+---
+id: efeito-global-no-dominio-tsx
+language: Tsx
+message: "P3/P5: o domínio usa rede, armazenamento, relógio ou aleatório direto. Receba pela port."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  any:
+    - pattern: fetch($$$)
+    - pattern: window.fetch($$$)
+    - pattern: globalThis.fetch($$$)
+    - pattern: new XMLHttpRequest($$$)
+    - pattern: new WebSocket($$$)
+    - pattern: localStorage.$M($$$)
+    - pattern: sessionStorage.$M($$$)
+    - pattern: Date.now()
+    - kind: new_expression          # new Date() ou new Date, sem argumento: lê o relógio
+      has: { field: constructor, regex: ^Date$ }
+      not: { has: { field: arguments, has: { regex: "^[^()]" } } }
+    - pattern: Math.random()
+    - pattern: crypto.randomUUID()
+    - pattern: performance.now()
+
+---
+id: efeito-global-no-dominio-js
+language: JavaScript
+message: "P3/P5: o domínio usa rede, armazenamento, relógio ou aleatório direto. Receba pela port."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  any:
+    - pattern: fetch($$$)
+    - pattern: window.fetch($$$)
+    - pattern: globalThis.fetch($$$)
+    - pattern: new XMLHttpRequest($$$)
+    - pattern: new WebSocket($$$)
+    - pattern: localStorage.$M($$$)
+    - pattern: sessionStorage.$M($$$)
+    - pattern: Date.now()
+    - kind: new_expression          # new Date() ou new Date, sem argumento: lê o relógio
+      has: { field: constructor, regex: ^Date$ }
+      not: { has: { field: arguments, has: { regex: "^[^()]" } } }
+    - pattern: Math.random()
+    - pattern: crypto.randomUUID()
+    - pattern: performance.now()

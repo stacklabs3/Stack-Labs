@@ -1,0 +1,57 @@
+# Princípio E4: erro nunca é engolido, também em promessa. O catch-vazio.yml pega try/catch; este pega
+# o .catch() que descarta a rejeição ou só loga e segue, e o .then(ok, () => {}). O
+# no-floating-promises do typescript-eslint aceita essas formas (a promessa está "tratada"), por isso a
+# regra existe. Copie para docs/regras-de-codigo/ast-grep/; sem marcador a trocar. Um documento por
+# linguagem; apague os que o projeto não usa.
+id: promessa-engolida
+language: TypeScript
+message: "E4: a rejeição da promessa é engolida. Trate o caso esperado ou deixe o erro subir até a borda."
+severity: error
+rule:
+  any:
+    - pattern: $P.catch(() => {})
+    - pattern: $P.catch(($E) => {})
+    - pattern: $P.catch($E => {})
+    - pattern: $P.catch(() => undefined)
+    - pattern: $P.catch(() => null)
+    - pattern: $P.catch(console.$LOG)
+    - pattern: $P.catch(($E) => console.$LOG($$$))
+    - pattern: $P.catch($E => console.$LOG($$$))
+    - pattern: $P.catch(($E) => { console.$LOG($$$) })
+    - pattern: $P.then($OK, () => {})
+
+---
+id: promessa-engolida-tsx
+language: Tsx
+message: "E4: a rejeição da promessa é engolida. Trate o caso esperado ou deixe o erro subir até a borda."
+severity: error
+rule:
+  any:
+    - pattern: $P.catch(() => {})
+    - pattern: $P.catch(($E) => {})
+    - pattern: $P.catch($E => {})
+    - pattern: $P.catch(() => undefined)
+    - pattern: $P.catch(() => null)
+    - pattern: $P.catch(console.$LOG)
+    - pattern: $P.catch(($E) => console.$LOG($$$))
+    - pattern: $P.catch($E => console.$LOG($$$))
+    - pattern: $P.catch(($E) => { console.$LOG($$$) })
+    - pattern: $P.then($OK, () => {})
+
+---
+id: promessa-engolida-js
+language: JavaScript
+message: "E4: a rejeição da promessa é engolida. Trate o caso esperado ou deixe o erro subir até a borda."
+severity: error
+rule:
+  any:
+    - pattern: $P.catch(() => {})
+    - pattern: $P.catch(($E) => {})
+    - pattern: $P.catch($E => {})
+    - pattern: $P.catch(() => undefined)
+    - pattern: $P.catch(() => null)
+    - pattern: $P.catch(console.$LOG)
+    - pattern: $P.catch(($E) => console.$LOG($$$))
+    - pattern: $P.catch($E => console.$LOG($$$))
+    - pattern: $P.catch(($E) => { console.$LOG($$$) })
+    - pattern: $P.then($OK, () => {})

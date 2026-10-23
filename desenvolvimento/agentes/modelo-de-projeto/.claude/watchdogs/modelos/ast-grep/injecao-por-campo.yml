@@ -1,0 +1,19 @@
+# Princípios P3 e E5: dependência entra pelo construtor, em campo final. Pega @Autowired, @Inject e
+# @Resource em campo (curtos ou qualificados); no construtor e no setter passa. Copie para
+# docs/regras-de-codigo/ast-grep/. Sem marcador a trocar; em teste (@Autowired em teste do Spring) o
+# `ignores` já deixa src/test/** de fora. Só Java: em TS e Rust a injeção já é por parâmetro.
+# Equivalente que lê o bytecode: ArchUnit GeneralCodingRules.NO_CLASSES_SHOULD_USE_FIELD_INJECTION.
+id: injecao-por-campo-java
+language: Java
+message: "P3/E5: injeção por campo. Receba a dependência pelo construtor, em campo final."
+severity: error
+ignores: ["src/test/**"]
+rule:
+  kind: field_declaration
+  has:
+    kind: modifiers
+    has:
+      any:
+        - kind: marker_annotation
+        - kind: annotation
+      regex: '^@((org\.springframework\.beans\.factory\.annotation\.)?Autowired|((jakarta|javax)\.inject\.)?Inject|((jakarta|javax)\.annotation\.)?Resource)\b'

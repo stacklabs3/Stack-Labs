@@ -1,0 +1,29 @@
+# clippy.toml de REFERÊNCIA (Clippy 0.1.97). Adoção por etapas: o projeto copia para a raiz só o que o
+# grilling de Regras de código decidiu. Os lints que usam estes limites estão em Cargo.lints.toml.
+
+too-many-arguments-threshold = 3 # E2: até 3 parâmetros
+excessive-nesting-threshold = 4 # E2: o corpo da função conta como o primeiro nível
+max-fn-params-bools = 1 # E3: dois bool no mesmo fn pedem um tipo
+# too-many-lines-threshold = 60 # E2, opcional (padrão 100); não crie função pública só para cumprir
+
+# RS2: em teste o pânico é a falha do teste.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-print-in-tests = true # P3
+
+disallowed-methods = [
+  { path = "std::env::var", reason = "P3: ambiente só na montagem; receba o valor por parâmetro" },
+  { path = "std::env::var_os", reason = "P3: ambiente só na montagem; receba o valor por parâmetro" },
+  { path = "std::env::vars", reason = "P3: ambiente só na montagem; receba o valor por parâmetro" },
+  # P3, P5, opcional no crate inteiro (o adapter do relógio ganha #[expect]); só no domínio, use
+  # o ast-grep relogio-e-acaso-entram.yml:
+  # { path = "std::time::SystemTime::now", reason = "P3: o relógio entra por parâmetro" },
+  # { path = "std::time::Instant::now", reason = "P3: o relógio entra por parâmetro" },
+]
+
+disallowed-types = [
+  # E3: saco genérico no domínio. Só com serde_json nas dependências; senão apague a linha.
+  # { path = "serde_json::Value", reason = "E3: converta para o tipo do domínio na borda" },
+]

@@ -1,0 +1,41 @@
+# Princípio E4: erro esperado é parte da interface, com tipo e nome próprios. No domínio, `Error` cru
+# esconde qual caso aconteceu e obriga quem chama a comparar texto; nenhum lint pega isso
+# (only-throw-error aceita Error). Pega throw new Error(...), throw Error(...) e
+# Promise.reject(new Error(...)). Copie para docs/regras-de-codigo/ast-grep/ e troque
+# <PASTA_DO_DOMINIO> (ex.: src/dominio); na borda e nos adapters, Error cru é aceitável. Se o projeto
+# decidiu erro esperado como resultado (não exceção), a regra vale para o que sobra como exceção. Um
+# documento por linguagem; apague os que o projeto não usa. Em Rust, o equivalente é erro-sem-tipo.yml.
+id: erro-generico-no-dominio
+language: TypeScript
+message: "E4: erro do domínio sem tipo próprio. Crie a classe do caso (class CupomVencido extends Error) ou devolva um resultado com tipo."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  any:
+    - pattern: throw new Error($$$)
+    - pattern: throw Error($$$)
+    - pattern: Promise.reject(new Error($$$))
+
+---
+id: erro-generico-no-dominio-tsx
+language: Tsx
+message: "E4: erro do domínio sem tipo próprio. Crie a classe do caso (class CupomVencido extends Error) ou devolva um resultado com tipo."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  any:
+    - pattern: throw new Error($$$)
+    - pattern: throw Error($$$)
+    - pattern: Promise.reject(new Error($$$))
+
+---
+id: erro-generico-no-dominio-js
+language: JavaScript
+message: "E4: erro do domínio sem tipo próprio. Crie a classe do caso (class CupomVencido extends Error) ou devolva um resultado com tipo."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  any:
+    - pattern: throw new Error($$$)
+    - pattern: throw Error($$$)
+    - pattern: Promise.reject(new Error($$$))

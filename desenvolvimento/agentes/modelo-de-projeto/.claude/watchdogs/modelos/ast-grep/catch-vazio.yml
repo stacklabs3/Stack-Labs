@@ -1,5 +1,7 @@
 # Princípio E4: erro nunca é engolido. Copie para docs/regras-de-codigo/ast-grep/. Pega o catch vazio
-# e o catch que só loga e segue. Um documento por linguagem; apague os que o projeto não usa.
+# e o catch que só loga e segue. Um documento por linguagem (TypeScript, Tsx, JavaScript, Python, Java,
+# Rust); apague os que o projeto não usa. Sem marcador a trocar, exceto o nome do logger no documento
+# Java (`log|logger|LOG|LOGGER` na regex), se o projeto usa outro.
 id: catch-vazio
 language: TypeScript
 message: "E4: o erro é engolido. Trate o caso esperado ou deixe o erro subir até a borda."
@@ -40,3 +42,51 @@ severity: error
 rule:
   kind: except_clause
   has: { kind: block, has: { kind: pass_statement }, stopBy: end }
+
+---
+# Java: pega o catch vazio, o que só tem comentário e o que só loga, imprime ou chama printStackTrace e
+# segue. Bloco que relança, retorna ou trata passa. O Google Java Style aceita catch vazio com
+# comentário; E4 é mais dura e pega também esse caso.
+id: catch-vazio-java
+language: Java
+message: "E4: o erro é engolido. Trate o caso esperado ou deixe o erro subir até a borda."
+severity: error
+rule:
+  kind: catch_clause
+  has:
+    field: body
+    kind: block
+    not:
+      has:
+        not:
+          any:
+            - regex: '^[{}]$'   # as chaves do bloco também são filhas
+            - kind: line_comment
+            - kind: block_comment
+            - kind: expression_statement
+              regex: '(?s)^((log|logger|LOG|LOGGER|System\.(out|err))\s*\.\s*\w+\s*\(.*\)|\w+\s*\.\s*printStackTrace\s*\(\s*\))\s*;$'
+
+---
+# Rust: pega o ramo de Err vazio e o que só imprime ou loga e segue. O Clippy cobre o resto; ligue no
+# [lints.clippy] (modelos/lint/Cargo.lints.toml) em vez de escrever padrão:
+#   let _ = <Result>      -> let_underscore_must_use
+#   <Result>.ok();        -> unused_result_ok
+#   .map_err(|_| ...)     -> map_err_ignore
+#   <Result>; descartado  -> unused_must_use (rustc; reprova com -D warnings)
+id: catch-vazio-rust
+language: Rust
+message: "E4: o erro é engolido. Trate o caso esperado ou devolva o erro com `?` até a borda."
+severity: error
+rule:
+  any:
+    - pattern: if let Err($$$) = $X { }
+    - kind: match_arm
+      all:
+        - has: { field: pattern, regex: '^(Result::)?Err\(' }
+        - has:
+            field: value
+            any:
+              - { kind: block, regex: '^\{\s*\}$' }
+              - { kind: unit_expression }
+              - { kind: block, regex: '^\{\s*(std::)?(e?print(ln)?|log::\w+|tracing::\w+|warn|error|info|debug)!\([^;]*\);?\s*\}$' }
+              - { kind: macro_invocation, regex: '^(std::)?(e?print(ln)?|log::\w+|tracing::\w+|warn|error|info|debug)!' }

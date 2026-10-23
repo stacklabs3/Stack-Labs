@@ -86,5 +86,5 @@ com `"principio": "JV<n>"` no `.json` e uma linha na tabela *Práticas da lingua
 ## Modelos
 
 Em `.claude/watchdogs/modelos/`: `regras-de-codigo.java.json`, `lint/checkstyle.xml`,
-`lint/pmd.xml`, `lint/error-prone.pom.xml` e, em `ast-grep/`, os documentos `Java`. Copie só o que o
+`lint/pmd.xml`, `lint/error-prone.pom.xml` (com o `.mvn/jvm.config` em `lint/error-prone.jvm.config`) e, em `ast-grep/`, os documentos `Java`. Copie só o que o
 grilling decidiu.

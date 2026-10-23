@@ -1,0 +1,15 @@
+# Princípios E4 e P8: o registro de erro e de evento passa pelo logger que o projeto escolheu.
+# System.out, System.err e printStackTrace() somem do código de produção. Copie para
+# docs/regras-de-codigo/ast-grep/. Sem marcador a trocar; acrescente ao `ignores` o que é CLI de
+# verdade (ex.: o main de uma ferramenta). Só Java: em Rust o Clippy cobre (print_stdout,
+# print_stderr, dbg_macro em modelos/lint/Cargo.lints.toml); em TS, a regra no-console do ESLint.
+id: saida-padrao-java
+language: Java
+message: "E4/P8: saída padrão no código. Use o logger do projeto (ou trate o erro)."
+severity: error
+ignores: ["src/test/**"]
+rule:
+  any:
+    - pattern: System.out.$M($$$)
+    - pattern: System.err.$M($$$)
+    - pattern: $E.printStackTrace()

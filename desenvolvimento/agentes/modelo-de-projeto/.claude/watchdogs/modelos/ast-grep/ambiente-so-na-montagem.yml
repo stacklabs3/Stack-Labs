@@ -1,6 +1,7 @@
 # Princípio P3: configuração por ambiente se lê num ponto só, a montagem. Copie para
-# docs/regras-de-codigo/ast-grep/ e troque <ARQUIVOS_DA_MONTAGEM> (ex.: src/montagem/**). Um
-# documento por linguagem; apague os que o projeto não usa.
+# docs/regras-de-codigo/ast-grep/ e troque <ARQUIVOS_DA_MONTAGEM> (ex.: src/montagem/** em TS e
+# Python; src/main/java/**/config/** em Java; src/main.rs ou src/config.rs em Rust). Um documento por
+# linguagem; apague os que o projeto não usa.
 id: ambiente-so-na-montagem
 language: TypeScript
 message: "P3: leitura de ambiente fora da montagem. Receba o valor por parâmetro."
@@ -37,3 +38,36 @@ rule:
   any:
     - pattern: os.environ
     - pattern: os.getenv($$$)
+
+---
+# Java: pega System.getenv, System.getProperty e @Value (curto ou qualificado). Em Spring Boot, a
+# montagem é a classe @Configuration ou um record @ConfigurationProperties. `Environment#getProperty`
+# injetado escapa (precisa de tipo) e fica com o revisor.
+id: ambiente-so-na-montagem-java
+language: Java
+message: "P3: leitura de ambiente fora da montagem. Receba o valor pelo construtor."
+severity: error
+ignores: ["<ARQUIVOS_DA_MONTAGEM>"]
+rule:
+  any:
+    - pattern: System.getenv($$$)
+    - pattern: System.getProperty($$$)
+    - kind: annotation
+      regex: '^@(org\.springframework\.beans\.factory\.annotation\.)?Value\s*\('
+
+---
+# Rust: pega std::env::var/var_os/vars/args (também com turbofish) e o `use std::env`. env!() e
+# option_env!() são de compilação e ficam fora. Alternativa por lint, que resolve o caminho pelo
+# compilador: clippy::disallowed_methods (modelos/lint/clippy.toml) com
+# #[expect(clippy::disallowed_methods, reason = "montagem")] no módulo da montagem.
+id: ambiente-so-na-montagem-rust
+language: Rust
+message: "P3: leitura de ambiente fora da montagem. Receba o valor por parâmetro."
+severity: error
+ignores: ["<ARQUIVOS_DA_MONTAGEM>"]
+rule:
+  any:
+    - kind: call_expression
+      has: { field: function, regex: '^(::)?(std::)?env::(var|var_os|vars|vars_os|args|args_os)(::<.+>)?$' }
+    - kind: use_declaration
+      regex: '\bstd::env\b'

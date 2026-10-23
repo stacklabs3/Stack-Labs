@@ -1,7 +1,11 @@
 # Princípios D e P3: o domínio não importa infraestrutura. Copie para docs/regras-de-codigo/ast-grep/
-# e troque os marcadores: <PASTA_DO_DOMINIO> (ex.: src/dominio) e <PACOTES_DE_INFRA> (regex, ex.:
-# prisma|@prisma/|express|axios|pg). Um documento por linguagem; apague os que o projeto não usa e,
-# para outra linguagem, copie um documento e troque `language` e o `kind` do import dela.
+# e troque os marcadores: <PASTA_DO_DOMINIO> e <PACOTES_DE_INFRA> (regex). Exemplos por linguagem:
+#   TS/JS/Python: src/dominio · prisma|@prisma/|express|axios|pg
+#   Java: src/main/java/br/com/loja/dominio · org\.springframework|jakarta\.persistence|org\.hibernate|
+#         com\.fasterxml\.jackson|java\.sql|software\.amazon (pontos escapados)
+#   Rust: src/dominio · sqlx|reqwest|tokio|aws_sdk_s3|crate::infra (nome do crate no código: hífen vira _)
+# Um documento por linguagem; apague os que o projeto não usa e, para outra linguagem, copie um
+# documento e troque `language` e o `kind` do import dela.
 id: dominio-sem-infra
 language: TypeScript
 message: "D/P3: o domínio importa infraestrutura. Defina a port no domínio; o adapter vive fora."
@@ -58,3 +62,49 @@ rule:
   any:
     - inside: { kind: import_statement, stopBy: end }
     - inside: { kind: import_from_statement, stopBy: end }
+
+---
+# Java: pega import comum, estático e com curinga, e nome qualificado no código (anotação, tipo, new).
+# Chamada estática totalmente qualificada (org.x.Classe.metodo()) escapa: o ArchUnit, que lê o
+# bytecode, cobre (regra `comando` à parte, ver regras-de-codigo.java.json).
+id: dominio-sem-infra-java
+language: Java
+message: "D/P3: o domínio importa infraestrutura. Defina a port no domínio; o adapter vive fora."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  any:
+    - kind: import_declaration
+      regex: '^import\s+(static\s+)?(<PACOTES_DE_INFRA>)\.'
+    - any:
+        - kind: scoped_identifier
+        - kind: scoped_type_identifier
+      regex: '^(<PACOTES_DE_INFRA>)\.'
+      not:
+        any:
+          - inside: { kind: scoped_identifier }
+          - inside: { kind: scoped_type_identifier }
+          - inside: { kind: import_declaration, stopBy: end }
+          - inside: { kind: package_declaration, stopBy: end }
+
+---
+# Rust: pega `use`, `extern crate` e o caminho qualificado sem `use` (sqlx::query(...), x: sqlx::PgPool).
+# Alias (`use sqlx as banco;`) é pego no `use`, não nas chamadas depois. Mais forte que esta regra: o
+# domínio num crate próprio do workspace, sem as dependências de infra no Cargo.toml dele.
+id: dominio-sem-infra-rust
+language: Rust
+message: "D/P3: o domínio usa infraestrutura. Defina o trait (port) no domínio; o adapter vive fora."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  any:
+    - kind: use_declaration
+      regex: '^(pub(\([^)]*\))?\s+)?use\s+(::)?(<PACOTES_DE_INFRA>)\b'
+    - kind: extern_crate_declaration
+      regex: '^extern\s+crate\s+(<PACOTES_DE_INFRA>)\b'
+    - any: [{ kind: scoped_identifier }, { kind: scoped_type_identifier }]
+      regex: '^(::)?(<PACOTES_DE_INFRA>)::'
+      not:
+        inside:
+          stopBy: end
+          any: [{ kind: use_declaration }, { kind: scoped_identifier }, { kind: scoped_type_identifier }]

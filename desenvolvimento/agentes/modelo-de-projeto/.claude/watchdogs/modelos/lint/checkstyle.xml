@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN" "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!--
+  Configuração de REFERÊNCIA do Checkstyle 14.3.0 para Java (21+). Adoção por etapas: o projeto copia
+  para config/checkstyle.xml só os módulos que o grilling de Regras de código decidiu, não o arquivo
+  inteiro. Cada módulo traz o princípio que concretiza. Severidade `error` em tudo.
+
+  Maven (pom.xml), com a versão do Checkstyle fixada (o plugin traz uma antiga embutida):
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-checkstyle-plugin</artifactId><version>3.6.0</version>
+      <configuration><configLocation>config/checkstyle.xml</configLocation><consoleOutput>true</consoleOutput>
+        <violationSeverity>error</violationSeverity><includeTestSourceDirectory>true</includeTestSourceDirectory></configuration>
+      <dependencies><dependency><groupId>com.puppycrawl.tools</groupId><artifactId>checkstyle</artifactId><version>14.3.0</version></dependency></dependencies>
+    </plugin>
+  Comando: mvn -B -q checkstyle:check
+  Gradle: plugin `checkstyle`, toolVersion = '14.3.0', maxWarnings = 0; comando: gradle checkstyleMain
+
+  O `lint-cobre` procura o nome do módulo no texto; módulo comentado também "aparece". Apague o que
+  não usar em vez de comentar.
+  Não ligue MissingSwitchDefault: exigir default anula a exaustividade do switch sobre sealed (O).
+-->
+<module name="Checker">
+  <property name="severity" value="error"/>
+  <property name="charset" value="UTF-8"/>
+  <module name="SuppressWarningsFilter"/>
+
+  <module name="TreeWalker">
+    <module name="SuppressWarningsHolder"/>
+
+    <!-- E1: caixa por tipo de identificador; sigla como palavra (XmlHttp). O vocabulário do
+         glossário fica com o termo-evitado do validador. -->
+    <module name="TypeName"/> <!-- E1 -->
+    <module name="MethodName"/> <!-- E1 -->
+    <module name="MemberName"/> <!-- E1 -->
+    <module name="LocalVariableName"/> <!-- E1 -->
+    <module name="ParameterName"/> <!-- E1 -->
+    <module name="ConstantName"/> <!-- E1 -->
+    <module name="AbbreviationAsWordInName"> <!-- E1 -->
+      <property name="allowedAbbreviationLength" value="0"/>
+    </module>
+
+    <!-- E2: até 3 parâmetros e 3 níveis de aninhamento; função simples. -->
+    <module name="ParameterNumber"> <!-- E2 -->
+      <property name="max" value="3"/>
+      <property name="ignoreOverriddenMethods" value="true"/>
+    </module>
+    <module name="NestedIfDepth"> <!-- E2: o primeiro if é o nível 0 -->
+      <property name="max" value="2"/>
+    </module>
+    <module name="NestedTryDepth"/> <!-- E2 -->
+    <module name="CyclomaticComplexity"> <!-- E2 -->
+      <property name="max" value="10"/>
+    </module>
+    <module name="VariableDeclarationUsageDistance"/> <!-- E2: variável perto do uso -->
+    <!-- E2, opcional: não crie método público só para cumprir o limite.
+    <module name="MethodLength"><property name="max" value="40"/><property name="countEmpty" value="false"/></module>
+    -->
+
+    <!-- E4: erro nunca é engolido; não se captura Exception/Throwable genérico (a borda,
+         @ControllerAdvice, fica fora por @SuppressWarnings("checkstyle:IllegalCatch") com motivo). -->
+    <module name="EmptyCatchBlock"/> <!-- E4 -->
+    <module name="IllegalCatch"/> <!-- E4 -->
+
+    <!-- E5: campo não se expõe para mutação. -->
+    <module name="VisibilityModifier"> <!-- E5 -->
+      <property name="allowPublicFinalFields" value="true"/>
+    </module>
+    <module name="FinalClass"/> <!-- O, L: classe só com construtor privado é final -->
+
+    <!-- E8: número com significado tem nome. -->
+    <module name="MagicNumber"/> <!-- E8 -->
+
+    <!-- P8: import explícito, um jeito só. -->
+    <module name="AvoidStarImport"/> <!-- P8 -->
+  </module>
+</module>

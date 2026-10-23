@@ -14,7 +14,7 @@
     { "id": "R4", "principio": "E6", "texto": "TODO e FIXME só com a issue",
       "verificacao": { "tipo": "todo-sem-issue" } },
     { "id": "R5", "principio": "E7", "texto": "Sem bloco duplicado de 8 linhas ou mais",
-      "verificacao": { "tipo": "comando", "executar": "npx jscpd --min-lines 8 --threshold 0 --exitCode 1 {arquivos}" } },
+      "verificacao": { "tipo": "comando", "executar": "npx jscpd@5.4.2 --min-lines 8 --threshold 0 --exit-code 1 {arquivos}" } },
     { "id": "R6", "principio": "D", "texto": "O domínio não importa infraestrutura",
       "verificacao": { "tipo": "ast-grep", "regras": "docs/regras-de-codigo/ast-grep/dominio-sem-infra.yml" } },
     { "id": "R7", "principio": "L", "texto": "Toda port tem teste de contrato que roda contra todos os adapters",
@@ -22,6 +22,8 @@
     { "id": "R8", "principio": "P9", "texto": "Commits em Conventional Commits, em português",
       "verificacao": { "tipo": "mensagem-de-commit", "padrao": "^(feat|fix|refactor|test|docs|chore)(\\(.+\\))?: .+" } },
     { "id": "R9", "principio": "S", "texto": "Cada módulo muda por um ator só",
-      "verificacao": { "tipo": "revisor" } }
+      "verificacao": { "tipo": "revisor" } },
+    { "id": "R10", "principio": "TS3", "texto": "Hooks do React só no topo do componente e com as dependências completas",
+      "verificacao": { "tipo": "lint-cobre", "config": "eslint.config.js", "regras": ["react-hooks/rules-of-hooks", "react-hooks/exhaustive-deps"] } }
   ]
 }
