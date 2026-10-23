@@ -52,8 +52,9 @@ Crie a branch a partir da base, `git push -u origin integracao/<nome>`, e grave 
 
 ### 3. Uma issue por vez
 
-**Fronteira:** issues abertas com `ready-for-agent`, sem responsável, sem label `wayfinder:*` e sem
-bloqueio aberto, da mais antiga para a mais nova. Um bloqueador já `integrada` nesta rodada conta
+**Fronteira:** issues abertas com `ready-for-agent`, sem responsável, sem label `wayfinder:*` nem
+`spec`, sem sub-issues (issue com filhas é um spec, mesmo sem a label) e sem bloqueio aberto, da mais
+antiga para a mais nova. Um bloqueador já `integrada` nesta rodada conta
 como resolvido: o código dele já está na branch de integração.
 
 Para a próxima issue da fronteira:

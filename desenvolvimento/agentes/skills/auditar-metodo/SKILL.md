@@ -36,6 +36,11 @@ grande. Cada item termina com ✅, ⚠️ ou ❌ e a evidência (nome do ticket 
   minutos são o sinal).
 - Tickets citados pelo nome no mapa, não por `#número` solto.
 
+**Caminho até ready-for-agent**
+- Toda issue `ready-for-agent` nasceu de uma rota de `docs/agents/caminho-ate-ready-for-agent.md`
+  (sub-issue de spec, ou agent brief do `/triage`); amostra de 5 conferida contra a definição de pronto.
+- Todo spec tem a label `spec` e nenhum spec está em `ready-for-agent`.
+
 **Protótipo**
 - Todo `/portar-prototipo` (commit ou PR que leva tela de `prototipos/` para produção) tem antes a
   aprovação explícita no ticket.

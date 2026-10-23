@@ -27,14 +27,15 @@ iniciais, a pesquisa antes de recomendar e a família `*-prototipo`. O projeto d
 ```
 projeto novo ──► 4 mapas iniciais
                     │
-ideia grande ──► /wayfinder ──► /to-spec ──► /to-tickets ──► /implement (1 issue por sessão) ──► PR
-                (decisões, uma    (fecha o    (fatias          + /tdd + /code-review
-                 por sessão)       mapa)       verticais)
+ideia grande ──► /wayfinder ──► /to-spec ──► /to-tickets ──► ready-for-agent ──► orquestração ──► PR
+                (decisões, uma    (fecha o    (fatias                            (implementa, revisa
+                 por sessão)       mapa)       verticais)                          e confere)
 ```
 
 - **Ideia clara, várias sessões:** `/grill-with-docs` → `/to-spec` → `/to-tickets`.
-- **Ideia clara, uma sessão:** `/grill-with-docs` → `/implement`.
-- **Bug ou pedido de cliente:** `/triage` → `/implement`.
+- **Ideia clara, uma sessão:** `/grill-with-docs` → `/to-tickets` com uma tarefa só.
+- **Bug ou pedido de cliente:** `/triage`.
+- **Como uma tarefa fica pronta para o agente:** veja [caminho-ate-ready-for-agent.md](caminho-ate-ready-for-agent.md).
 - **Não sabe por onde ir:** `/ask-matt`.
 
 ## Os quatro mapas iniciais

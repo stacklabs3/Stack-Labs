@@ -51,6 +51,9 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
   `mapa-inicial:arquitetura`, `mapa-inicial:fases` ou `mapa-inicial:infra`. Veja `docs/agents/mapas-iniciais.md`.
 - **Resolução com fontes:** o comentário de resolução de ticket de grilling, tarefa ou pesquisa
   termina com `## Fontes` e ao menos um link. Veja `docs/agents/pesquisa-antes-de-recomendar.md`.
+- **Spec:** o `/to-spec` publica o spec com `ready-for-agent`; troque pela label `spec`. As fatias do
+  `/to-tickets` são sub-issues dele e são elas que recebem `ready-for-agent`
+  (`docs/agents/caminho-ate-ready-for-agent.md`).
 - **Fora de escopo:** `gh issue close <n> --reason "not planned"`. Não conta no limite de um ticket por sessão.
 - **Ativar uma issue para implementar:** `node .claude/hooks/ativar-issue.mjs <n>`.
 - **Branches:** `issue/<n>-<slug>`, `integracao/<nome>`, `prototype/<nome>`, `research/<nome>`, `chore/<nome>`. A `main`
@@ -61,7 +64,7 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
 ```bash
 for label in wayfinder:map wayfinder:research wayfinder:prototype wayfinder:grilling wayfinder:task \
   mapa-inicial:prototipo mapa-inicial:arquitetura mapa-inicial:fases mapa-inicial:infra \
-  needs-triage needs-info ready-for-agent ready-for-human wontfix; do
+  needs-triage needs-info ready-for-agent ready-for-human wontfix spec altera-watchdogs; do
   gh label create "$label" --force
 done
 ```

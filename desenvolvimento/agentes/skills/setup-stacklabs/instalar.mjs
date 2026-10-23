@@ -22,7 +22,7 @@ const CAMINHOS_DOS_WATCHDOGS = [".claude/hooks", ".claude/githooks", ".claude/ag
 const LABELS_DO_METODO = [
   "wayfinder:map", "wayfinder:research", "wayfinder:prototype", "wayfinder:grilling", "wayfinder:task",
   "mapa-inicial:prototipo", "mapa-inicial:arquitetura", "mapa-inicial:fases", "mapa-inicial:infra",
-  "needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix", "altera-watchdogs",
+  "needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix", "spec", "altera-watchdogs",
 ];
 
 // ---------- utilitários ----------

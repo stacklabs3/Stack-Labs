@@ -92,6 +92,9 @@ if (numerosAtivados.length === 1) {
   if (tipoWayfinder(issueCandidata.labels)) {
     bloquearFerramenta(NOME_WATCHDOG, `#${numeroIssue} é um ticket do wayfinder: decide, não implementa. Feche o mapa e passe por /to-spec → /to-tickets.`);
   }
+  if (issueCandidata.labels.includes("spec")) {
+    bloquearFerramenta(NOME_WATCHDOG, `#${numeroIssue} é um spec: ele é o pai das fatias, não uma delas. Fatie com /to-tickets e implemente as sub-issues.`);
+  }
   if (!issueCandidata.labels.some((label) => LABELS_IMPLEMENTAVEIS.includes(label))) {
     bloquearFerramenta(NOME_WATCHDOG, `a issue #${numeroIssue} não tem ${LABELS_IMPLEMENTAVEIS.join(" nem ")}. Ela precisa sair do /to-tickets ou passar pelo /triage antes.`);
   }
