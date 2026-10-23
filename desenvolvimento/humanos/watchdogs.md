@@ -18,7 +18,7 @@ método dizendo qual é o próximo passo. A lista técnica completa fica em
 | Mensagem | O que fazer |
 |---|---|
 | "faltam mapas iniciais" | Abra os mapas que faltam com `/wayfinder` |
-| "mapas iniciais ... ainda estão abertos" | Termine Arquitetura e Fases antes de implementar |
+| "mapas iniciais ... ainda estão abertos" | Feche Protótipo (desenho inicial), Arquitetura e Fases antes de implementar |
 | "exige uma issue ativa" | Ative uma issue `ready-for-*` com `ativar-issue.sh`, ou passe por `/to-tickets` |
 | "seria fechado sem ## Fontes" | A decisão precisa citar a pesquisa ou a fonte primária |
 | "não foi reivindicado" | O ticket precisa de responsável antes do trabalho |

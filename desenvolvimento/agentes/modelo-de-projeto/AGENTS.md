@@ -36,7 +36,8 @@ ideia grande demais para uma sessão
 ### 1. Mapas iniciais
 1. **[W]** Todo projeto abre os quatro **mapas iniciais**: Protótipo, Arquitetura, Fases e Infra
    ([docs/agents/mapas-iniciais.md](docs/agents/mapas-iniciais.md)). Nenhuma issue de implementação
-   é ativada enquanto os quatro não existirem e enquanto Arquitetura e Fases não estiverem fechados.
+   é ativada enquanto os quatro não existirem e enquanto Protótipo (o desenho inicial), Arquitetura e
+   Fases não estiverem fechados. Infra é informativo e não trava.
 
 ### 2. Recomendação fundamentada
 2. **[W]** Toda recomendação sua (no grilling, num ticket, num review, numa resposta) aponta a

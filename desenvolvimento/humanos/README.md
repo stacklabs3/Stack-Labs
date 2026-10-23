@@ -42,12 +42,13 @@ Todo projeto abre, no primeiro dia, quatro mapas no GitHub
 ([ADR 0002](../adr/0002-quatro-mapas-iniciais.md)). Detalhes e perguntas típicas em
 [mapas-iniciais.md](mapas-iniciais.md).
 
-1. **Protótipo**: como o produto parece, rotina por rotina, com a família `*-prototipo`.
+1. **Protótipo**: o desenho inicial do produto, com a família `*-prototipo`.
 2. **Arquitetura**: linguagem, stack e módulos.
-3. **Fases**: a ordem do front, do backend e da integração.
-4. **Infra**: onde roda, quanto custa, como se faz deploy.
+3. **Fases**: como o desenvolvimento se divide, decidido pelo desenvolvedor que conduz o projeto.
+4. **Infra**: o que vamos usar, quanto custa e o que teremos que construir em volta.
 
-Ninguém começa a implementar antes de **Arquitetura** e **Fases** fecharem. O watchdog barra.
+Ninguém começa a implementar antes de **Protótipo** (o desenho inicial), **Arquitetura** e **Fases**
+fecharem. O watchdog barra. **Infra** é informativo: dá conhecimento de custos e tecnologias e não trava nada.
 
 ## Grilling: como responder
 

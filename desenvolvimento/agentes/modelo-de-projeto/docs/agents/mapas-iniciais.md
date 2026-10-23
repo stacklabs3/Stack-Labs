@@ -6,15 +6,15 @@ como os watchdogs encontram o mapa.
 
 | Mapa | Label | Destino | Precisa estar fechado para ativar issue? |
 |---|---|---|---|
-| Protótipo | `mapa-inicial:prototipo` | Cada rotina do projeto prototipada e aprovada | Não (segue aberto enquanto houver rotina) |
+| Protótipo | `mapa-inicial:prototipo` | O desenho inicial do produto prototipado e aprovado | **Sim** |
 | Arquitetura | `mapa-inicial:arquitetura` | Linguagem, stack e módulos decididos, em ADRs | **Sim** |
-| Fases | `mapa-inicial:fases` | A ordem do front, do backend e da integração, com o que entra em cada fase | **Sim** |
-| Infra | `mapa-inicial:infra` | Hospedagem, banco, ambientes, deploy e custos decididos | Não (fecha até o primeiro deploy) |
+| Fases | `mapa-inicial:fases` | A divisão em fases que o desenvolvedor escolheu, com o que entra e o critério de pronto de cada uma | **Sim** |
+| Infra | `mapa-inicial:infra` | Retrato da infra que vamos usar: custos, tecnologias e o que construir em volta | Não (informativo) |
 
 ## Como abrir
 
 1. Uma sessão por mapa, com `/wayfinder` em modo *Chart the map*. Comece pelo Protótipo e pela
-   Arquitetura; Fases e Infra dependem deles.
+   Arquitetura; Fases e Infra dependem deles. Infra é o menor dos quatro: poucos tickets, quase todos de pesquisa.
 2. Crie o mapa com as duas labels e o corpo do modelo abaixo. Ajuste o destino ao projeto no grilling.
 3. Os tickets sugeridos são ponto de partida, não lista fechada. O grilling breadth-first decide
    quais existem; o que não tiver pergunta precisa vai para *Not yet specified*.
@@ -38,8 +38,8 @@ como os watchdogs encontram o mapa.
 ```markdown
 ## Destination
 
-Cada rotina do projeto prototipada no protótipo único (`prototipos/<projeto>/`), auditada e com
-aprovação explícita do humano, pronta para `/portar-prototipo`.
+O desenho inicial do produto: as rotinas principais prototipadas no protótipo único
+(`prototipos/<projeto>/`), auditadas e com aprovação explícita do humano, prontas para `/portar-prototipo`.
 
 ## Notes
 
@@ -49,6 +49,8 @@ aprovação explícita do humano, pronta para `/portar-prototipo`.
   `/portar-prototipo` só com aprovação explícita. Roteiro: docs/agents/roteiro-de-prototipo.md.
 - Comportamento (estado, regra, lógica) se prototipa com `/prototype`, não com a família visual.
 - Tickets de protótipo de um mesmo lote fecham juntos, depois da aprovação.
+- Este mapa trava a implementação até fechar. Protótipos que surgirem depois do desenho inicial
+  entram como tickets de protótipo nos mapas de cada esforço, não reabrem este.
 - Vocabulário: GLOSSARY.md do projeto.
 
 ## Decisions so far
@@ -63,7 +65,7 @@ Tickets que costumam nascer:
 - *Superfícies e aparelhos* (grilling): em que aparelho cada papel usa o produto (iOS, Android, web, tablet, TV).
 - *Princípios de UI/UX do projeto* (grilling + pesquisa de referências do mercado).
 - *Criar o protótipo único* (protótipo): `/novo-prototipo`, com as abas e as visões decididas.
-- *Lista de rotinas a prototipar* (grilling): vira um ticket de protótipo por rotina, em lotes.
+- *Rotinas do desenho inicial* (grilling): quais rotinas entram agora; cada uma vira um ticket de protótipo, em lotes.
 
 ## Mapa de Arquitetura
 
@@ -102,15 +104,15 @@ Tickets que costumam nascer:
 ```markdown
 ## Destination
 
-A sequência de fases do desenvolvimento (front, backend e integração), com o que cada fase entrega,
-o critério de pronto de cada uma e a ordem em que os mapas de implementação serão abertos.
+A sequência de fases do desenvolvimento, com o que cada fase entrega, o critério de pronto de cada
+uma e a ordem em que os mapas de implementação serão abertos.
 
 ## Notes
 
-- Depende do mapa de Arquitetura (stack) e do mapa de Protótipo (rotinas aprovadas).
-- O padrão da casa é: front a partir do protótipo aprovado com dados falsos atrás de uma seam →
-  backend atrás da mesma interface → integração trocando o adapter falso pelo real. O grilling pode
-  mudar isso, com motivo registrado.
+- Depende do mapa de Arquitetura (stack) e do mapa de Protótipo (desenho inicial aprovado).
+- A divisão das fases é decisão do desenvolvedor que vai conduzir o projeto. Comece perguntando a
+  ele como quer dividir; a casa não tem ordem padrão. Recomende só com base no que os outros mapas
+  decidiram e na pesquisa, com a fonte citada.
 - Cada fase fecha com `/to-spec` e `/to-tickets` em fatias verticais.
 
 ## Decisions so far
@@ -122,8 +124,8 @@ o critério de pronto de cada uma e a ordem em que os mapas de implementação s
 
 Tickets que costumam nascer:
 
-- *Ordem das fases* (grilling).
-- *Seam entre front e backend* (grilling): onde fica a interface que o front usa com dados falsos e depois reais.
+- *Como dividir as fases* (grilling com o desenvolvedor).
+- *Seams entre as partes* (grilling): onde ficam as interfaces que deixam uma fase avançar sem a outra.
 - *Critério de pronto de cada fase* (grilling).
 - *Estratégia de testes por fase* (grilling + `/tdd`).
 
@@ -132,15 +134,15 @@ Tickets que costumam nascer:
 ```markdown
 ## Destination
 
-Onde o projeto roda (hospedagem, banco, filas, armazenamento), os ambientes, o deploy e o custo
-mensal estimado decididos, com a pesquisa de preço e limites de cada provedor em docs/research/.
+Um retrato da infra que o projeto vai usar: os serviços e tecnologias disponíveis, o custo estimado e
+o que teremos que construir em volta deles. É conhecimento de causa para os outros mapas; não trava
+a implementação e não precisa fechar.
 
 ## Notes
 
-- Depende do mapa de Arquitetura.
+- Mapa leve: poucos tickets, quase todos de pesquisa. Não detalhe ambientes, deploy ou CI aqui;
+  isso vira mapa próprio quando a implementação chegar perto.
 - Preço, limite e região de provedor só entram com fonte primária e data da consulta.
-- Tarefas que só o humano faz (criar conta, cartão, DNS, segredos) viram tickets de tarefa HITL
-  com checklist (o `/wizard` gera o passo a passo).
 
 ## Decisions so far
 
@@ -151,8 +153,6 @@ mensal estimado decididos, com a pesquisa de preço e limites de cada provedor e
 
 Tickets que costumam nascer:
 
-- *Opções de hospedagem* (pesquisa) → *Hospedagem* (grilling).
-- *Ambientes* (grilling): local, preview, produção.
-- *Deploy e CI* (grilling).
-- *Custo mensal estimado* (pesquisa).
-- *Segredos e acessos* (tarefa HITL).
+- *Infra disponível para a stack* (pesquisa): serviços e tecnologias que atendem o que a Arquitetura decidiu.
+- *Custos estimados* (pesquisa): quanto custa no começo e com o dobro de uso.
+- *O que construir em volta* (grilling): o que a infra escolhida não resolve e vira trabalho nosso.

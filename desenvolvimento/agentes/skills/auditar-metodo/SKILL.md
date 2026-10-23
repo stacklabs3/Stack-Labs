@@ -22,7 +22,7 @@ grande. Cada item termina com ✅, ⚠️ ou ❌ e a evidência (nome do ticket 
 **Mapas iniciais**
 - Os quatro existem, com `wayfinder:map` + `mapa-inicial:<tipo>`.
 - Cada um tem *Destination* preenchido e *Decisions so far* com um ponteiro por ticket fechado.
-- Nenhuma issue `ready-for-*` foi fechada antes de Arquitetura e Fases fecharem (compare as datas).
+- Nenhuma issue `ready-for-*` foi fechada antes de Protótipo, Arquitetura e Fases fecharem (compare as datas).
 
 **Pesquisa antes de recomendar**
 - Todo ticket fechado de grilling, tarefa e pesquisa tem `## Fontes` com link no comentário de resolução.

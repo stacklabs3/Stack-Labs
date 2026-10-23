@@ -98,7 +98,7 @@ if (ativacaoIssue) {
   }
   const mapasAindaAbertos = mapasIniciais.filter((mapaInicial) => MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR.includes(mapaInicial.tipo) && mapaInicial.estado !== "closed");
   if (mapasAindaAbertos.length) {
-    bloquearFerramenta(NOME_WATCHDOG, `os mapas iniciais ${mapasAindaAbertos.map((mapaInicial) => `"${mapaInicial.titulo}"`).join(" e ")} ainda estão abertos. Implementação só começa com a arquitetura e as fases decididas.`);
+    bloquearFerramenta(NOME_WATCHDOG, `os mapas iniciais ${mapasAindaAbertos.map((mapaInicial) => `"${mapaInicial.titulo}"`).join(" e ")} ainda estão abertos. Implementação só começa com o desenho inicial do protótipo aprovado e a arquitetura e as fases decididas (o mapa de Infra não trava).`);
   }
 
   estadoSessao.issueAtiva = { numero: issueCandidata.numero, titulo: issueCandidata.titulo, ativadaEm: new Date().toISOString() };

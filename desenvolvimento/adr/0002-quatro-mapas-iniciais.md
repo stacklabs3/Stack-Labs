@@ -7,6 +7,10 @@ donos e ritmos diferentes: o protótipo conversa com o cliente, a arquitetura e 
 técnico, e as fases amarram as três. Num mapa só, as decisões técnicas ficavam esperando as de produto.
 
 **Consequências:** nenhuma issue de implementação é ativada enquanto os quatro mapas não existirem,
-e enquanto os mapas de Arquitetura e de Fases não estiverem fechados (o watchdog `guarda-bash` barra).
-O mapa de Infra pode fechar depois, até o primeiro deploy. O mapa de Protótipo segue aberto enquanto
-houver rotina a prototipar.
+e enquanto os mapas de Protótipo, Arquitetura e Fases não estiverem fechados (o watchdog
+`guarda-bash` barra). O mapa de Protótipo fecha com o **desenho inicial** aprovado; protótipos que
+surgirem depois entram como tickets nos mapas de cada esforço. O mapa de Infra é **informativo**:
+responde que infra vamos usar, quanto custa e o que teremos que construir em volta, para dar
+conhecimento de causa. É leve, não precisa fechar e não trava a implementação. A divisão das fases
+(front, backend, integração ou outra) é decidida com o desenvolvedor que vai conduzir, no grilling;
+a casa não impõe uma ordem.

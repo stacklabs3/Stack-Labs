@@ -19,7 +19,7 @@ export const PREFIXOS_BRANCH_DESCARTAVEL = ["prototype/", "research/"];
 export const MAPAS_INICIAIS = ["prototipo", "arquitetura", "fases", "infra"];
 
 // Mapas iniciais que precisam estar fechados para uma issue de implementação ser ativada.
-export const MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR = ["arquitetura", "fases"];
+export const MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR = ["prototipo", "arquitetura", "fases"];
 
 // Tipos de ticket do wayfinder cuja resolução exige a seção "## Fontes" (pesquisa antes de recomendar).
 export const TIPOS_QUE_EXIGEM_FONTES = ["grilling", "task", "research"];

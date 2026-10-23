@@ -20,7 +20,7 @@ grilling amplo, cria o mapa e os tickets e dispara as pesquisas. Você responde.
 - [ ] **Mapa de Protótipo**: primeiro ticket é criar o protótipo único com `/novo-prototipo`.
 - [ ] **Mapa de Arquitetura**: primeiro ticket são as restrições do projeto.
 - [ ] **Mapa de Fases**: bloqueado pelas decisões de Arquitetura e pelas rotinas do Protótipo.
-- [ ] **Mapa de Infra**: bloqueado pela stack.
+- [ ] **Mapa de Infra**: leve e informativo; não trava a implementação.
 - [ ] **Você:** confira no GitHub que cada mapa tem as labels `wayfinder:map` e `mapa-inicial:<tipo>`.
 
 ## Semanas seguintes: resolver os mapas
@@ -29,7 +29,7 @@ grilling amplo, cria o mapa e os tickets e dispara as pesquisas. Você responde.
 - [ ] Pesquisas rodam sozinhas; você lê o resumo antes do grilling que depende delas.
 - [ ] Protótipos em lote: você aprova por escrito.
 - [ ] Mapa sem nada a decidir → `/to-spec` → `/to-tickets`.
-- [ ] Arquitetura e Fases fechados: a implementação está liberada.
+- [ ] Protótipo (desenho inicial), Arquitetura e Fases fechados: a implementação está liberada.
 
 ## Durante todo o projeto
 
