@@ -8,7 +8,8 @@ limpa. Os passos estão na skill `/orquestrar-issues`; aqui está o porquê de c
 ## Quando recomendar
 
 Ao terminar um `/to-tickets` ou um `/triage` que deixou issues em `ready-for-agent`, recomende a
-orquestração ao humano e gere, com o `/nova-sessao`, o kickoff da janela do orquestrador.
+orquestração ao humano e gere, com o `/nova-sessao`, o kickoff da janela do orquestrador. Num projeto
+em adoção, só a partir da etapa `planejamento` (`docs/agents/adocao.md`).
 
 ## Os papéis
 

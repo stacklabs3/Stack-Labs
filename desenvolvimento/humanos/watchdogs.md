@@ -36,6 +36,12 @@ método dizendo qual é o próximo passo. A lista técnica completa fica em
 
 Usou um escape? Avise os sócios e registre o motivo na issue ou na PR. O `/auditar-metodo` vai achar.
 
+## Projeto que está adotando o método
+
+Num projeto que já existia, os watchdogs ligam em etapas: na **observação** quase tudo só avisa, no
+**planejamento** passam a cobrar mapas, issues e branches, e no **completo** vale tudo. Veja
+[adotar-em-projeto-existente.md](adotar-em-projeto-existente.md).
+
 ## Atualizar os watchdogs de um projeto
 
 Rode `/setup-stacklabs` no projeto. O que for watchdog ele não sobrescreve sozinho: entrega a você o

@@ -4,6 +4,9 @@ Todo projeto abre estes quatro mapas no primeiro dia ([ADR 0002](../adr/0002-qua
 Cada um é uma issue no GitHub, com tickets filhos que são perguntas. O corpo exato de cada mapa, que
 o agente usa, fica em [docs/agents/mapas-iniciais.md](../agentes/modelo-de-projeto/docs/agents/mapas-iniciais.md).
 
+Num projeto que já está rodando, os mapas registram as decisões que ele já tomou e fecham na hora
+quando nada está em aberto: veja [adotar-em-projeto-existente.md](adotar-em-projeto-existente.md).
+
 Em todos: **grilling** em cada decisão, e **nenhuma recomendação sem pesquisa**. A implementação só
 começa com **Protótipo**, **Arquitetura** e **Fases** fechados.
 

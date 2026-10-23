@@ -30,4 +30,16 @@ Junte os dois JSONs: o bloco `hooks` vem do modelo; `permissions`, `env` e o res
 Hook do projeto que não é do método entra ao lado dos do modelo, no mesmo evento. Com watchdogs já
 ativos, esse arquivo é protegido: entregue o JSON mesclado ao humano para ele gravar.
 
-Pronto quando nenhum `.stacklabs-novo` resta e o humano respondeu às contradições do passo 3.
+## Watchdogs que o projeto já tinha
+
+Hooks próprios (outro nome, outras regras, como os `APPETITO_*` do appetito_v2) são **substituídos**
+pelos do modelo. Antes de o humano rodar o `--atualizar-watchdogs`:
+
+1. Leia cada hook antigo e liste o que ele garante.
+2. Para cada garantia, diga se um watchdog do modelo já a cobre e qual.
+3. O que nenhum cobre vai para o humano decidir, item a item: vira regra em `## Regras deste projeto`
+   (sem bloqueio), vira proposta de ajuste no `modelo-de-projeto` do Stack-Labs (se serve para todo
+   projeto), ou cai.
+
+Pronto quando nenhum `.stacklabs-novo` resta, o humano respondeu às contradições do `AGENTS.md` e,
+havendo hooks antigos, decidiu cada garantia que nenhum watchdog do modelo cobre.

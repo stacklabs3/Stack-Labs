@@ -21,7 +21,8 @@ reprova, o diagnosticador acha a causa, o implementador corrige e os dois confer
 ## Como usar
 
 1. No fim do planejamento (`/to-tickets` ou `/triage`), o agente recomenda a orquestração e gera um
-   kickoff com o `/nova-sessao`. Abra uma janela nova e cole.
+   kickoff com o `/nova-sessao`. Abra uma janela nova e cole. Num projeto que está
+   [adotando o método](adotar-em-projeto-existente.md), a orquestração só começa na etapa de planejamento.
 2. O orquestrador te pergunta **quais issues** entram e **o nome da branch de integração**
    (`integracao/<nome>`) e a base dela. Responda.
 3. Ele trabalha sozinho, uma issue por vez. Se a janela dele encher, ele mesmo gera o kickoff para

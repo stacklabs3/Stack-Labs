@@ -13,6 +13,7 @@ pulam etapas produzem issues que o implementador não consegue terminar sozinho.
 | **Ideia clara, várias sessões** | `/grill-with-docs` → `/to-spec` → `/to-tickets` | `/to-tickets` |
 | **Ideia clara que cabe numa sessão** | `/grill-with-docs` → `/to-tickets` com uma fatia só | `/to-tickets` |
 | **Bug ou pedido de fora** | issue → `/triage` (verifica, grilling se preciso, agent brief) | `/triage` |
+| **Issue antiga de projeto em adoção** | `/triage` em lotes de até 10, na etapa de observação (`/adotar-metodo-stack-labs`) | `/triage` |
 
 Em todas: as decisões saem do **grilling com o humano respondendo**, e toda recomendação tem fonte
 (`docs/agents/pesquisa-antes-de-recomendar.md`). Aparência de tela passa antes pelo mapa de

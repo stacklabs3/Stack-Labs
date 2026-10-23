@@ -22,6 +22,8 @@ bug / pedido ──► /triage ────────────────�
 - **Ideia clara**, mas grande para uma sessão: `/grill-with-docs`, depois `/to-spec` e `/to-tickets`.
 - **Ideia clara e pequena**: `/grill-with-docs`, depois `/to-tickets` com uma tarefa só.
 - **Bug ou pedido de cliente**: abra a issue e rode `/triage`.
+- **Issue antiga de um projeto que está adotando o método**: passa pelo `/triage` em lotes, durante a
+  [adoção](adotar-em-projeto-existente.md). Nenhuma vai para o agente sem esse triage.
 
 ## O que você faz em cada etapa
 

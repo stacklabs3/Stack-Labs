@@ -6,7 +6,7 @@ import {
   lerEntradaDoHook, diretorioDoProjeto, bloquearFerramenta, watchdogsDesligados,
   lerEstadoSessao, chaveDoAgente, caminhoRelativoAoProjeto, caminhoEhProtegido, caminhoEhLivreSemIssue,
   branchAtual, branchEhPrincipal, branchEhDescartavel, repositorioTemCommits,
-  medirTokensDeContexto, LIMITE_DURO_CONTEXTO,
+  medirTokensDeContexto, LIMITE_DURO_CONTEXTO, etapaDeAdocao,
 } from "./lib/comum.mjs";
 
 const NOME_WATCHDOG = "guarda-edicao";
@@ -32,6 +32,9 @@ const tokensDeContexto = medirTokensDeContexto(entradaHook.transcript_path);
 if (tokensDeContexto >= LIMITE_DURO_CONTEXTO) {
   bloquearFerramenta(NOME_WATCHDOG, `contexto em ~${Math.round(tokensDeContexto / 1000)}k tokens, acima da smart zone (${LIMITE_DURO_CONTEXTO / 1000}k). Rode /nova-sessao (se precisar de documento, ele vai para o tmp do SO, fora do repositório) e continue numa janela nova com o kickoff.`);
 }
+
+// Na adoção do método, código sem issue ativa só passa a ser barrado na etapa "completo".
+if (etapaDeAdocao(diretorioProjeto) !== "completo") process.exit(0);
 
 if (caminhoEhLivreSemIssue(caminhoRelativo)) process.exit(0);
 
