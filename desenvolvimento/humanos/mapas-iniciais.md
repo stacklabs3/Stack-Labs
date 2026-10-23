@@ -2,8 +2,9 @@
 
 Todo projeto abre estes cinco mapas no primeiro dia ([ADR 0002](../adr/0002-quatro-mapas-iniciais.md)
 e [ADR 0007](../adr/0007-mapa-de-regras-de-codigo.md)).
-Cada um é uma issue no GitHub, com tickets filhos que são perguntas. O corpo exato de cada mapa, que
-o agente usa, fica em [docs/agents/mapas-iniciais.md](../agentes/modelo-de-projeto/docs/agents/mapas-iniciais.md).
+Cada um é uma issue no GitHub, com tickets filhos que são perguntas. O que o agente faz em cada
+mapa está em [docs/agents/mapas-iniciais.md](../agentes/modelo-de-projeto/docs/agents/mapas-iniciais.md);
+aqui fica o que você decide.
 
 Num projeto que já está rodando, os mapas registram as decisões que ele já tomou e fecham na hora
 quando nada está em aberto: veja [adotar-em-projeto-existente.md](adotar-em-projeto-existente.md).
@@ -31,9 +32,8 @@ Arquitetura ────────┤
 **Perguntas que você vai ouvir:** em que aparelho cada pessoa usa o produto? Quais rotinas existem?
 Qual o caminho mais curto para fazer cada coisa? Como fica vazio, carregando, com erro, sem internet?
 
-**Como anda:** `/novo-prototipo` cria o protótipo único uma vez; cada rotina entra com
-`/integrar-ao-prototipo`; a auditoria (`/auditar-prototipo`) e as correções (`/melhorar-prototipo`)
-vêm antes de você aprovar; só o aprovado vira código (`/portar-prototipo`).
+**Como anda:** o agente monta e audita cada rotina antes de levar a você; só o que você aprovar por
+escrito vira código.
 
 **Fecha quando:** o desenho inicial está aprovado. **Bloqueia a implementação.** Protótipos que
 surgirem depois entram como tickets nos mapas de cada esforço.
@@ -47,9 +47,8 @@ surgirem depois entram como tickets nos mapas de cada esforço.
 **Perguntas que você vai ouvir:** quem mantém isso daqui a dois anos? Qual o orçamento? Que
 integrações são obrigatórias? Entre as opções que a pesquisa comparou, qual?
 
-**Como anda:** cada escolha técnica tem antes um ticket de pesquisa comparando as opções (versão
-atual, licença, maturidade, custo). O grilling usa essa pesquisa. Cada escolha difícil de reverter
-vira uma ADR.
+**Como anda:** cada escolha técnica chega a você com a pesquisa que comparou as opções. Cada escolha
+difícil de reverter vira uma ADR.
 
 **Fecha quando:** a stack e os módulos estão decididos. **Bloqueia a implementação.**
 
@@ -67,11 +66,8 @@ fase vira depois uma spec e fatias verticais.
 
 ## 4. Regras de código
 
-**Decide:** as regras que todo código do projeto segue: como nomear, como desenhar módulos e
-interfaces, como tratar erro, como testar e o que o lint e o formatador garantem sozinhos. O
-resultado é um documento curto, `docs/regras-de-codigo.md`, com o porquê e um exemplo do projeto em
-cada regra. É a régua do agente que implementa e do agente que revisa: sem ela, cada sessão escreve
-de um jeito.
+**Decide:** as regras que todo código do projeto segue, no documento `docs/regras-de-codigo.md`. É a
+régua do agente que implementa e do agente que revisa.
 
 **Quem participa:** os sócios técnicos e quem vai manter o projeto.
 
@@ -79,15 +75,13 @@ de um jeito.
 glossário vira o nome da classe? Quando vale criar uma interface? Onde se valida o que o usuário
 digita? O que se testa e o que se mocka? Qual lint e qual formatador?
 
-**Como anda:** depois que a Arquitetura decidiu a linguagem e a stack. Usa quatro skills:
-`/human-architect-mindset` para as restrições (quem mantém, o nível do time, o que o agente costuma
-errar), `/domain-modeling` para os nomes que vêm do glossário, `/codebase-design` para o desenho de
-módulos e `/improve-codebase-architecture` quando já existe código. Lint e formatador passam por
-pesquisa, como toda escolha técnica. Configurar o lint é implementação: entra como a primeira fatia
-da primeira fase.
+**Como anda:** depois da Arquitetura. O grilling roda em torno dos
+[princípios de código](principios-de-codigo.md) da casa: primeiro as restrições, depois um ticket
+por grupo de princípios, e cada princípio sai adotado, adaptado ou deixado de fora, com o porquê.
 
-**Fecha quando:** `docs/regras-de-codigo.md` está escrito e você aprovou. **Bloqueia a
-implementação.** Regra nova ou mudada depois passa por ticket, nunca por edição solta.
+**Fecha quando:** `docs/regras-de-codigo.md` está escrito, com os 22 princípios decididos na tabela
+de cobertura, e você aprovou. **Bloqueia a implementação.** Regra nova ou mudada depois passa por
+ticket.
 
 ## 5. Infra
 
@@ -97,8 +91,8 @@ em volta delas.
 
 **Quem participa:** os sócios técnicos e quem paga a conta.
 
-**Como anda:** é o menor dos cinco mapas, com poucos tickets, quase todos de pesquisa. Preço e
-limite de provedor só entram com fonte e data da consulta.
+**Como anda:** é o menor dos cinco, quase todo de pesquisa. Preço e limite de provedor chegam com
+fonte e data da consulta.
 
 **Fecha quando:** não precisa fechar. Detalhes de ambientes e deploy viram um mapa próprio quando a
 implementação chegar perto.

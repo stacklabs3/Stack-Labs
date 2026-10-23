@@ -1,15 +1,16 @@
 # Orquestração de issues
 
 Como a casa implementa a fila de issues `ready-for-agent` (ADR 0005 do método). Uma sessão própria,
-aberta pelo kickoff do `/nova-sessao` com `/orquestrar-issues <N>`, tem um agente **orquestrador** que
-dispara os papéis de `.claude/agents/` **em sequência**, um subagente por vez, cada um com a janela
-limpa. Os passos estão na skill `/orquestrar-issues`; aqui está o porquê de cada peça.
+aberta com `/orquestrar-issues <N>`, tem um **orquestrador** que dispara os papéis de
+`.claude/agents/` **em sequência**, um subagente por vez, cada um com a janela limpa. Os passos, o
+esforço por ciclo e o estado da rodada estão na skill `/orquestrar-issues`; aqui está o porquê de
+cada peça.
 
 ## Quando recomendar
 
 Ao terminar um `/to-tickets` ou um `/triage` que deixou issues em `ready-for-agent`, recomende a
 orquestração ao humano e gere, com o `/nova-sessao`, o kickoff da janela do orquestrador. Num projeto
-em adoção, só a partir da etapa `planejamento` (`docs/agents/adocao.md`).
+em adoção, só a partir da etapa `planejamento` ([adocao.md](adocao.md)).
 
 ## Os papéis
 
@@ -36,23 +37,18 @@ Duas issues devolvidas seguidas param a rodada: algo comum a elas precisa de um 
 
 ## Branches
 
-O desenvolvedor escolhe, antes de começar, o nome da **branch de integração**
-(`integracao/<nome>`) e a base. Cada issue parte dela (`issue/<n>-<slug>`) e volta para ela por merge
-depois de aprovada. No fim da fila, o desenvolvedor decide: uma PR só da integração para a base, ou
-uma PR por issue, empilhadas na ordem. **Merge na `main`, nunca pelo agente.**
+O desenvolvedor escolhe o nome da **branch de integração** e a base. No fim da fila ele decide:
+uma PR só da integração para a base, ou uma PR por issue, empilhadas na ordem. O merge na base é
+sempre do desenvolvedor.
 
-## Modelo e esforço
+## Esforço
 
-Todos os papéis usam `opus`. No primeiro ciclo, implementador, revisor e conferente rodam em `low`;
-o diagnosticador, que abre cada ciclo de correção, roda sempre em `medium`, e nos ciclos de correção
-todos sobem para `medium`. O esforço vai em cada chamada, para subir sem
-editar os agentes.
+O primeiro ciclo roda barato; o diagnosticador e os ciclos de correção sobem o esforço. O esforço vai
+em cada chamada, para subir sem editar os papéis.
 
 ## Watchdogs na orquestração
 
 - Cada subagente aparece para os hooks com o próprio `agent_id`: a regra de uma issue ativa vale por
   subagente implementador, e os demais papéis não editam.
-- O orquestrador grava o andamento em `.claude/orquestracao/<nome>.json` (fora do git) e, no aviso
-  da smart zone (450k), passa a rodada para uma janela nova com o `/nova-sessao`. Nas sessões normais
-  o limite duro continua em 550k.
-- `.claude/agents/` é infraestrutura protegida: o agente não edita os papéis.
+- No aviso da smart zone (450k), o orquestrador grava o estado da rodada e passa a rodada para uma
+  janela nova com o `/nova-sessao`. Nas sessões normais o limite duro continua em 550k.

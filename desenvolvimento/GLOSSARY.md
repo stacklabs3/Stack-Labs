@@ -26,6 +26,12 @@ regras que todo código segue, cada uma com o porquê e um exemplo do projeto. �
 implementador e do revisor. Muda só por ticket.
 _Evitar_: Style guide, padrões, boas práticas, coding standards
 
+**Princípios de código**:
+Os 22 princípios da casa para escrever código, iguais em todo projeto (escrita E1 a E8, padrões P1 a
+P9 e SOLID), em `docs/agents/principios-de-codigo.md`. Guiam o grilling do mapa de Regras de código,
+que adota, adapta ou afasta cada um.
+_Evitar_: Boas práticas, clean code, style guide
+
 **Destino**:
 O que significa chegar ao fim de um mapa: uma spec, uma decisão travada ou uma mudança feita. É a
 primeira coisa que se escreve num mapa e define o escopo dele.
@@ -55,10 +61,8 @@ e leva a label `spec`: é o pai das fatias verticais, nunca implementado inteiro
 _Evitar_: PRD, requisito, documento de requisitos
 
 **Definição de pronto**:
-A lista de dez itens que uma fatia vertical cumpre antes de receber `ready-for-agent`: verificável
-sozinha, cabe numa janela, critérios de aceite, bloqueios ligados, nenhuma decisão em aberto, ligada
-à origem, vocabulário do glossário, sem caminho de arquivo, protótipo aprovado quando toca tela e sem
-humano no meio.
+A lista de itens que uma fatia vertical cumpre antes de receber `ready-for-agent`. A lista vive em
+`docs/agents/caminho-ate-ready-for-agent.md`.
 
 **Fatia vertical**:
 Uma issue de implementação que atravessa todas as camadas necessárias e entrega algo verificável.
@@ -200,8 +204,12 @@ _Evitar_: Prompt, instruções
 - Um **mapa** fechado vira uma **spec**, que vira **fatias verticais**; cada fatia é a **issue ativa** de uma **sessão**.
 - Um **watchdog** vigia uma regra da **constituição**.
 - Toda **fatia vertical** segue as **regras de código**; o revisor reprova a que quebra uma.
+- As **regras de código** de um projeto partem dos **princípios de código** da casa, e cada regra cita o princípio de onde nasceu.
 
 ## Flagged ambiguities
 
 - "Mapa" sempre quer dizer a issue `wayfinder:map`. Mapa mental, mapa de telas ou mapa de mesas do cliente não são mapas do método.
+- "Fronteira" sem qualificador é a do mapa. A fronteira de decisões do grilling (as perguntas
+  independentes de uma rodada) e a fronteira de issues `ready-for-agent` da orquestração se escrevem
+  com o qualificador.
 - "Tarefa" é só o tipo de ticket que faz um trabalho para destravar uma decisão. Trabalho de implementação é **fatia vertical**.

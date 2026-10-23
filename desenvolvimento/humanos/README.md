@@ -32,80 +32,66 @@ ideia grande ──► /wayfinder ──► /to-spec ──► /to-tickets ─�
                  por sessão)       mapa)       verticais)                          e confere)
 ```
 
-- **Ideia clara, várias sessões:** `/grill-with-docs` → `/to-spec` → `/to-tickets`.
-- **Ideia clara, uma sessão:** `/grill-with-docs` → `/to-tickets` com uma tarefa só.
-- **Bug ou pedido de cliente:** `/triage`.
-- **Projeto que já está rodando:** entra no método por etapas, com `/adotar-metodo-stack-labs`
+- **Outras entradas** (ideia clara, bug ou pedido de cliente) e o que você aprova em cada etapa:
+  [caminho-ate-ready-for-agent.md](caminho-ate-ready-for-agent.md).
+- **Projeto que já está rodando:** entra por etapas, com `/adotar-metodo-stack-labs`
   ([adotar-em-projeto-existente.md](adotar-em-projeto-existente.md)).
-- **Como uma tarefa fica pronta para o agente:** veja [caminho-ate-ready-for-agent.md](caminho-ate-ready-for-agent.md).
 - **Não sabe por onde ir:** `/ask-matt`.
 
 ## Os cinco mapas iniciais
 
-Todo projeto abre, no primeiro dia, cinco mapas no GitHub
-([ADR 0002](../adr/0002-quatro-mapas-iniciais.md) e [ADR 0007](../adr/0007-mapa-de-regras-de-codigo.md)). Detalhes e perguntas típicas em
-[mapas-iniciais.md](mapas-iniciais.md).
+Todo projeto abre, no primeiro dia, cinco mapas no GitHub: **Protótipo**, **Arquitetura**,
+**Fases**, **Regras de código** e **Infra** ([ADR 0002](../adr/0002-quatro-mapas-iniciais.md),
+[ADR 0007](../adr/0007-mapa-de-regras-de-codigo.md)). O que cada um decide e as perguntas típicas:
+[mapas-iniciais.md](mapas-iniciais.md). O grilling de Regras de código roda em torno dos
+[princípios de código](principios-de-codigo.md) da casa.
 
-1. **Protótipo**: o desenho inicial do produto, com a família `*-prototipo`.
-2. **Arquitetura**: linguagem, stack e módulos.
-3. **Fases**: como o desenvolvimento se divide, decidido pelo desenvolvedor que conduz o projeto.
-4. **Regras de código**: as regras que todo código do projeto segue, para o código sair com qualidade
-   e o revisor ter uma régua.
-5. **Infra**: o que vamos usar, quanto custa e o que teremos que construir em volta.
-
-Ninguém começa a implementar antes de **Protótipo** (o desenho inicial), **Arquitetura**, **Fases** e
-**Regras de código** fecharem. O watchdog barra. **Infra** é informativo: dá conhecimento de custos e tecnologias e não trava nada.
+A implementação começa só com **Protótipo** (o desenho inicial), **Arquitetura**, **Fases** e
+**Regras de código** fechados; o watchdog barra antes disso. **Infra** é informativo e não trava nada.
 
 ## Grilling: como responder
 
-Em todo mapa, as decisões saem de um **grilling**: o agente faz várias perguntas de uma vez,
-numeradas, cada uma com a recomendação dele.
+Em todo mapa, as decisões saem de um **grilling**.
 
 - Responda por número. **"Sim"** aceita a recomendação; qualquer outra coisa, explique.
-- Se a recomendação não tem fonte, **não aceite**. Peça a pesquisa
-  ([ADR 0003](../adr/0003-nenhuma-recomendacao-sem-pesquisa.md)). Fonte boa é primária:
-  documentação oficial, página de preço, texto da lei. Blog e "todo mundo usa" não contam.
+- Aceite só recomendação com fonte primária: documentação oficial, página de preço, texto da lei.
+  Sem fonte, ou com blog e "todo mundo usa", peça a pesquisa
+  ([ADR 0003](../adr/0003-nenhuma-recomendacao-sem-pesquisa.md)).
 - Se você não sabe responder, diga. A pergunta vira um ticket de pesquisa, de protótipo ou de tarefa.
-- O agente nunca responde por você. Se ele fizer isso, interrompa.
+- A resposta é sempre sua. Se o agente responder por você, interrompa.
 
 ## Protótipo: aprovar é escrever
 
-O agente leva os prints e os pontos para aprovação até o ticket. Você aprova **por escrito** no
-comentário de resolução ("Aprovado", com o que mudar, se for o caso). "Legal", emoji ou silêncio não
-liberam o protótipo para virar código. Veja o [roteiro de protótipo](../agentes/modelo-de-projeto/docs/agents/roteiro-de-prototipo.md).
+O agente leva os prints e os pontos até o ticket. Você aprova **por escrito** no comentário de
+resolução ("Aprovado", com o que mudar, se for o caso): é a **aprovação explícita**, a única que
+libera o protótipo para virar código. Etapas do protótipo: o
+[roteiro de protótipo](../agentes/modelo-de-projeto/docs/agents/roteiro-de-prototipo.md).
 
 ## Implementação
 
 - Uma issue por sessão. Para trocar de issue, abra outra sessão.
 - A `main` só muda por PR. A PR cita a issue (`Closes #42`) e passa no `vigia-do-metodo`.
 - "Pronto" é teste passando, não o agente dizendo que terminou.
-
-## Issues prontas: a orquestração
-
-Quando issues chegam a `ready-for-agent`, o agente recomenda a **orquestração**: uma janela nova em
-que um agente orquestrador implementa a fila uma issue por vez, com revisão e conferência a cada uma,
-numa branch de integração. Veja [orquestracao.md](orquestracao.md).
+- Com issues em `ready-for-agent`, o agente recomenda a **orquestração**:
+  [orquestracao.md](orquestracao.md).
 
 ## Hábitos de sessão
 
-- **Uma janela do grilling até o `/to-tickets`.** Nada de `/compact` ou `/clear` no meio.
+- **Uma janela só do grilling até o `/to-tickets`**, sem `/compact` nem `/clear` no meio.
 - **Trabalho novo ou continuação: janela nova.** No fim de uma fase, ou quando o watchdog avisa que
-  a janela encheu, rode **`/nova-sessao`**. Ele confere que nada ficou de fora, escolhe as skills e
-  entrega uma mensagem de kickoff; abra uma janela nova e cole. A mensagem traz um pré-voo: se algo
-  mudou desde que ela foi gerada, a sessão nova para e pergunta.
-- **Assunto paralelo: sessão satélite.** Uma dúvida que foge do foco não entra na sessão principal.
-  Abra outra sessão, discuta lá e rode **`/voltar-a-principal`**: ele atualiza o
-  `HANDOFF-<projeto>.md` do tópico e te entrega uma mensagem curta para colar na sessão principal,
-  com só o que a satélite fez e decidiu. A principal não gasta contexto com o desvio.
+  a janela encheu, rode **`/nova-sessao`**, abra uma janela nova e cole o kickoff. Se algo mudou
+  desde que ele foi gerado, o pré-voo faz a sessão nova parar e perguntar.
+- **Assunto paralelo: sessão satélite.** Discuta lá e rode **`/voltar-a-principal`**: ele atualiza o
+  `HANDOFF-<projeto>.md` do tópico e entrega uma mensagem curta para colar na sessão principal.
 - **Um ticket de decisão por sessão** no wayfinder. Contexto limpo decide melhor.
 - **Use o glossário do projeto.** Se o agente usa outra palavra para a mesma coisa, corrija.
 
 ## Quando um watchdog barra
 
-Leia o motivo: ele diz o que falta e qual é a rota certa. Se o watchdog estiver errado, corrija o
-watchdog (por PR, com a label `altera-watchdogs`), não a regra na conversa. Veja [watchdogs.md](watchdogs.md).
+Leia o motivo: ele diz o que falta e qual é a rota certa. Watchdog errado se corrige no watchdog,
+por PR com a label `altera-watchdogs`, nunca na conversa. Mensagens e escapes:
+[watchdogs.md](watchdogs.md).
 
 ## Começar um projeto
 
-Siga o [checklist](iniciar-um-projeto.md). Projeto que já está rodando entra por etapas: veja
-[adotar-em-projeto-existente.md](adotar-em-projeto-existente.md).
+Siga o [checklist](iniciar-um-projeto.md).

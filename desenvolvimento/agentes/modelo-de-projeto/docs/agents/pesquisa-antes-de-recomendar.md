@@ -6,8 +6,8 @@ que imagina; a pesquisa é o que separa os dois.
 ## Quando pesquisar
 
 Antes de recomendar qualquer coisa que dependa de um fato do mundo: versão, preço, limite, licença,
-compatibilidade, suporte, lei, comportamento de uma API, prática do mercado. O que se descobre olhando
-o próprio repositório (código, `package.json`, ADRs, glossário) não precisa de `/research`: olhe.
+compatibilidade, suporte, lei, comportamento de uma API, prática do mercado. O que o próprio
+repositório responde (código, `package.json`, ADRs, glossário) você olha direto, sem `/research`.
 
 ## Como
 
@@ -28,7 +28,7 @@ Toda recomendação traz a fonte na mesma linha:
 atual ([docs/research/banco-de-dados.md](../research/banco-de-dados.md), seção 2).
 ```
 
-Sem fonte, diga que não há recomendação ainda e qual pesquisa vai resolver.
+Sem fonte, diga que ainda não há recomendação e qual pesquisa vai trazê-la.
 
 ## Como fechar o ticket
 
@@ -41,6 +41,5 @@ O comentário de resolução de todo ticket de grilling, tarefa ou pesquisa term
 - https://www.postgresql.org/docs/current/...
 ```
 
-O `guarda-bash` barra o `gh issue close` de ticket sem essa seção (com ao menos um link `http` ou
-`docs/research/`) no comentário de resolução. Ticket de protótipo é a exceção: a evidência dele é o
-protótipo aprovado.
+O `guarda-bash` barra o `gh issue close` de ticket sem essa seção, com ao menos um link `http` ou
+`docs/research/`. Ticket de protótipo é a exceção: a evidência dele é o protótipo aprovado.

@@ -47,20 +47,17 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
 ## Convenções da StackLabs (vigiadas pelos watchdogs)
 
 - **Repositório:** o do `origin` deste clone.
-- **Mapas iniciais:** além de `wayfinder:map`, cada um leva `mapa-inicial:prototipo`,
-  `mapa-inicial:arquitetura`, `mapa-inicial:fases`, `mapa-inicial:regras-de-codigo` ou
-  `mapa-inicial:infra`. Veja `docs/agents/mapas-iniciais.md`.
-- **Resolução com fontes:** o comentário de resolução de ticket de grilling, tarefa ou pesquisa
-  termina com `## Fontes` e ao menos um link. Veja `docs/agents/pesquisa-antes-de-recomendar.md`.
-- **Spec:** o `/to-spec` publica o spec com `ready-for-agent`; troque pela label `spec`. As fatias do
-  `/to-tickets` são sub-issues dele e são elas que recebem `ready-for-agent`
-  (`docs/agents/caminho-ate-ready-for-agent.md`).
+- **Mapas iniciais:** além de `wayfinder:map`, cada um leva a sua `mapa-inicial:<tipo>`
+  ([mapas-iniciais.md](mapas-iniciais.md)).
+- **Resolução com fontes:** regra 2 do `AGENTS.md` ([pesquisa-antes-de-recomendar.md](pesquisa-antes-de-recomendar.md)).
+- **Spec:** troque `ready-for-agent` por `spec` logo depois do `/to-spec`; as fatias, sub-issues
+  dele, recebem `ready-for-agent` ([caminho-ate-ready-for-agent.md](caminho-ate-ready-for-agent.md)).
 - **Fora de escopo:** `gh issue close <n> --reason "not planned"`. Não conta no limite de um ticket por sessão.
-- **Ativar uma issue para implementar:** `node .claude/hooks/ativar-issue.mjs <n>`.
-- **Branches:** `issue/<n>-<slug>`, `integracao/<nome>`, `prototype/<nome>`, `research/<nome>`, `chore/<nome>`. A `main`
-  só recebe merge de PR, e a PR de `issue/*` cita a issue com `Closes #<n>`.
+- **Ativar, branches e PR:** regras 3 e 17 do `AGENTS.md`.
 
-## Labels a criar no repositório novo
+## Labels do método
+
+O `/setup-stacklabs` cria estas labels. Para recriar à mão:
 
 ```bash
 for label in wayfinder:map wayfinder:research wayfinder:prototype wayfinder:grilling wayfinder:task \

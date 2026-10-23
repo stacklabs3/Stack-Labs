@@ -13,7 +13,7 @@ status (✅, ⚠️ ou ❌) e evidência (caminho, link ou comando).
 
 ## 2. Plano
 
-Grilling com o humano, toda a fronteira numa rodada:
+Grilling com o humano, as três perguntas numa rodada:
 
 1. Quais branches e PRs abertas terminam fora do método (padrão: todas as do diagnóstico).
 2. O destino de cada garantia dos hooks antigos que nenhum watchdog do modelo cobre (seção *Watchdogs
@@ -29,7 +29,8 @@ perguntas têm resposta do humano escrita no plano.
 2. Com o sim do humano, rode sem `--simular`. O `--adocao` grava `.claude/metodo.json` em
    `observacao`, com a data de hoje, antes de copiar os watchdogs.
 3. Linhas `PULADO` (o projeto já tinha `.claude/hooks/`): entregue ao humano o comando
-   `node <pasta da skill setup-stacklabs>/instalar.mjs --adocao --atualizar-watchdogs`. Você não o roda.
+   `node <pasta da skill setup-stacklabs>/instalar.mjs --adocao --atualizar-watchdogs` e espere que
+   ele rode.
 4. Linhas `MESCLAR`: siga [MESCLAR.md](MESCLAR.md).
 5. Branch `chore/adotar-metodo`, um commit, PR.
 

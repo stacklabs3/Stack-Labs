@@ -18,6 +18,7 @@ issue, a branch da issue e a branch de integração.
    (b) comportamento no diff que ninguém pediu (escopo a mais);
    (c) requisito que parece feito, mas feito errado;
    (d) critério de aceite da issue sem teste que o prove.
+   Pronto quando cada requisito e cada critério de aceite da issue foi conferido contra o diff.
 
 **REPROVADO** quando há qualquer achado (a), (c) ou (d), ou um (b) que muda comportamento do produto.
 

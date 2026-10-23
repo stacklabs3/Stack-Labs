@@ -13,7 +13,8 @@ com o `/wayfinder` como porta de entrada, mais as regras da casa.
 | [humanos/](humanos/README.md) | Sócios e funcionários | O guia: como decidir, aprovar e conduzir os agentes |
 | [agentes/](agentes/README.md) | Os agentes de IA | A constituição, os watchdogs e as skills, prontos para copiar em cada projeto |
 | [GLOSSARY.md](GLOSSARY.md) | Os dois | A linguagem do método, fonte única dos termos |
-| [adr/](adr/) | Os dois | As decisões do próprio método e o porquê |
+| [adr/](adr/) | Os dois | As decisões do próprio método e o porquê; a escrita dos documentos na [ADR 0009](adr/0009-escrita-dos-documentos-do-metodo.md) |
+| Princípios de código ([humanos](humanos/principios-de-codigo.md) · [agentes](agentes/modelo-de-projeto/docs/agents/principios-de-codigo.md)) | Os dois | A base da casa para escrever código: escrita, padrões de desenvolvimento e SOLID |
 
 ## As regras da casa, em uma linha cada
 
