@@ -73,7 +73,7 @@ manter, para humano e para agente, que precisa carregar tudo no contexto.
 
 **No diff:** uma regra nova que obriga a editar cinco pastas distantes.
 
-**No validador:** `comando` com o dependency-cruiser em JS/TS; nas outras stacks, `revisor`.
+**No validador:** `comando` com o dependency-cruiser em JS/TS e o ArchUnit em Java; em Rust, crate por conceito no workspace; o resto, `revisor`.
 
 ### P5. Teste pela interface, com o comportamento como frase
 
