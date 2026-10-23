@@ -15,9 +15,16 @@ link cada), a névoa e o que ficou fora de escopo. A decisão em si mora no tick
 _Evitar_: Épico, roadmap, plano, backlog
 
 **Mapa inicial**:
-Um dos quatro mapas que todo projeto abre no primeiro dia, antes de qualquer código de produção:
-Protótipo, Arquitetura, Fases e Infra. Leva a label `wayfinder:map` e a label `mapa-inicial:<tipo>`.
+Um dos cinco mapas que todo projeto abre no primeiro dia, antes de qualquer código de produção:
+Protótipo, Arquitetura, Fases, Regras de código e Infra. Leva a label `wayfinder:map` e a label
+`mapa-inicial:<tipo>`.
 _Evitar_: Kickoff, discovery, fase zero
+
+**Regras de código**:
+O documento `docs/regras-de-codigo.md` de cada projeto, destino do mapa inicial de mesmo nome: as
+regras que todo código segue, cada uma com o porquê e um exemplo do projeto. É a régua do
+implementador e do revisor. Muda só por ticket.
+_Evitar_: Style guide, padrões, boas práticas, coding standards
 
 **Destino**:
 O que significa chegar ao fim de um mapa: uma spec, uma decisão travada ou uma mudança feita. É a
@@ -187,11 +194,12 @@ _Evitar_: Prompt, instruções
 
 ## Relationships
 
-- Um **projeto** abre quatro **mapas iniciais** e pode abrir outros **mapas** depois.
+- Um **projeto** abre cinco **mapas iniciais** e pode abrir outros **mapas** depois.
 - Um **mapa** tem um **destino**, muitos **tickets**, uma **névoa** e uma lista **fora de escopo**.
 - Um **ticket** de grilling ou tarefa só fecha com **fontes**; um ticket de protótipo só libera o porte com **aprovação explícita**.
 - Um **mapa** fechado vira uma **spec**, que vira **fatias verticais**; cada fatia é a **issue ativa** de uma **sessão**.
 - Um **watchdog** vigia uma regra da **constituição**.
+- Toda **fatia vertical** segue as **regras de código**; o revisor reprova a que quebra uma.
 
 ## Flagged ambiguities
 

@@ -24,9 +24,12 @@ grande. Cada item termina com ✅, ⚠️ ou ❌ e a evidência (nome do ticket 
 - As labels do método existem (`docs/agents/issue-tracker.md`, seção *Labels*).
 
 **Mapas iniciais**
-- Os quatro existem, com `wayfinder:map` + `mapa-inicial:<tipo>`.
+- Os cinco existem, com `wayfinder:map` + `mapa-inicial:<tipo>`.
 - Cada um tem *Destination* preenchido e *Decisions so far* com um ponteiro por ticket fechado.
-- Nenhuma issue `ready-for-*` foi fechada antes de Protótipo, Arquitetura e Fases fecharem (compare as datas).
+- Nenhuma issue `ready-for-*` foi fechada antes de Protótipo, Arquitetura, Fases e Regras de
+  código fecharem (compare as datas).
+- `docs/regras-de-codigo.md` existe, cada regra tem o porquê e um exemplo, e o mapa de Regras de
+  código aponta para ele. Amostra de 3 PRs mergeadas: o diff segue as regras.
 
 **Pesquisa antes de recomendar**
 - Todo ticket fechado de grilling, tarefa e pesquisa tem `## Fontes` com link no comentário de resolução.

@@ -13,7 +13,7 @@ As regras marcadas **[W]** são vigiadas por watchdogs que **bloqueiam** a açã
 
 ```
 projeto novo
-  → os 4 mapas iniciais (docs/agents/mapas-iniciais.md)
+  → os 5 mapas iniciais (docs/agents/mapas-iniciais.md)
 ideia grande demais para uma sessão
   → /wayfinder   (mapa de tickets de decisão, 1 ticket por sessão)
   → /to-spec     (mapa fechado: nada mais a decidir)
@@ -40,10 +40,10 @@ ideia grande demais para uma sessão
 ## Regras duras
 
 ### 1. Mapas iniciais
-1. **[W]** Todo projeto abre os quatro **mapas iniciais**: Protótipo, Arquitetura, Fases e Infra
-   ([docs/agents/mapas-iniciais.md](docs/agents/mapas-iniciais.md)). Nenhuma issue de implementação
-   é ativada enquanto os quatro não existirem e enquanto Protótipo (o desenho inicial), Arquitetura e
-   Fases não estiverem fechados. Infra é informativo e não trava.
+1. **[W]** Todo projeto abre os cinco **mapas iniciais**: Protótipo, Arquitetura, Fases, Regras de
+   código e Infra ([docs/agents/mapas-iniciais.md](docs/agents/mapas-iniciais.md)). Nenhuma issue de
+   implementação é ativada enquanto os cinco não existirem e enquanto Protótipo (o desenho inicial),
+   Arquitetura, Fases e Regras de código não estiverem fechados. Infra é informativo e não trava.
 
 ### 2. Recomendação fundamentada
 2. **[W]** Toda recomendação sua (no grilling, num ticket, num review, numa resposta) aponta a
@@ -100,13 +100,16 @@ ideia grande demais para uma sessão
     (a da orquestração), `prototype/<nome>`, `research/<nome>` ou `chore/<nome>`. A PR cita a issue (`Closes #<n>`). Push forçado e `--no-verify` são proibidos.
 18. Use o vocabulário do `GLOSSARY.md` e respeite as ADRs de `docs/adr/`. Contradição com ADR se
     aponta, nunca se sobrescreve em silêncio.
-19. Todo nome de variável diz o que guarda (`valorProduto = produto.valor`, nunca `p = x.valor`).
+19. Todo código segue as **regras de código** do projeto, em `docs/regras-de-codigo.md` (o destino
+    do mapa de Regras de código). Contradição com uma regra se aponta, nunca se contorna em silêncio;
+    regra nova ou mudada passa por ticket nesse mapa ou num mapa novo.
+20. Todo nome de variável diz o que guarda (`valorProduto = produto.valor`, nunca `p = x.valor`).
 
 ### 8. Os watchdogs
-20. **[W]** Você **não edita, move, apaga nem contorna** `.claude/hooks/`, `.claude/githooks/`,
+21. **[W]** Você **não edita, move, apaga nem contorna** `.claude/hooks/`, `.claude/githooks/`,
     `.claude/agents/`, `.claude/metodo.json`, `.claude/settings.json`, `.claude/state/`, `.github/workflows/vigia-do-metodo.yml` nem o
     `core.hooksPath`. Se um watchdog estiver errado, explique ao usuário e peça que ele altere.
-21. Em projeto que está adotando o método, a etapa de `.claude/metodo.json` decide só o que a máquina
+22. Em projeto que está adotando o método, a etapa de `.claude/metodo.json` decide só o que a máquina
     bloqueia; as regras desta constituição valem inteiras desde o primeiro dia
     ([docs/agents/adocao.md](docs/agents/adocao.md)). Um bloqueio é uma informação, não um obstáculo. Leia o motivo e siga a rota que ele indica.
 

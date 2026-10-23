@@ -25,7 +25,7 @@ iniciais, a pesquisa antes de recomendar e a família `*-prototipo`. O projeto d
 ## A rota
 
 ```
-projeto novo ──► 4 mapas iniciais
+projeto novo ──► 5 mapas iniciais
                     │
 ideia grande ──► /wayfinder ──► /to-spec ──► /to-tickets ──► ready-for-agent ──► orquestração ──► PR
                 (decisões, uma    (fecha o    (fatias                            (implementa, revisa
@@ -40,19 +40,21 @@ ideia grande ──► /wayfinder ──► /to-spec ──► /to-tickets ─�
 - **Como uma tarefa fica pronta para o agente:** veja [caminho-ate-ready-for-agent.md](caminho-ate-ready-for-agent.md).
 - **Não sabe por onde ir:** `/ask-matt`.
 
-## Os quatro mapas iniciais
+## Os cinco mapas iniciais
 
-Todo projeto abre, no primeiro dia, quatro mapas no GitHub
-([ADR 0002](../adr/0002-quatro-mapas-iniciais.md)). Detalhes e perguntas típicas em
+Todo projeto abre, no primeiro dia, cinco mapas no GitHub
+([ADR 0002](../adr/0002-quatro-mapas-iniciais.md) e [ADR 0007](../adr/0007-mapa-de-regras-de-codigo.md)). Detalhes e perguntas típicas em
 [mapas-iniciais.md](mapas-iniciais.md).
 
 1. **Protótipo**: o desenho inicial do produto, com a família `*-prototipo`.
 2. **Arquitetura**: linguagem, stack e módulos.
 3. **Fases**: como o desenvolvimento se divide, decidido pelo desenvolvedor que conduz o projeto.
-4. **Infra**: o que vamos usar, quanto custa e o que teremos que construir em volta.
+4. **Regras de código**: as regras que todo código do projeto segue, para o código sair com qualidade
+   e o revisor ter uma régua.
+5. **Infra**: o que vamos usar, quanto custa e o que teremos que construir em volta.
 
-Ninguém começa a implementar antes de **Protótipo** (o desenho inicial), **Arquitetura** e **Fases**
-fecharem. O watchdog barra. **Infra** é informativo: dá conhecimento de custos e tecnologias e não trava nada.
+Ninguém começa a implementar antes de **Protótipo** (o desenho inicial), **Arquitetura**, **Fases** e
+**Regras de código** fecharem. O watchdog barra. **Infra** é informativo: dá conhecimento de custos e tecnologias e não trava nada.
 
 ## Grilling: como responder
 

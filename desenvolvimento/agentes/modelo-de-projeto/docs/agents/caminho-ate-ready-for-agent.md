@@ -8,7 +8,7 @@ pulam etapas produzem issues que o implementador não consegue terminar sozinho.
 
 | De onde vem | Caminho | Quem aplica a label |
 |---|---|---|
-| **Projeto novo** | os 4 mapas iniciais (`docs/agents/mapas-iniciais.md`); depois, cada fase segue a rota de ideia grande | — |
+| **Projeto novo** | os 5 mapas iniciais (`docs/agents/mapas-iniciais.md`); depois, cada fase segue a rota de ideia grande | — |
 | **Ideia grande** (várias sessões, com névoa) | `/wayfinder` → um ticket de decisão por sessão → mapa sem nada a decidir → `/to-spec` → `/to-tickets` | `/to-tickets` |
 | **Ideia clara, várias sessões** | `/grill-with-docs` → `/to-spec` → `/to-tickets` | `/to-tickets` |
 | **Ideia clara que cabe numa sessão** | `/grill-with-docs` → `/to-tickets` com uma fatia só | `/to-tickets` |
@@ -52,8 +52,8 @@ etapa da rota que o resolve; não marque "quase pronta".
 9. **Tela com protótipo aprovado**, quando toca interface: link do ticket com a aprovação explícita.
 10. **Sem humano no meio** (senão, `ready-for-human`).
 
-A implementação ainda depende dos mapas iniciais: com Protótipo, Arquitetura ou Fases abertos, o
-watchdog não ativa nenhuma issue.
+A implementação ainda depende dos mapas iniciais: com Protótipo, Arquitetura, Fases ou Regras de
+código abertos, o watchdog não ativa nenhuma issue.
 
 ## Depois da label
 

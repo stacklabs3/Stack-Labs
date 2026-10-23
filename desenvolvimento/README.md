@@ -17,7 +17,7 @@ com o `/wayfinder` como porta de entrada, mais as regras da casa.
 
 ## As regras da casa, em uma linha cada
 
-1. Todo projeto abre quatro **mapas iniciais**: Protótipo, Arquitetura, Fases e Infra.
+1. Todo projeto abre cinco **mapas iniciais**: Protótipo, Arquitetura, Fases, Regras de código e Infra.
 2. Todo mapa decide por **grilling**: o agente pergunta e recomenda, o humano responde.
 3. **Nenhuma recomendação sem pesquisa**: o agente cita a fonte primária ou não recomenda.
 4. Aparência se prototipa com a família **`*-prototipo`** e só vira código com aprovação explícita.

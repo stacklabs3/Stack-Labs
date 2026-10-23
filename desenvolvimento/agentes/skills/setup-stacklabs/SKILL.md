@@ -83,4 +83,8 @@ Pronto quando a PR existe, ou o humano sabe exatamente o que a impede.
 O humano precisa de uma **janela nova**: os hooks só carregam no início de uma sessão. Gere o
 kickoff com o `/nova-sessao` para ele colar lá. O `sessao-inicio` vai mostrar o setup ✅ e os mapas
 iniciais ❌. Na **instalação**, o próximo
-trabalho é abrir os quatro mapas iniciais (`docs/agents/mapas-iniciais.md`).
+trabalho é abrir os cinco mapas iniciais (`docs/agents/mapas-iniciais.md`). Na **atualização**, se o
+`sessao-inicio` mostrar um mapa inicial ❌ que o projeto ainda não tinha (o de Regras de código, em
+projeto anterior à ADR 0007), avise o humano que nenhuma issue será ativada até ele existir e
+fechar, e que o próximo trabalho é abri-lo como mapa retroativo: registra as regras que o código
+já segue e fecha quando nada está em aberto.

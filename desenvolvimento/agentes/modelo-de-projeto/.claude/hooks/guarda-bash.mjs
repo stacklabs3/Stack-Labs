@@ -105,7 +105,7 @@ if (numerosAtivados.length === 1) {
   if (!issueCandidata.labels.some((label) => LABELS_IMPLEMENTAVEIS.includes(label))) {
     bloquearFerramenta(NOME_WATCHDOG, `a issue #${numeroIssue} não tem ${LABELS_IMPLEMENTAVEIS.join(" nem ")}. Ela precisa sair do /to-tickets ou passar pelo /triage antes.`);
   }
-  // W4b — mapas iniciais: os quatro existem, e os que decidem stack e fases estão fechados.
+  // W4b — mapas iniciais: os cinco existem, e os que decidem desenho, stack, fases e regras de código estão fechados.
   let mapasIniciais;
   try {
     mapasIniciais = buscarMapasIniciais(diretorioProjeto);
@@ -114,11 +114,11 @@ if (numerosAtivados.length === 1) {
   }
   const mapasFaltando = mapasIniciais.filter((mapaInicial) => !mapaInicial.numero);
   if (mapasFaltando.length) {
-    bloquearFerramenta(NOME_WATCHDOG, `faltam mapas iniciais: ${mapasFaltando.map((mapaInicial) => mapaInicial.tipo).join(", ")}. Todo projeto abre os quatro antes de implementar (docs/agents/mapas-iniciais.md). Abra com /wayfinder e as labels wayfinder:map + mapa-inicial:<tipo>.`);
+    bloquearFerramenta(NOME_WATCHDOG, `faltam mapas iniciais: ${mapasFaltando.map((mapaInicial) => mapaInicial.tipo).join(", ")}. Todo projeto abre os cinco antes de implementar (docs/agents/mapas-iniciais.md). Abra com /wayfinder e as labels wayfinder:map + mapa-inicial:<tipo>.`);
   }
   const mapasAindaAbertos = mapasIniciais.filter((mapaInicial) => MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR.includes(mapaInicial.tipo) && mapaInicial.estado !== "closed");
   if (mapasAindaAbertos.length) {
-    bloquearFerramenta(NOME_WATCHDOG, `os mapas iniciais ${mapasAindaAbertos.map((mapaInicial) => `"${mapaInicial.titulo}"`).join(" e ")} ainda estão abertos. Implementação só começa com o desenho inicial do protótipo aprovado e a arquitetura e as fases decididas (o mapa de Infra não trava).`);
+    bloquearFerramenta(NOME_WATCHDOG, `os mapas iniciais ${mapasAindaAbertos.map((mapaInicial) => `"${mapaInicial.titulo}"`).join(", ")} ainda estão abertos. Implementação só começa com o desenho inicial do protótipo aprovado e a arquitetura, as fases e as regras de código decididas (o mapa de Infra não trava).`);
   }
 
   estadoSessao.issuesAtivas[chaveAgente] = { numero: issueCandidata.numero, titulo: issueCandidata.titulo, ativadaEm: new Date().toISOString() };

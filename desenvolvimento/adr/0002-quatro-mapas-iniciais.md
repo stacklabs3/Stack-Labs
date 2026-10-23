@@ -1,5 +1,8 @@
 # Todo projeto abre quatro mapas iniciais antes do código
 
+> Complementada pela [ADR 0007](0007-mapa-de-regras-de-codigo.md): um quinto mapa inicial, Regras de
+> código, que também trava a implementação.
+
 Todo projeto começa abrindo quatro mapas do wayfinder: **Protótipo**, **Arquitetura**, **Fases** e
 **Infra**. Havia a opção de um mapa único de escopo ou de decidir arquitetura e infra conforme a
 necessidade surgisse. Escolhemos quatro mapas separados porque são quatro destinos diferentes, com
