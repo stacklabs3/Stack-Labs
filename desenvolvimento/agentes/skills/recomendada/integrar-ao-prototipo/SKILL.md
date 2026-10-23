@@ -125,7 +125,7 @@ ninguém ver.
 Tire os prints da rotina (seção "Conferência por print" do contrato):
 
 ```bash
-node ~/.claude/skills/prototipo-html/scripts/tirar-prints.mjs http://localhost:8765 <id-da-rotina> <protótipo>/prints
+sh ~/.claude/skills/prototipo-html/scripts/rodar http://localhost:8765 <id-da-rotina> <protótipo>/prints
 ```
 
 **Abra cada print** e confira contra a checklist do projeto (os princípios de UI, quando

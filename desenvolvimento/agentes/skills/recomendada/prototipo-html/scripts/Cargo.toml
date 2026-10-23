@@ -1,0 +1,15 @@
+[package]
+name = "tirar-prints"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+serde_json = "1.0.154"
+# Só o cliente ws:// (o Chrome fala em 127.0.0.1); sem TLS.
+tungstenite = { version = "0.30.0", default-features = false, features = ["handshake"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true

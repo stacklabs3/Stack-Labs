@@ -1,0 +1,7 @@
+A folha não foi gerada:
+- A: id repetido
+- pergunta na posição 2: falta "id"
+- pergunta na posição 2: o id precisa começar com letra e ter só letras, números, _ ou -
+- pergunta na posição 3: falta "id"
+- pergunta na posição 3: id repetido
+- pergunta na posição 3: o id precisa começar com letra e ter só letras, números, _ ou -

@@ -5,12 +5,12 @@ description: Gera a folha de respostas .html de uma rodada de perguntas ao human
 
 # Folha de respostas
 
-Escreva as perguntas num JSON e rode o script. Ele valida o JSON e gera a folha: um arquivo só, sem internet, que abre com dois cliques, guarda o que foi marcado no navegador e tem tema claro e escuro.
+Escreva as perguntas num JSON e rode o script. Ele valida o JSON e gera a folha: um arquivo só, sem internet, que abre com dois cliques, guarda o que foi marcado no navegador e tem tema claro e escuro. O script é Rust: o `rodar` o compila na primeira vez e para isso precisa do `cargo` (https://rustup.rs).
 
 ## Quick start
 
 ```bash
-node ~/.claude/skills/folha-de-respostas/scripts/gerar-folha.mjs perguntas.json respostas.html && open respostas.html
+sh ~/.claude/skills/folha-de-respostas/scripts/rodar perguntas.json respostas.html && open respostas.html
 ```
 
 `perguntas.json`:

@@ -33,7 +33,7 @@ mostra o estado ativo; fecha com Esc ou clique fora.
 nunca telas. O modo Showcase mostra as rotinas da aba, cada uma com as telas em ordem.
 
 **Endereço:** `?visao=&superficie=&tema=&estado=&modo=&idioma=` abre uma combinação, e
-`&print=1` esconde o chrome. `scripts/tirar-prints.mjs` usa isso para os prints da
+`&print=1` esconde o chrome. O `scripts/rodar` da skill usa isso para os prints da
 conferência.
 
 ## Estrutura

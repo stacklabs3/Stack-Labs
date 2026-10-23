@@ -288,10 +288,11 @@ Ao fim de cada rotina, antes da aprovação, a rotina é conferida por prints:
 O script tira todos de uma vez, a partir de `visoes.jsx`:
 
 ```bash
-node ~/.claude/skills/prototipo-html/scripts/tirar-prints.mjs http://localhost:8765 <id-da-rotina> <protótipo>/prints
+sh ~/.claude/skills/prototipo-html/scripts/rodar http://localhost:8765 <id-da-rotina> <protótipo>/prints
 ```
 
-O script precisa do Node 22 ou mais novo e de um Chrome ou Chromium (`CHROME=<caminho>`
+O script é Rust: o `rodar` o compila na primeira vez e para isso precisa do `cargo`
+(https://rustup.rs). Ele também precisa de um Chrome ou Chromium (`CHROME=<caminho>`
 escolhe outro). Ele abre o Chrome sem janela pelo protocolo de depuração, com a área de
 tela exata de cada combinação, e só fotografa quando a tela montou: o `--screenshot` do
 Chrome cortava e deslocava a moldura.
