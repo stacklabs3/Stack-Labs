@@ -12,7 +12,7 @@ watchdogs o encontram. Num projeto que já existia, os mapas são **retroativos*
 | [Protótipo](mapas-iniciais/prototipo.md) | O desenho inicial do produto prototipado e aprovado | **Sim** |
 | [Arquitetura](mapas-iniciais/arquitetura.md) | Linguagem, stack e módulos decididos, em ADRs | **Sim** |
 | [Fases](mapas-iniciais/fases.md) | A divisão em fases que o desenvolvedor escolheu, com o que entra e o critério de pronto de cada uma | **Sim** |
-| [Regras de código](mapas-iniciais/regras-de-codigo.md) | `docs/regras-de-codigo.md`, com os 22 princípios de código decididos | **Sim** |
+| [Regras de código](mapas-iniciais/regras-de-codigo.md) | `docs/regras-de-codigo.md`, com os 22 princípios de código decididos, e o `docs/riscos.md` | **Sim** |
 | [Infra](mapas-iniciais/infra.md) | Retrato da infra: custos, tecnologias e o que construir em volta | Não (informativo) |
 
 ## Como abrir

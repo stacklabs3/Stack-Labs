@@ -34,6 +34,8 @@ seu olho:
 - Tem **critérios de aceite** que dá para conferir.
 - Toda decisão já foi tomada e está escrita: nada "a definir".
 - Se mexe em tela, o **protótipo foi aprovado** por você.
+- Diz **quais riscos** do `docs/riscos.md` os testes dela cobrem, e todo risco novo foi aprovado por
+  você.
 - **Ninguém precisa entrar no meio.** Se precisar de acesso, conta, decisão de design ou teste manual,
   ela vai para `ready-for-human`.
 
