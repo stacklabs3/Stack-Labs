@@ -5,7 +5,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, openSync, readSync, fstatSync, closeSync } from "node:fs";
 import { join, relative, resolve, isAbsolute } from "node:path";
 
-// Smart zone calibrada para modelos de contexto longo: acima disso, hora de /handoff.
+// Smart zone calibrada para modelos de contexto longo: acima disso, hora de /nova-sessao.
 export const LIMITE_AVISO_CONTEXTO = 450_000;
 export const LIMITE_DURO_CONTEXTO = 550_000;
 
@@ -208,7 +208,11 @@ export function caminhoEhProtegido(caminhoRelativo) {
   return CAMINHOS_PROTEGIDOS.some((caminhoProtegido) => caminhoRelativo === caminhoProtegido.replace(/\/$/, "") || caminhoRelativo.startsWith(caminhoProtegido));
 }
 
+// Handoffs de sessão satélite (/voltar-a-principal): HANDOFF-<projeto>.md na raiz do repositório.
+const PADRAO_HANDOFF_NA_RAIZ = /^HANDOFF-[^/]+\.md$/;
+
 export function caminhoEhLivreSemIssue(caminhoRelativo) {
+  if (PADRAO_HANDOFF_NA_RAIZ.test(caminhoRelativo)) return true;
   return CAMINHOS_LIVRES_SEM_ISSUE.some((caminhoLivre) => (caminhoLivre.endsWith("/") ? caminhoRelativo.startsWith(caminhoLivre) : caminhoRelativo === caminhoLivre));
 }
 

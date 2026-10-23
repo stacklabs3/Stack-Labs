@@ -22,8 +22,9 @@ método dizendo qual é o próximo passo. A lista técnica completa fica em
 | "exige uma issue ativa" | Ative uma issue `ready-for-*` com `node .claude/hooks/ativar-issue.mjs <n>`, ou passe por `/to-tickets` |
 | "seria fechado sem ## Fontes" | A decisão precisa citar a pesquisa ou a fonte primária |
 | "não foi reivindicado" | O ticket precisa de responsável antes do trabalho |
+| "o comando ativa mais de uma issue" | Uma issue por sessão: ative uma e abra outra janela para a próxima |
 | "esta sessão já resolveu" | Um ticket de decisão por sessão: abra outra |
-| "contexto ... acima da smart zone" | `/handoff` e sessão nova |
+| "contexto ... acima da smart zone" | `/nova-sessao` e cole o kickoff numa janela nova |
 | "push direto para main" | Suba a branch e abra PR |
 | "a PR não fecha a issue da branch" | Acrescente `Closes #<n>` no corpo da PR |
 | "a PR altera os watchdogs" | Um sócio revisa e aplica a label `altera-watchdogs` |

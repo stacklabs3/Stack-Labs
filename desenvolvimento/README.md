@@ -21,6 +21,10 @@ com o `/wayfinder` como porta de entrada, mais as regras da casa.
 2. Todo mapa decide por **grilling**: o agente pergunta e recomenda, o humano responde.
 3. **Nenhuma recomendação sem pesquisa**: o agente cita a fonte primária ou não recomenda.
 4. Aparência se prototipa com a família **`*-prototipo`** e só vira código com aprovação explícita.
-5. **Watchdogs** barram o que foge do método, na sessão, no push e na PR.
+5. **Uma janela por trabalho**: trabalho novo ou continuação abre com o kickoff do **`/nova-sessao`**;
+   assunto paralelo vai para uma **sessão satélite** e volta pelo **`/voltar-a-principal`**.
+6. Issues `ready-for-agent` sem ninguém olhando rodam no **loop de issues**: uma sessão nova por
+   issue, em sequência, terminando em PR.
+7. **Watchdogs** barram o que foge do método, na sessão, no push e na PR.
 
 Projeto de referência: [appetito_v2](https://github.com/stacklabs1/appetito_v2).

@@ -20,7 +20,7 @@ const caminhoArquivo = parametrosFerramenta.file_path || parametrosFerramenta.no
 if (!caminhoArquivo) process.exit(0);
 
 const caminhoRelativo = caminhoRelativoAoProjeto(diretorioProjeto, caminhoArquivo);
-if (caminhoRelativo === null) process.exit(0); // fora do repo (ex.: documento do /handoff no tmp)
+if (caminhoRelativo === null) process.exit(0); // fora do repo (ex.: documento de handoff no tmp)
 
 // W1 — os watchdogs não podem ser desligados pelo agente que eles vigiam.
 if (caminhoEhProtegido(caminhoRelativo)) {
@@ -30,7 +30,7 @@ if (caminhoEhProtegido(caminhoRelativo)) {
 // W2 — passou da smart zone: nada de seguir editando com o raciocínio degradado.
 const tokensDeContexto = medirTokensDeContexto(entradaHook.transcript_path);
 if (tokensDeContexto >= LIMITE_DURO_CONTEXTO) {
-  bloquearFerramenta(NOME_WATCHDOG, `contexto em ~${Math.round(tokensDeContexto / 1000)}k tokens, acima da smart zone (${LIMITE_DURO_CONTEXTO / 1000}k). Rode /handoff (o documento vai para o tmp do SO) e continue numa sessão nova.`);
+  bloquearFerramenta(NOME_WATCHDOG, `contexto em ~${Math.round(tokensDeContexto / 1000)}k tokens, acima da smart zone (${LIMITE_DURO_CONTEXTO / 1000}k). Rode /nova-sessao (se precisar de documento, ele vai para o tmp do SO, fora do repositório) e continue numa janela nova com o kickoff.`);
 }
 
 if (caminhoEhLivreSemIssue(caminhoRelativo)) process.exit(0);

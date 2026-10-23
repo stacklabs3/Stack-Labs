@@ -21,6 +21,8 @@ como os watchdogs encontram o mapa.
 4. Ligue os bloqueios entre mapas com dependências nativas: os tickets de Fases e de Infra que
    dependem de uma escolha de Arquitetura ficam `blocked_by` o ticket dela.
 5. Dispare os subagentes `/research` dos tickets de pesquisa no fim da sessão de mapear.
+6. Feche a sessão com o `/nova-sessao`: o kickoff abre a próxima janela, que pega o próximo ticket
+   da fronteira (um ticket de decisão por sessão).
 
 ## Regras que valem nos quatro
 

@@ -15,7 +15,7 @@ grande. Cada item termina com ✅, ⚠️ ou ❌ e a evidência (nome do ticket 
 
 **Setup**
 - `AGENTS.md`, `CLAUDE.md`, `docs/agents/*.md`, `.claude/settings.json`, `.claude/hooks/`,
-  `.github/workflows/vigia-do-metodo.yml` existem e batem com o `modelo-de-projeto` do repositório
+  `.claude/loop/`, `.github/workflows/vigia-do-metodo.yml` existem e batem com o `modelo-de-projeto` do repositório
   Stack-Labs (diff resumido do que divergiu).
 - As labels do método existem (`docs/agents/issue-tracker.md`, seção *Labels*).
 

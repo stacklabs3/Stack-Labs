@@ -9,8 +9,9 @@ Marque na ordem. Cada passo diz quem faz.
       ([instruções](../agentes/README.md#instalar-num-projeto-novo)).
 - [ ] **Agente:** rode `/setup-stacklabs` no projeto. Ele mostra o que vai fazer, espera o seu sim,
       instala o método e as skills e abre a PR `chore/setup-metodo`. Faça o merge.
-- [ ] **Você:** abra uma sessão do Claude Code e confira o aviso do `sessao-inicio`: setup ✅ e
-      pre-push ✅. Os mapas iniciais aparecem como ❌; é o esperado.
+- [ ] **Você:** abra uma janela nova do Claude Code com o kickoff que o `/setup-stacklabs` gerou e
+      confira o aviso do `sessao-inicio`: setup ✅ e pre-push ✅. Os mapas iniciais aparecem como ❌;
+      é o esperado.
 
 ## Dia 1: os mapas iniciais
 
@@ -33,6 +34,9 @@ grilling amplo, cria o mapa e os tickets e dispara as pesquisas. Você responde.
 
 ## Durante todo o projeto
 
-- [ ] Uma sessão por issue de implementação, PR com `Closes #<n>`.
+- [ ] Entre uma sessão e a próxima, `/nova-sessao`; assunto paralelo numa sessão satélite, de volta
+      com o `/voltar-a-principal`.
+- [ ] Uma sessão por issue de implementação, PR com `Closes #<n>`. Com várias issues
+      `ready-for-agent` prontas, `/loop-de-issues` e revise as PRs que ele abrir.
 - [ ] `/auditar-metodo` a cada marco e antes de entregar ao cliente.
 - [ ] `/retro` ao fim de cada fase: o que ajustar no método vira PR no Stack-Labs.

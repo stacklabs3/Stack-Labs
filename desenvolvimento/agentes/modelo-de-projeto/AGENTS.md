@@ -51,7 +51,7 @@ ideia grande demais para uma sessão
 3. **[W]** Código de produção só se edita com uma **issue ativa** na sessão:
    `node .claude/hooks/ativar-issue.mjs <n>`. A issue está aberta, tem `ready-for-agent` ou
    `ready-for-human` e não é ticket do wayfinder. Ficam livres: `AGENTS.md`, `CLAUDE.md`,
-   `GLOSSARY*.md`, `README.md`, `docs/`, `.scratch/`, `prototipos/`, `.claude/` (exceto os
+   `GLOSSARY*.md`, `README.md`, `HANDOFF-*.md` (na raiz), `docs/`, `.scratch/`, `prototipos/`, `.claude/` (exceto os
    watchdogs) e as branches `prototype/*` e `research/*`.
 4. Diante de uma ideia nova grande, comece pelo `/wayfinder`. A vontade de "só ir fazendo" é o sinal
    de que o mapa acabou e chegou a hora do `/to-spec`.
@@ -75,8 +75,15 @@ ideia grande demais para uma sessão
     resolução do ticket, depois do `/auditar-prototipo`.
 
 ### 6. Higiene de contexto
-12. Do grilling até o `/to-tickets`, uma janela só: nada de `/compact` nem `/clear` no meio da fase.
-13. **[W]** **Smart zone:** passou do limite, a próxima ação é o `/handoff` e o trabalho segue numa sessão nova.
+12. **Uma janela por fase.** Do grilling até o `/to-tickets`, uma janela só: nada de `/compact` nem
+    `/clear` no meio da fase. Trabalho novo, fase nova ou continuação começa numa **janela nova**,
+    aberta com o kickoff que o `/nova-sessao` gera no fim da janela anterior. Assunto paralelo (uma
+    dúvida fora do foco, uma exploração) vai para uma **sessão satélite**, nunca para a principal;
+    ao fim dela, o `/voltar-a-principal` atualiza o `HANDOFF-<projeto>.md` e gera a mensagem de
+    retorno que o humano cola na sessão principal, com só o que a satélite fez e decidiu.
+13. **[W]** **Smart zone:** passou do limite, a próxima ação é o `/nova-sessao`, e o trabalho segue
+    numa janela nova com o kickoff. (O `/handoff` do Matt é a alternativa quando não há humano para
+    colar a mensagem; o loop de issues faz o próprio handoff.)
 14. **[W]** **Uma issue por sessão de `/implement`.**
 
 ### 7. Implementação

@@ -79,7 +79,7 @@ if (numerosAtivados.length === 1) {
   const numeroIssue = numerosAtivados[0];
   const estadoSessao = lerEstadoSessao(diretorioProjeto, idSessao);
   if (estadoSessao.issueAtiva && estadoSessao.issueAtiva.numero !== numeroIssue) {
-    bloquearFerramenta(NOME_WATCHDOG, `esta sessão já trabalha na issue #${estadoSessao.issueAtiva.numero}. Contexto limpo por issue: termine, rode /handoff se preciso, e abra uma sessão nova para a #${numeroIssue}.`);
+    bloquearFerramenta(NOME_WATCHDOG, `esta sessão já trabalha na issue #${estadoSessao.issueAtiva.numero}. Contexto limpo por issue: termine, rode /nova-sessao e cole o kickoff numa janela nova para a #${numeroIssue}.`);
   }
   const issueCandidata = buscarIssueOuBloquear(numeroIssue);
   if (issueCandidata.estado !== "open") {
