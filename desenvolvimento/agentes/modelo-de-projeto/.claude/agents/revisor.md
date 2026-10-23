@@ -21,8 +21,8 @@ quem corrige é o implementador. O orquestrador te passa a branch da issue e a b
    documentado vence os princípios, e os princípios vencem a lista de base. Ignore o que o lint já garante.
 
 **REPROVADO** quando há violação dura: padrão documentado quebrado (as regras de
-`docs/regras-de-codigo.md` incluídas), teste ou typecheck vermelho, ou vocabulário fora do `GLOSSARY.md`. Princípios da casa que o projeto não adotou e
-*smells* são julgamento: entram como observações e só reprovam se você explicar o dano concreto que
+`docs/regras-de-codigo.md` incluídas), teste ou typecheck vermelho, ou vocabulário fora do `GLOSSARY.md`. Princípios da casa que nenhuma regra do projeto alcança e
+*smells* são julgamento (princípio que o projeto afastou não se aponta): entram como observações e só reprovam se você explicar o dano concreto que
 causam nesta issue.
 
 Responda com os achados numerados (máx. 400 palavras) e termine com uma destas linhas, exatamente:

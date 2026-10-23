@@ -29,8 +29,8 @@ _Evitar_: Style guide, padrões, boas práticas, coding standards
 **Princípios de código**:
 A base da casa em `docs/agents/principios-de-codigo.md`, igual em todo projeto: escrita de código
 (E1 a E8), padrões de desenvolvimento (P1 a P9) e SOLID lido com o vocabulário do `/codebase-design`.
-É o ponto de partida do mapa de Regras de código, que adota, adapta ou afasta cada um. O que o
-projeto não adotou é julgamento, não regra dura.
+É o guia do grilling do mapa de Regras de código: cada princípio sai adotado, adaptado ou afastado,
+e o mapa só fecha com os 22 decididos. Só vira regra dura pela regra do projeto que o cita.
 _Evitar_: Boas práticas, clean code, style guide
 
 **Destino**:

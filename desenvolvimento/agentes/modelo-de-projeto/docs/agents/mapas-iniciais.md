@@ -20,7 +20,8 @@ como os watchdogs encontram o mapa. Num projeto que já existia antes do método
    Arquitetura; Fases, Regras de código e Infra dependem deles. Infra é o menor dos cinco: poucos
    tickets, quase todos de pesquisa.
 2. Crie o mapa com as duas labels e o corpo do modelo abaixo. Ajuste o destino ao projeto no grilling.
-3. Os tickets sugeridos são ponto de partida, não lista fechada. O grilling breadth-first decide
+3. Os tickets sugeridos são ponto de partida, não lista fechada (exceto os tickets de grupo do mapa
+   de Regras de código, obrigatórios). O grilling breadth-first decide
    quais existem; o que não tiver pergunta precisa vai para *Not yet specified*.
 4. Ligue os bloqueios entre mapas com dependências nativas: os tickets de Fases, de Regras de código e
    de Infra que dependem de uma escolha de Arquitetura ficam `blocked_by` o ticket dela.
@@ -137,33 +138,39 @@ Tickets que costumam nascer:
 
 ## Mapa de Regras de código
 
+O grilling deste mapa roda em torno dos **princípios de código** da casa
+([principios-de-codigo.md](principios-de-codigo.md), ADR 0008 do método): cada ticket cobre um grupo
+de princípios, e cada princípio sai com uma decisão. O roteiro das rodadas e o modelo do documento
+final estão na seção *Roteiro do grilling* de lá.
+
 ```markdown
 ## Destination
 
-As regras que todo código deste projeto segue, escritas em docs/regras-de-codigo.md: nomes, desenho
-de módulos e seams, erros, testes, dependências e o que o lint e o formatador garantem sozinhos.
-Cada regra tem o porquê e um exemplo do próprio projeto. É a régua do implementador e do revisor
-da orquestração.
+docs/regras-de-codigo.md escrito e aprovado: cada um dos 22 princípios de código da casa (E1 a E8,
+P1 a P9, S, O, L, I, D) adotado, adaptado ou afastado com o porquê, as regras que saíram deles com
+exemplo do próprio projeto, e o que o lint e o formatador garantem sozinhos. É a régua do
+implementador e do revisor da orquestração.
 
 ## Notes
 
+- Guia do grilling: docs/agents/principios-de-codigo.md. Cada pergunta nasce da pergunta-guia
+  "No grilling" do princípio, reescrita com um exemplo real deste projeto, e traz a recomendação
+  (adotar, adaptar ou afastar) com a fonte. Ticket de grupo só fecha com uma linha de decisão por
+  princípio no comentário de resolução.
 - Depende do mapa de Arquitetura: as regras são da linguagem e da stack decididas lá. Os tickets que
   dependem de uma escolha de stack ficam `blocked_by` o ticket dela.
-- Ferramentas do mapa: `/human-architect-mindset` para as restrições (quem mantém, nível do time,
-  o que o agente erra), `/domain-modeling` para nomes que vêm do GLOSSARY.md, `/codebase-design`
-  para o desenho de módulos (módulo, interface, profundidade, seam, adapter, deletion test).
-  Projeto com código existente: comece por `/improve-codebase-architecture` e transforme o atrito
-  que ele achar em regra ou em ticket.
-- Regra de lint, formatador e checagem de tipo é pesquisada como qualquer escolha técnica: versão
-  atual, manutenção e o que cada regra pega, com fonte. O que a ferramenta garante sozinha entra no
-  documento como "garantido pelo lint", sem repetir a regra.
+- As restrições (quem mantém, nível do time, o que o agente erra) vêm primeiro, com
+  `/human-architect-mindset`, e bloqueiam os tickets de grupo: são elas que justificam adaptar ou
+  afastar um princípio.
+- Projeto com código existente: o `/improve-codebase-architecture` roda antes dos grupos; cada
+  atrito vira exemplo na pergunta do princípio que ele quebra.
+- Lint, formatador e checagem de tipo são pesquisados como qualquer escolha técnica: versão atual,
+  manutenção e o que cada regra pega, com fonte. O princípio que a ferramenta garante sozinha entra
+  na cobertura como "garantido pelo lint", sem repetir a regra.
 - Configurar o lint e o CI é implementação: entra como a primeira fatia da primeira fase, não como
   ticket deste mapa.
 - O documento é curto e verificável. Regra que o revisor não consegue apontar num diff não é regra.
-- Ponto de partida: os princípios de código da casa (docs/agents/principios-de-codigo.md: escrita
-  E1 a E8, padrões P1 a P9 e SOLID). Cada ticket passa pelos princípios que toca e decide, um a um,
-  adotar, adaptar ou afastar com o porquê; cada regra do documento cita o ID de onde nasceu. Somam-se
-  as regras da constituição e a lista de smells do `/code-review`.
+- Somam-se aos princípios as regras da constituição e a lista de smells do `/code-review`.
 
 ## Decisions so far
 
@@ -172,21 +179,25 @@ da orquestração.
 ## Out of scope
 ```
 
-Tickets que costumam nascer:
+Tickets que costumam nascer (os de grupo são obrigatórios; um grupo pode virar mais de um ticket se
+não couber numa sessão):
 
 - *Restrições para as regras* (grilling + `/human-architect-mindset`): quem mantém, nível do time,
-  quanto do código o agente escreve, o que já deu errado em projetos parecidos.
-- *Nomes e vocabulário* (grilling + `/domain-modeling`): idioma dos nomes, termos do GLOSSARY.md no
-  código, como nomear funções, tipos, arquivos e testes.
-- *Desenho de módulos e seams* (grilling + `/codebase-design`): tamanho de interface, onde ficam as
-  seams, quando um adapter se justifica, o que não se extrai só para testar.
-- *Erros, validação e logs* (grilling): onde se valida entrada, como um erro sobe, o que se loga.
-- *Testes* (grilling + `/tdd`): o que se testa pela interface, o que se mocka, nome e lugar dos testes.
-- *Opções de lint, formatador e typecheck* (pesquisa) → *Lint e formatador* (grilling).
-- *Atrito do código existente* (tarefa, só em projeto com código): `/improve-codebase-architecture`
-  e as regras que saem dele.
-- *Escrever docs/regras-de-codigo.md* (tarefa): junta as decisões num documento curto, com exemplo
-  por regra; fecha o mapa.
+  quanto do código o agente escreve, o que já deu errado em projetos parecidos. Bloqueia os grupos.
+- *Atrito do código existente* (tarefa, só em projeto com código): `/improve-codebase-architecture`,
+  com cada atrito ligado ao princípio que ele quebra.
+- *Escrita de código: E1, E2, E6, E7, E8* (grilling + `/domain-modeling`): nomes e idioma, tamanho de
+  função, comentários, duplicação, constantes.
+- *Tipos, erros e validação: E3, E4, E5* (grilling + `/domain-modeling`): tipos do domínio, onde se
+  valida a entrada, como um erro sobe, o que se loga, imutabilidade.
+- *Desenho de módulos e SOLID: P1 a P4, S, O, L, I, D* (grilling + `/codebase-design`): profundidade,
+  onde ficam as seams, quando um adapter se justifica, como chegam as dependências, organização das pastas.
+- *Testes e fluxo de trabalho: P5 a P9* (grilling + `/tdd`): o que se testa e o que se mocka, TDD,
+  generalidade, padrões fixos, commits.
+- *Opções de lint, formatador e typecheck* (pesquisa) → *Lint e formatador* (grilling): quais
+  princípios a ferramenta garante sozinha.
+- *Escrever docs/regras-de-codigo.md* (tarefa): junta as decisões no modelo de
+  principios-de-codigo.md, com a tabela de cobertura dos 22 princípios; fecha o mapa.
 
 ## Mapa de Infra
 

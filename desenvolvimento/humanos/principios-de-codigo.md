@@ -7,11 +7,14 @@ item e o que o revisor procura no diff, é a que os agentes leem:
 
 ## Para que serve
 
-Ela é o **ponto de partida do mapa de Regras de código**. Em vez de começar do zero em todo projeto,
-o grilling passa pela base item por item e pergunta: adotamos como está, adaptamos ou deixamos de
-fora? O que for decidido vai para o `docs/regras-de-codigo.md` do projeto, que é a régua dura. O que
-o projeto não adotou continua valendo como bom senso: o revisor pode apontar, mas só reprova se
-mostrar o estrago concreto.
+Ela é o **guia do mapa de Regras de código**. O grilling desse mapa roda em torno destes princípios:
+cada um vira uma pergunta sobre o seu projeto, e você decide se ele é **adotado**, **adaptado** ou
+**deixado de fora**, sempre com o porquê. Nenhum fica sem decisão: o mapa só fecha quando os 22 estão
+na tabela de cobertura do `docs/regras-de-codigo.md`.
+
+O que você adotou ou adaptou vira regra do projeto, e o revisor reprova quem a quebra. O que você
+deixou de fora não é cobrado. Onde nenhuma regra alcança um trecho, o princípio vale como bom senso:
+o revisor pode apontar, mas só reprova se mostrar o estrago concreto.
 
 ## Os princípios, em uma linha cada
 
@@ -46,12 +49,26 @@ mostrar o estrago concreto.
 - **I.** Quem usa conhece só o que usa.
 - **D.** A regra de negócio define o que precisa; banco e provedor se adaptam a ela.
 
-## No grilling do mapa de Regras de código
+## Como o grilling anda
 
-Você vai ouvir perguntas como: "Os erros que o negócio prevê (cupom vencido) voltam como resposta ou
-como exceção nesta stack?", "Criamos interface para o banco agora ou só quando houver a segunda
-implementação?". Cada uma vem com a recomendação do agente, a fonte e um exemplo do seu projeto.
-Afastar um princípio é legítimo: diga o porquê, e ele fica registrado.
+1. **Restrições primeiro:** quem vai manter, o nível do time, quanto do código o agente escreve, o
+   que já deu errado. São elas que justificam adaptar ou deixar algo de fora.
+2. **Depois, um ticket por grupo**, uma sessão cada:
+
+   | Ticket | Princípios |
+   |---|---|
+   | Escrita de código | E1, E2, E6, E7, E8 |
+   | Tipos, erros e validação | E3, E4, E5 |
+   | Desenho de módulos e SOLID | P1 a P4, S, O, L, I, D |
+   | Testes e fluxo de trabalho | P5 a P9 |
+
+3. **Cada pergunta** é curta, com um exemplo do seu projeto e a recomendação do agente com a fonte.
+   Por exemplo: "Quando o cupom está vencido, o sistema devolve uma resposta 'cupom vencido' que a
+   tela trata, ou lança um erro? Recomendo a resposta, pelo princípio E4, com a fonte dele: a tela fica obrigada a tratar o caso."
+4. **Você responde por número.** "Sim" aceita; qualquer outra coisa, explique. Deixar de fora é
+   legítimo: diga o porquê, e ele fica registrado.
+5. **No fim**, o agente junta tudo no `docs/regras-de-codigo.md`, com a tabela dos 22 princípios, e
+   você aprova o documento.
 
 ## Mudar a base
 

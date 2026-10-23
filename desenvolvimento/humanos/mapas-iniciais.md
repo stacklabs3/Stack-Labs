@@ -82,13 +82,14 @@ digita? O que se testa e o que se mocka? Qual lint e qual formatador?
 **Como anda:** depois que a Arquitetura decidiu a linguagem e a stack. Usa quatro skills:
 `/human-architect-mindset` para as restrições (quem mantém, o nível do time, o que o agente costuma
 errar), `/domain-modeling` para os nomes que vêm do glossário, `/codebase-design` para o desenho de
-módulos e `/improve-codebase-architecture` quando já existe código. Não começa do zero: parte dos
-[princípios de código](principios-de-codigo.md) da casa e decide, um a um, o que o projeto adota,
-adapta ou deixa de fora. Lint e formatador passam por
+módulos e `/improve-codebase-architecture` quando já existe código. O grilling roda em torno dos
+[princípios de código](principios-de-codigo.md) da casa: um ticket por grupo de princípios, e cada
+princípio sai adotado, adaptado ou deixado de fora, com o porquê. Lint e formatador passam por
 pesquisa, como toda escolha técnica. Configurar o lint é implementação: entra como a primeira fatia
 da primeira fase.
 
-**Fecha quando:** `docs/regras-de-codigo.md` está escrito e você aprovou. **Bloqueia a
+**Fecha quando:** `docs/regras-de-codigo.md` está escrito, com os 22 princípios decididos na tabela
+de cobertura, e você aprovou. **Bloqueia a
 implementação.** Regra nova ou mudada depois passa por ticket, nunca por edição solta.
 
 ## 5. Infra

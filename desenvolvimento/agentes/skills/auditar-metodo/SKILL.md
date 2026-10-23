@@ -30,8 +30,11 @@ grande. Cada item termina com ✅, ⚠️ ou ❌ e a evidência (nome do ticket 
   código fecharem (compare as datas).
 - `docs/regras-de-codigo.md` existe, cada regra tem o porquê e um exemplo, e o mapa de Regras de
   código aponta para ele. Amostra de 3 PRs mergeadas: o diff segue as regras.
-- Cada regra de `docs/regras-de-codigo.md` cita o princípio de `docs/agents/principios-de-codigo.md`
-  de onde nasceu, e o mapa de Regras de código registra os princípios que o projeto afastou e o porquê.
+- `docs/regras-de-codigo.md` tem a tabela de cobertura com os 22 princípios de
+  `docs/agents/principios-de-codigo.md` (E1 a E8, P1 a P9, S, O, L, I, D), cada um adotado, adaptado
+  ou afastado com o porquê, e cada regra cita o princípio de onde nasceu. Cada ticket de grupo do mapa
+  fechou com uma linha de decisão por princípio. Projeto anterior à ADR 0008 sem cobertura: ⚠️ e o
+  ticket que a completa.
 
 **Pesquisa antes de recomendar**
 - Todo ticket fechado de grilling, tarefa e pesquisa tem `## Fontes` com link no comentário de resolução.
