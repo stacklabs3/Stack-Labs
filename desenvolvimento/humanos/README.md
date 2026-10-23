@@ -86,9 +86,10 @@ cada uma numa sessão nova, e entrega PRs para você revisar. Veja [loop-de-issu
   a janela encheu, rode **`/nova-sessao`**. Ele confere que nada ficou de fora, escolhe as skills e
   entrega uma mensagem de kickoff; abra uma janela nova e cole. A mensagem traz um pré-voo: se algo
   mudou desde que ela foi gerada, a sessão nova para e pergunta.
-- **Assunto paralelo: sessão lateral.** Uma dúvida que foge do foco não entra na sessão principal.
-  Abra outra sessão, discuta lá e rode **`/voltar-a-principal`** para levar à principal só o que
-  você aprendeu. A sessão principal não gasta contexto com o desvio.
+- **Assunto paralelo: sessão satélite.** Uma dúvida que foge do foco não entra na sessão principal.
+  Abra outra sessão, discuta lá e rode **`/voltar-a-principal`**: ele atualiza o
+  `HANDOFF-<projeto>.md` do tópico e te entrega uma mensagem curta para colar na sessão principal,
+  com só o que a satélite fez e decidiu. A principal não gasta contexto com o desvio.
 - **Um ticket de decisão por sessão** no wayfinder. Contexto limpo decide melhor.
 - **Use o glossário do projeto.** Se o agente usa outra palavra para a mesma coisa, corrija.
 

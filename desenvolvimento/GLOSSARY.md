@@ -128,16 +128,19 @@ pré-voo com as premissas a conferir, skills a invocar, decisões já tomadas e 
 _Evitar_: Resumo, prompt de continuação
 
 **Handoff**:
-O documento que passa o trabalho de uma sessão para a próxima sem humano no meio: o do `/handoff` do
-Matt ou o que a sessão do loop de issues escreve na smart zone. Com humano, o padrão é o kickoff.
+O documento que guarda o estado de um trabalho para quem o retoma. Três formas: o
+`HANDOFF-<projeto>.md` na raiz, que o `/voltar-a-principal` mantém para cada tópico de sessão
+satélite; o do `/handoff` do Matt; e o que a sessão do loop de issues escreve na smart zone.
+Para abrir uma janela nova com humano, o padrão é o kickoff.
 
 **Sessão principal**:
 A sessão onde o trabalho em curso acontece e cujo contexto se protege.
 
-**Sessão lateral**:
+**Sessão satélite**:
 Uma sessão aberta à parte para discutir ou explorar algo fora do foco da sessão principal, sem gastar
-nem corromper o contexto dela. Termina no `/voltar-a-principal`, que leva à principal só o aprendido.
-_Evitar_: Sessão paralela (que soa como trabalho simultâneo), subagente
+nem corromper o contexto dela. Termina no `/voltar-a-principal`, que atualiza o `HANDOFF-<projeto>.md`
+e gera a mensagem de retorno para colar na principal.
+_Evitar_: Sessão lateral, sessão paralela (que soa como trabalho simultâneo), subagente
 
 **Watchdog**:
 Um hook do Claude Code, um hook do git ou um check de CI que transforma uma regra do método em

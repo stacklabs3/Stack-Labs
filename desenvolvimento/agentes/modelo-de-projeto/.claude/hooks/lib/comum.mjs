@@ -208,7 +208,11 @@ export function caminhoEhProtegido(caminhoRelativo) {
   return CAMINHOS_PROTEGIDOS.some((caminhoProtegido) => caminhoRelativo === caminhoProtegido.replace(/\/$/, "") || caminhoRelativo.startsWith(caminhoProtegido));
 }
 
+// Handoffs de sessão satélite (/voltar-a-principal): HANDOFF-<projeto>.md na raiz do repositório.
+const PADRAO_HANDOFF_NA_RAIZ = /^HANDOFF-[^/]+\.md$/;
+
 export function caminhoEhLivreSemIssue(caminhoRelativo) {
+  if (PADRAO_HANDOFF_NA_RAIZ.test(caminhoRelativo)) return true;
   return CAMINHOS_LIVRES_SEM_ISSUE.some((caminhoLivre) => (caminhoLivre.endsWith("/") ? caminhoRelativo.startsWith(caminhoLivre) : caminhoRelativo === caminhoLivre));
 }
 
