@@ -26,6 +26,12 @@ mais novas do Matt Pocock, ativa o pre-push, cria as labels e abre a PR do setup
 forma de instalar: assim todo projeto fica com a mesma versão e com a origem registrada em
 `.claude/skills/ORIGEM.json`.
 
+## Mudar o método
+
+Todo documento do método se escreve com a skill **`/writing-for-agents`**
+(`desenvolvimento/agentes/skills/recomendada/writing-for-agents/`) e segue a tabela de donos de
+[desenvolvimento/agentes/README.md](desenvolvimento/agentes/README.md#mudar-o-método) (ADR 0009).
+
 ## Mapa do repositório
 
 - `desenvolvimento/humanos/`: o guia para pessoas.

@@ -1,14 +1,14 @@
 ---
 name: orquestrar-issues
-description: Orquestra a fila de issues ready-for-agent numa sessão própria — subagentes em sequência implementam, revisam, conferem com o spec e corrigem, tudo numa branch de integração.
+description: Orquestra a fila de issues ready-for-agent numa sessão própria, com subagentes em sequência numa branch de integração.
 disable-model-invocation: true
 argument-hint: "N issues, ou --retomar <arquivo de estado>"
 ---
 
-Você é o **orquestrador**. Você não escreve código: dispara os subagentes de `.claude/agents/`, lê os
+Você é o **orquestrador**: o código é dos subagentes. Você os dispara de `.claude/agents/`, lê os
 pareceres, cuida das branches e do estado da rodada. Um subagente por vez, sempre em primeiro plano
-(espere cada um terminar), cada um com a janela limpa. Passe a eles **ponteiros** (número da issue,
-nomes das branches, o plano), nunca cópias de conteúdo que eles mesmos leem. Guia completo:
+(espere cada um terminar), cada um com a janela limpa. Passe a eles **ponteiros** (número da issue, nomes das
+branches, o plano); o conteúdo eles mesmos leem. O porquê de cada peça está em
 `docs/agents/orquestracao.md`.
 
 ## Esforço por ciclo
@@ -53,6 +53,9 @@ Pergunte numa rodada só, com recomendação em cada pergunta, e **espere as res
 
 Crie a branch a partir da base, `git push -u origin integracao/<nome>`, e grave o estado.
 
+Pronto quando o desenvolvedor respondeu, a branch de integração está no `origin` e o estado da rodada
+está gravado.
+
 ### 3. Uma issue por vez
 
 **Fronteira:** issues abertas com `ready-for-agent`, sem responsável, sem label `wayfinder:*` nem
@@ -82,9 +85,11 @@ Pronto quando: a fila acabou, a fronteira esvaziou, ou a rodada parou por duas d
 
 ### 4. Smart zone
 
-O aviso do watchdog (450k de contexto) é o seu limite: ao recebê-lo, termine o subagente em curso,
-grave o estado, não comece outra issue e rode o `/nova-sessao`. O kickoff abre uma janela nova com
-`/orquestrar-issues --retomar .claude/orquestracao/<nome>.json`.
+O aviso de smart zone do watchdog é o seu limite. Ao recebê-lo, deixe o subagente em curso
+terminar, grave o estado e rode o `/nova-sessao` em vez de começar outra issue. O kickoff abre uma
+janela nova com `/orquestrar-issues --retomar .claude/orquestracao/<nome>.json`.
+
+Pronto quando o estado está gravado e o desenvolvedor tem o kickoff.
 
 ### 5. Fim da fila
 
@@ -95,6 +100,6 @@ devolvidas) e pergunte como as integradas chegam à `main`:
 - **(B) Uma PR por issue:** empilhadas na ordem da rodada (a primeira contra a base, cada seguinte
   contra a branch da anterior), para o merge ser feito na ordem.
 
-Abra as PRs da opção escolhida. **Merge nunca:** é sempre do desenvolvedor.
+Abra as PRs da opção escolhida. O **merge é sempre do desenvolvedor**.
 
 Pronto quando as PRs estão abertas e o desenvolvedor tem a tabela da rodada.

@@ -10,14 +10,14 @@ agentes/
 │   ├── AGENTS.md               constituição: as regras duras
 │   ├── CLAUDE.md               @AGENTS.md
 │   ├── docs/agents/            o que a constituição aponta
-│   │   ├── mapas-iniciais.md          os 5 mapas e o corpo de cada um
+│   │   ├── mapas-iniciais.md          os 5 mapas; o corpo de cada um em mapas-iniciais/
 │   │   ├── pesquisa-antes-de-recomendar.md
 │   │   ├── roteiro-de-prototipo.md    família *-prototipo
 │   │   ├── watchdogs.md
 │   │   ├── caminho-ate-ready-for-agent.md   rotas e definição de pronto
 │   │   ├── orquestracao.md            a orquestração de issues
 │   │   ├── adocao.md                  as etapas de adoção num projeto que já existia
-│   │   ├── principios-de-codigo.md    a base da casa: escrita, padrões e SOLID (ADR 0008)
+│   │   ├── principios-de-codigo.md    os 22 princípios (ADR 0008); grupos e grilling em principios-de-codigo/
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
 │   ├── .claude/                hooks do Claude Code (watchdogs) e os papéis da orquestração (agents/)
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
@@ -64,3 +64,19 @@ Requisitos na máquina: `node` 18+, `gh` autenticado e `git`.
 
 O `modelo-de-projeto` é a fonte única. Mude aqui primeiro, por PR no Stack-Labs, e propague para os
 projetos. Mudança só num projeto é exceção dele e fica na seção `## Regras deste projeto`.
+
+Todo documento do método se escreve com o `/writing-for-agents` (ADR 0009). Cada significado tem um
+dono; os outros lugares apontam para ele:
+
+| Significado | Dono |
+|---|---|
+| Definição de um termo | [GLOSSARY.md](../GLOSSARY.md) |
+| O porquê de uma decisão do método | [adr/](../adr/) |
+| Regra dura do agente | `modelo-de-projeto/AGENTS.md`, uma linha por regra e o ponteiro |
+| Mecânica do agente: passos, critério de pronto, comandos | `modelo-de-projeto/docs/agents/` |
+| O que a pessoa faz, decide e aprova | [humanos/](../humanos/README.md) |
+| Procedimento de uma skill | o `SKILL.md` dela |
+| Fato que se descobre olhando (constante, caminho, comando) | o código ou a configuração |
+
+O que só um ramo usa vai para um arquivo irmão, com um ponteiro que diz quando ler. Caminho que um
+hook ou outro doc cita não muda.

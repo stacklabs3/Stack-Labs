@@ -1,17 +1,18 @@
 ---
 name: auditar-metodo
-description: Audita se um projeto da StackLabs segue o método de desenvolvimento com IA (wayfinder, mapas iniciais, pesquisa antes de recomendar, protótipos aprovados, PRs ligadas a fatias). Use quando pedirem para auditar o método, conferir a saúde do processo de um projeto ou antes de uma entrega ao cliente.
+description: Audita, só lendo o histórico, se um projeto da StackLabs segue o método.
 disable-model-invocation: true
 ---
 
-Os hooks barram a ação na hora; esta auditoria olha o histórico inteiro do projeto e acha o que
+Os watchdogs barram a ação na hora; esta auditoria olha o histórico inteiro do projeto e acha o que
 passou por fora (um humano sem hooks, um watchdog desligado, uma regra que máquina não checa).
-Você só **lê**: não corrige, não fecha, não comenta. O resultado é um relatório.
+Você só **lê**: o resultado é um relatório, e o que fazer com cada desvio o humano decide.
 
 ## 1. Colete
 
 Rode cada verificação abaixo com `gh` e `git` no clone do projeto, num subagente se o histórico for
-grande. Cada item termina com ✅, ⚠️ ou ❌ e a evidência (nome do ticket com link, hash, caminho).
+grande. Pronto quando todo item abaixo tem ✅, ⚠️ ou ❌ e a evidência (nome do ticket com link, hash,
+caminho).
 
 **Etapa de adoção**
 - Se `.claude/metodo.json` existe, informe a etapa e a data. Meça todos os critérios mesmo assim, e
@@ -31,8 +32,7 @@ grande. Cada item termina com ✅, ⚠️ ou ❌ e a evidência (nome do ticket 
 - `docs/regras-de-codigo.md` existe, cada regra tem o porquê e um exemplo, e o mapa de Regras de
   código aponta para ele. Amostra de 3 PRs mergeadas: o diff segue as regras.
 - `docs/regras-de-codigo.md` tem a tabela de cobertura com os 22 princípios de
-  `docs/agents/principios-de-codigo.md` (E1 a E8, P1 a P9, S, O, L, I, D), cada um adotado, adaptado
-  ou afastado com o porquê, e cada regra cita o princípio de onde nasceu. Cada ticket de grupo do mapa
+  `docs/agents/principios-de-codigo.md`, cada um adotado, adaptado ou afastado com o porquê, e cada regra cita o princípio de onde nasceu. Cada ticket de grupo do mapa
   fechou com uma linha de decisão por princípio. Projeto anterior à ADR 0008 sem cobertura: ⚠️ e o
   ticket que a completa.
 
@@ -72,4 +72,4 @@ Escreva `.scratch/auditoria-do-metodo-<data>.md` com:
 3. Os desvios em ordem de gravidade, cada um com a regra do `AGENTS.md` que ele fere e o que o
    humano precisa decidir (corrigir agora, aceitar e registrar, ou ajustar o método).
 
-Pronto quando todo item da seção 1 tem status e evidência, e o humano recebeu o caminho do relatório.
+Pronto quando o relatório cobre todo item da seção 1 e o humano recebeu o caminho dele.
