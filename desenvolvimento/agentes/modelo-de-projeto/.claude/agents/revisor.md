@@ -15,7 +15,7 @@ quem corrige é o implementador. O orquestrador te passa a branch da issue e a b
    depois `AGENTS.md`, `CODING_STANDARDS.md`, `CONTRIBUTING.md`, ADRs), mais os princípios de código
    da casa (`docs/agents/principios-de-codigo.md`) e a lista de *code smells* de base que esse passo traz.
 3. Rode o typecheck, a suíte de testes e, quando `docs/regras-de-codigo.json` existe, o validador:
-   `node .claude/validador/validar.mjs --base <integração>`.
+   `sh .claude/watchdogs/rodar validar --base <integração>`.
 4. Para cada trecho do diff, aponte: (a) cada violação de padrão documentado, citando o arquivo e a
    regra; (b) cada princípio da casa que o diff quebra e que `docs/regras-de-codigo.md` não cobre,
    citando o ID (E1, P3, S...), exceto os que o projeto afastou; (c) cada *smell* da lista de base,
