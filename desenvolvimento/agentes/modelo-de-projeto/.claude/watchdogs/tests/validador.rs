@@ -243,33 +243,47 @@ fn configuracao_invalida_e_erro_de_configuracao() {
 }
 
 #[test]
-fn modelo_de_regras_de_codigo_json_e_valido() {
-    let modelo: Value = serde_json::from_str(&fs::read_to_string(pasta_do_crate().join("modelos/regras-de-codigo.json")).unwrap()).unwrap();
-    let repositorio = Repositorio::novo(&[]);
-    let linhas: Vec<(String, String)> = modelo["regras"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|regra| {
-            (
-                regra["principio"].as_str().unwrap().to_string(),
-                format!("adotado | {}", regra["id"].as_str().unwrap()),
-            )
-        })
-        .collect();
-    let linhas_ref: Vec<(&str, &str)> = linhas.iter().map(|(principio, valor)| (principio.as_str(), valor.as_str())).collect();
-    let relatorio = validar(
-        &repositorio.raiz,
-        &modelo,
-        &tabela_com(&linhas_ref),
-        &Opcoes {
-            base: None,
-            completo: false,
-            so_cobertura: true,
-        },
-    )
-    .unwrap();
-    assert!(relatorio.aprovado, "{:?}", relatorio.resultados[0].violacoes);
+fn modelos_de_regras_de_codigo_json_sao_validos() {
+    for nome in ["regras-de-codigo.json", "regras-de-codigo.java.json", "regras-de-codigo.rust.json"] {
+        let modelo: Value = serde_json::from_str(&fs::read_to_string(pasta_do_crate().join("modelos").join(nome)).unwrap()).unwrap();
+        let repositorio = Repositorio::novo(&[]);
+        // Uma linha por princípio ou prática, citando todas as regras que nascem dele.
+        let mut linhas: Vec<(String, Vec<String>)> = Vec::new();
+        for regra in modelo["regras"].as_array().unwrap() {
+            let principio = regra["principio"].as_str().unwrap().to_string();
+            let id = regra["id"].as_str().unwrap().to_string();
+            match linhas.iter_mut().find(|(nome_da_linha, _)| *nome_da_linha == principio) {
+                Some((_, ids)) => ids.push(id),
+                None => linhas.push((principio, vec![id])),
+            }
+        }
+        let valores: Vec<(String, String)> = linhas
+            .iter()
+            .map(|(principio, ids)| (principio.clone(), format!("adotado | {}", ids.join(", "))))
+            .collect();
+        let linhas_dos_22: Vec<(&str, &str)> = valores
+            .iter()
+            .filter(|(principio, _)| PRINCIPIOS.contains(&principio.as_str()))
+            .map(|(principio, valor)| (principio.as_str(), valor.as_str()))
+            .collect();
+        let praticas: String = valores
+            .iter()
+            .filter(|(principio, _)| !PRINCIPIOS.contains(&principio.as_str()))
+            .map(|(principio, valor)| format!("| {principio} | {valor} |\n"))
+            .collect();
+        let relatorio = validar(
+            &repositorio.raiz,
+            &modelo,
+            &tabela_com_praticas(&linhas_dos_22, &praticas),
+            &Opcoes {
+                base: None,
+                completo: false,
+                so_cobertura: true,
+            },
+        )
+        .unwrap_or_else(|erro| panic!("{nome}: {}", erro.0));
+        assert!(relatorio.aprovado, "{nome}: {:?}", relatorio.resultados[0].violacoes);
+    }
 }
 
 fn preencher_modelo(nome: &str, trocas: &[(&str, &str)]) -> String {
@@ -412,5 +426,462 @@ fn linha_de_comando_imprime_o_parecer_e_sai_com_1() {
     assert!(
         texto.contains("❌ R1 (E6) todo-sem-issue") && texto.contains("src/a.ts:1") && texto.trim_end().ends_with("VALIDADOR: REPROVADO"),
         "{texto}"
+    );
+}
+
+// ---------- lint-cobre falha fechado ----------
+
+fn motivos_do_lint(arquivos: &[(&str, &str)], config: Value, regras: &[&str]) -> Vec<String> {
+    rodar_uma_regra(arquivos, json!({ "tipo": "lint-cobre", "config": config, "regras": regras }), "E4")
+        .into_iter()
+        .map(|violacao| violacao.2)
+        .collect()
+}
+
+#[test]
+fn lint_cobre_cargo_toml_exige_deny_ou_forbid() {
+    let cargo_toml = "[package]\nname = \"x\"\n\n[lints.rust]\nunsafe_code = \"forbid\"\n\n[lints.clippy]\n\
+        pedantic = { level = \"deny\", priority = -1 }\nexpect_used = { level = \"deny\", priority = 1 }\nunwrap_used = \"allow\"\n\
+        todo = \"warn\"\npanic_in_result_fn = \"deny\"\n# dbg_macro = \"deny\"\n";
+    let motivos = motivos_do_lint(
+        &[("Cargo.toml", cargo_toml)],
+        json!("Cargo.toml"),
+        &[
+            "unsafe_code",
+            "pedantic",
+            "expect_used",
+            "clippy::expect_used",
+            "unwrap_used",
+            "todo",
+            "panic",
+            "dbg_macro",
+            "rust::expect_used",
+        ],
+    );
+    assert_eq!(
+        motivos,
+        vec![
+            "a regra de lint \"unwrap_used\" está configurada como \"allow\", que não bloqueia",
+            "a regra de lint \"todo\" está configurada como \"warn\", que não bloqueia",
+            "a regra de lint \"panic\" não está configurada",
+            "a regra de lint \"dbg_macro\" só aparece comentada",
+            "a regra de lint \"rust::expect_used\" não está configurada",
+        ]
+    );
+}
+
+#[test]
+fn lint_cobre_workspace_lints_e_limite_do_clippy_toml() {
+    let motivos = motivos_do_lint(
+        &[
+            ("Cargo.toml", "[workspace]\nmembers = []\n\n[workspace.lints.clippy]\nunwrap_used = \"deny\"\n"),
+            ("clippy.toml", "too-many-lines-threshold = 60\nallow-unwrap-in-tests = false\n"),
+        ],
+        json!(["Cargo.toml", "clippy.toml"]),
+        &[
+            "unwrap_used",
+            "too-many-lines-threshold",
+            "allow-unwrap-in-tests",
+            "excessive-nesting-threshold",
+        ],
+    );
+    assert_eq!(
+        motivos,
+        vec![
+            "a regra de lint \"allow-unwrap-in-tests\" está configurada como false, que não bloqueia",
+            "a regra de lint \"excessive-nesting-threshold\" não está configurada",
+        ]
+    );
+}
+
+#[test]
+fn lint_cobre_toml_invalido_reprova() {
+    let motivos = motivos_do_lint(
+        &[("Cargo.toml", "[lints.clippy\nunwrap_used = \"deny\"\n")],
+        json!("Cargo.toml"),
+        &["unwrap_used"],
+    );
+    assert_eq!(motivos.len(), 1);
+    assert!(motivos[0].contains("não foi conferida: não é TOML válido"), "{motivos:?}");
+}
+
+#[test]
+fn lint_cobre_checkstyle_ignora_comentario_e_severity_ignore() {
+    let checkstyle = r#"<?xml version="1.0"?>
+<module name="Checker">
+  <module name="TreeWalker">
+    <module name="ParameterNumber"><property name="max" value="3"/></module>
+    <module name="MagicNumberX"/>
+    <!-- <module name="MagicNumber"/> -->
+    <module name="NestedIfDepth">
+      <property name="severity" value="ignore"/>
+    </module>
+    <module name="com.puppycrawl.tools.checkstyle.checks.coding.IllegalCatchCheck"/>
+    <module name="AvoidStarImport"/>
+  </module>
+</module>
+"#;
+    let motivos = motivos_do_lint(
+        &[("config/checkstyle.xml", checkstyle)],
+        json!("config/checkstyle.xml"),
+        &[
+            "ParameterNumber",
+            "MagicNumber",
+            "NestedIfDepth",
+            "IllegalCatch",
+            "AvoidStarImport",
+            "TreeWalker",
+            "Number",
+        ],
+    );
+    assert_eq!(
+        motivos,
+        vec![
+            "a regra de lint \"MagicNumber\" só aparece comentada",
+            "a regra de lint \"NestedIfDepth\" está configurada como severity \"ignore\", que não bloqueia",
+            "a regra de lint \"Number\" não está configurada",
+        ]
+    );
+}
+
+#[test]
+fn lint_cobre_pmd_aceita_ref_e_respeita_exclude() {
+    let pmd = r#"<ruleset name="casa">
+  <rule ref="category/java/design.xml/ExcessiveParameterList"/>
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="AvoidCatchingGenericException"/>
+  </rule>
+  <!-- <rule ref="category/java/design.xml/GodClass"/> -->
+  <rule ref="category/java/design.xml/CognitiveComplexityX"/>
+</ruleset>
+"#;
+    let motivos = motivos_do_lint(
+        &[("pmd.xml", pmd)],
+        json!("pmd.xml"),
+        &["ExcessiveParameterList", "AvoidCatchingGenericException", "GodClass", "CognitiveComplexity"],
+    );
+    assert_eq!(
+        motivos,
+        vec![
+            "a regra de lint \"AvoidCatchingGenericException\" está configurada como <exclude>, que não bloqueia",
+            "a regra de lint \"GodClass\" só aparece comentada",
+            "a regra de lint \"CognitiveComplexity\" não está configurada",
+        ]
+    );
+}
+
+#[test]
+fn lint_cobre_error_prone_exige_error() {
+    let pom = r#"<project><build><plugins><plugin><configuration><compilerArgs>
+  <arg>-Xplugin:ErrorProne -Xep:EmptyCatch:ERROR -Xep:NullAway:ERROR -Xep:UnusedVariable:WARN -Xep:MissingOverride -XepOpt:NullAway:OnlyNullMarked=true</arg>
+  <!-- <arg>-Xep:CatchAndPrintStackTrace:ERROR</arg> -->
+</compilerArgs></configuration></plugin></plugins></build></project>
+"#;
+    let motivos = motivos_do_lint(
+        &[("pom.xml", pom)],
+        json!("pom.xml"),
+        &[
+            "EmptyCatch",
+            "-Xep:EmptyCatch:ERROR",
+            "NullAway:ERROR",
+            "UnusedVariable",
+            "MissingOverride",
+            "CatchAndPrintStackTrace",
+            "Empty",
+        ],
+    );
+    assert_eq!(
+        motivos,
+        vec![
+            "a regra de lint \"UnusedVariable\" está configurada como -Xep:UnusedVariable:WARN, que não bloqueia",
+            "a regra de lint \"MissingOverride\" está configurada como -Xep:MissingOverride sem :ERROR, que não bloqueia",
+            "a regra de lint \"CatchAndPrintStackTrace\" só aparece comentada",
+            "a regra de lint \"Empty\" não está configurada",
+        ]
+    );
+}
+
+#[test]
+fn lint_cobre_json_com_comentarios_e_valor_desligado() {
+    let tsconfig = "{\n  // base da casa\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"noImplicitAny\": false,\n    \
+        \"url\": \"https://x//y\",\n    /* \"noUncheckedIndexedAccess\": true, */\n    \"exactOptionalPropertyTypes\": true,\n  },\n}\n";
+    let eslintrc = r#"{ "rules": { "max-depth": ["error", 3], "max-params": "off", "complexity": 0, "no-console": ["off"], "@typescript-eslint/no-explicit-any": "error" } }"#;
+    let motivos = motivos_do_lint(
+        &[("tsconfig.json", tsconfig), (".eslintrc.json", eslintrc)],
+        json!(["tsconfig.json", ".eslintrc.json"]),
+        &[
+            "strict",
+            "noImplicitAny",
+            "noUncheckedIndexedAccess",
+            "exactOptionalPropertyTypes",
+            "max-depth",
+            "max-params",
+            "complexity",
+            "no-console",
+            "@typescript-eslint/no-explicit-any",
+            "no-explicit-any",
+        ],
+    );
+    assert_eq!(
+        motivos,
+        vec![
+            "a regra de lint \"noImplicitAny\" está configurada como false, que não bloqueia",
+            "a regra de lint \"noUncheckedIndexedAccess\" só aparece comentada",
+            "a regra de lint \"max-params\" está configurada como \"off\", que não bloqueia",
+            "a regra de lint \"complexity\" está configurada como 0, que não bloqueia",
+            "a regra de lint \"no-console\" está configurada como \"off\", que não bloqueia",
+            "a regra de lint \"no-explicit-any\" não está configurada",
+        ]
+    );
+}
+
+#[test]
+fn lint_cobre_outros_arquivos_por_identificador_fora_de_comentario() {
+    let eslint = "import tseslint from \"typescript-eslint\";\n// \"no-console\": \"error\",\n/* \"eqeqeq\": \"error\" */\n\
+        export default [...tseslint.configs.strictTypeChecked, { rules: {\n  \"max-depth\": [\"error\", 3],\n  \"max-params\": \"off\",\n  \
+        'complexity': 'off',\n  \"max-lines-per-function\": [\"error\", 40],\n  \"url\": \"https://exemplo/no-console\",\n} }];\n";
+    let motivos = motivos_do_lint(
+        &[("eslint.config.js", eslint)],
+        json!("eslint.config.js"),
+        &[
+            "max-depth",
+            "max-params",
+            "complexity",
+            "max-lines",
+            "no-console",
+            "eqeqeq",
+            "strictTypeChecked",
+        ],
+    );
+    assert_eq!(
+        motivos,
+        vec![
+            "a regra de lint \"max-params\" está configurada como \"off\", que não bloqueia",
+            "a regra de lint \"complexity\" está configurada como 'off', que não bloqueia",
+            "a regra de lint \"max-lines\" não está configurada",
+            "a regra de lint \"no-console\" só aparece comentada",
+            "a regra de lint \"eqeqeq\" só aparece comentada",
+        ]
+    );
+}
+
+#[test]
+fn lint_cobre_basta_um_arquivo_cobrir() {
+    let motivos = motivos_do_lint(
+        &[
+            ("Cargo.toml", "[lints.clippy]\nunwrap_used = \"allow\"\n"),
+            ("outro/Cargo.toml", "[lints.clippy]\nunwrap_used = \"deny\"\n"),
+        ],
+        json!(["Cargo.toml", "outro/Cargo.toml"]),
+        &["unwrap_used"],
+    );
+    assert!(motivos.is_empty(), "{motivos:?}");
+}
+
+// ---------- teste-de-contrato-por-port no layout Maven/Gradle ----------
+
+#[test]
+fn teste_de_contrato_por_port_no_layout_maven() {
+    let violacoes = rodar_uma_regra(
+        &[
+            ("src/main/java/br/x/dominio/portas/Pedidos.java", "public interface Pedidos {}\n"),
+            ("src/test/java/br/x/dominio/portas/PedidosContratoTest.java", "class PedidosContratoTest {}\n"),
+            ("src/main/java/br/x/dominio/portas/Cobranca.java", "public interface Cobranca {}\n"),
+            ("src/main/java/br/x/dominio/portas/CobrancaContratoTest.java", "class CobrancaContratoTest {}\n"),
+            ("modulo/src/main/kotlin/Estoque.kt", "interface Estoque\n"),
+            ("modulo/src/test/kotlin/EstoqueContratoTest.kt", "class EstoqueContratoTest\n"),
+        ],
+        json!({
+            "tipo": "teste-de-contrato-por-port",
+            "ports": ["src/main/java/**/portas/*.java", "modulo/src/main/kotlin/*.kt"],
+            "ignorar": ["**/*Test.java"],
+            "contrato": "{dir_de_teste}/{nome}ContratoTest.{ext}"
+        }),
+        "L",
+    );
+    // "{ext}" não é marcador: fica literal e nenhum contrato existe com ele.
+    assert_eq!(violacoes.len(), 3);
+    let violacoes = rodar_uma_regra(
+        &[
+            ("src/main/java/br/x/dominio/portas/Pedidos.java", "public interface Pedidos {}\n"),
+            ("src/test/java/br/x/dominio/portas/PedidosContratoTest.java", "class PedidosContratoTest {}\n"),
+            ("src/main/java/br/x/dominio/portas/Cobranca.java", "public interface Cobranca {}\n"),
+            ("src/main/java/br/x/dominio/portas/CobrancaContratoTest.java", "class CobrancaContratoTest {}\n"),
+        ],
+        json!({
+            "tipo": "teste-de-contrato-por-port",
+            "ports": "src/main/java/**/portas/*.java",
+            "ignorar": ["**/*Test.java"],
+            "contrato": "{dir_de_teste}/{nome}ContratoTest.java"
+        }),
+        "L",
+    );
+    assert_eq!(
+        violacoes.into_iter().map(|violacao| (violacao.0.unwrap(), violacao.2)).collect::<Vec<_>>(),
+        vec![(
+            "src/main/java/br/x/dominio/portas/Cobranca.java".to_string(),
+            "port sem teste de contrato em src/test/java/br/x/dominio/portas/CobrancaContratoTest.java".to_string()
+        )]
+    );
+}
+
+#[test]
+fn teste_de_contrato_dir_de_teste_sem_src_main_fica_igual_ao_dir() {
+    let violacoes = rodar_uma_regra(
+        &[
+            ("src/pagamento/portas/cobranca.ts", "export interface Cobranca {}\n"),
+            ("src/pagamento/portas/cobranca.contrato.test.ts", ""),
+            ("modulo/src/main/kotlin/Estoque.kt", "interface Estoque\n"),
+            ("modulo/src/test/kotlin/EstoqueContratoTest.kt", ""),
+            ("xsrc/main/Caixa.kt", "interface Caixa\n"),
+        ],
+        json!({ "tipo": "teste-de-contrato-por-port", "ports": ["src/**/portas/*.ts", "modulo/**/*.kt", "xsrc/**/*.kt"], "ignorar": ["**/*.test.*", "**/*Test.kt"], "contrato": "{dir_de_teste}/{nome}.contrato.test.ts" }),
+        "L",
+    );
+    let mensagens: Vec<String> = violacoes.into_iter().map(|violacao| violacao.2).collect();
+    assert_eq!(
+        mensagens,
+        vec![
+            "port sem teste de contrato em modulo/src/test/kotlin/Estoque.contrato.test.ts",
+            "port sem teste de contrato em xsrc/main/Caixa.contrato.test.ts"
+        ]
+    );
+}
+
+// ---------- termo-evitado em Rust ----------
+
+#[test]
+fn termo_evitado_em_rust_ve_mut_static_mod_e_as_outras_declaracoes() {
+    let violacoes = rodar_uma_regra(
+        &[
+            ("GLOSSARY.md", "**Cliente**:\nQuem compra.\n_Evitar_: Usuario\n"),
+            (
+                "src/lib.rs",
+                "let mut usuario_novo = 1;\nstatic USUARIO_PADRAO: u8 = 0;\nstatic mut USUARIO_GLOBAL: u8 = 0;\nmod usuario_repo;\npub(crate) const USUARIO_MAX: u8 = 9;\n\
+                 fn criar_usuario() {}\nstruct UsuarioX;\nenum TipoDeUsuario {}\ntrait UsuarioRepo {}\ntype UsuarioId = u64;\nunion UsuarioBits { a: u8 }\n\
+                 let r#usuario_bruto = 2;\nlet cliente = 1;\nlet mut cliente_novo = usuario();\nmacro_rules! usuario_macro { () => {} }\n",
+            ),
+        ],
+        json!({ "tipo": "termo-evitado" }),
+        "E1",
+    );
+    assert_eq!(
+        violacoes.iter().map(|violacao| violacao.1.unwrap()).collect::<Vec<_>>(),
+        vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15]
+    );
+}
+
+#[test]
+fn termo_evitado_em_ts_java_e_python_segue_igual() {
+    let violacoes = rodar_uma_regra(
+        &[
+            ("GLOSSARY.md", "_Evitar_: Usuario, void, final\n"),
+            (
+                "src/a.ts",
+                "let usuarioAtivo = 1;\nlet mut = 2;\nclass Usuario {}\nstatic readonly usuarioFixo = 1;\nconst x = usuario;\n",
+            ),
+            (
+                "src/A.java",
+                "public static void criarUsuario() {}\nprivate static final int USUARIO_MAX = 1;\nrecord UsuarioDto() {}\n",
+            ),
+            ("src/b.py", "def criar_usuario():\n    pass\nclass UsuarioRepo:\n    pass\n"),
+        ],
+        json!({ "tipo": "termo-evitado" }),
+        "E1",
+    );
+    let achados: Vec<String> = violacoes
+        .into_iter()
+        .map(|violacao| format!("{}:{}", violacao.0.unwrap(), violacao.1.unwrap()))
+        .collect();
+    // Como antes: "static" não declara nome fora de Rust (nem "void" nem "final" viram nome), e "let mut = 2"
+    // em JS declara "mut", que não é termo evitado.
+    assert_eq!(achados, vec!["src/A.java:3", "src/a.ts:1", "src/a.ts:3", "src/b.py:1", "src/b.py:3"]);
+}
+
+// ---------- práticas da linguagem fora dos 22 ----------
+
+fn tabela_com_praticas(linhas_dos_22: &[(&str, &str)], praticas: &str) -> String {
+    format!(
+        "{}\n## Práticas da linguagem\n\n| Prática | Decisão | Onde ou por quê |\n|---|---|---|\n{praticas}",
+        tabela_com(linhas_dos_22)
+    )
+}
+
+#[test]
+fn pratica_da_linguagem_aceita_com_linha_na_tabela_de_praticas() {
+    let regras = regras_de(json!([
+        { "id": "R1", "principio": "E1", "verificacao": { "tipo": "revisor" } },
+        { "id": "R12", "principio": "RS1", "verificacao": { "tipo": "revisor" } },
+        { "id": "R13", "principio": "TS2", "verificacao": { "tipo": "revisor" } },
+        { "id": "R14", "principio": "JV10", "verificacao": { "tipo": "revisor" } }
+    ]));
+    let texto_md = tabela_com_praticas(
+        &[("E1", "adotado | R1")],
+        "| RS1 | adotado | R12 |\n| TS2 | garantido pelo lint | R13 |\n| JV10 | adaptado | R14 |\n| RS9 | afastado | sem regra, não exigida |\n",
+    );
+    assert!(checar_cobertura(&texto_md, &regras).is_empty(), "{:?}", checar_cobertura(&texto_md, &regras));
+}
+
+#[test]
+fn pratica_sem_linha_ou_citada_so_nos_22_reprova() {
+    let regras = regras_de(json!([
+        { "id": "R1", "principio": "E1", "verificacao": { "tipo": "revisor" } },
+        { "id": "R12", "principio": "RS1", "verificacao": { "tipo": "revisor" } }
+    ]));
+    let sem_linha: Vec<String> = checar_cobertura(&tabela_com(&[("E1", "adotado | R1")]), &regras)
+        .into_iter()
+        .map(|violacao| violacao.mensagem)
+        .collect();
+    assert_eq!(sem_linha, vec!["R12 nasce da prática RS1 e nenhuma linha da tabela de práticas a cita"]);
+    let so_nos_22: Vec<String> = checar_cobertura(&tabela_com(&[("E1", "adotado | R1, R12")]), &regras)
+        .into_iter()
+        .map(|violacao| violacao.mensagem)
+        .collect();
+    assert_eq!(
+        so_nos_22,
+        vec![
+            "R12 nasce de RS1 no .json, mas a tabela a cita em E1",
+            "R12 nasce da prática RS1 e nenhuma linha da tabela de práticas a cita"
+        ]
+    );
+    let decisao_ruim: Vec<String> = checar_cobertura(&tabela_com_praticas(&[("E1", "adotado | R1")], "| RS1 | talvez | R12 |\n"), &regras)
+        .into_iter()
+        .map(|violacao| violacao.mensagem)
+        .collect();
+    assert_eq!(
+        decisao_ruim,
+        vec![
+            "RS1: decisão \"talvez\" não é uma de: adotado, adaptado, afastado, garantido pelo lint",
+            "R12 nasce da prática RS1 e nenhuma linha da tabela de práticas a cita"
+        ]
+    );
+}
+
+#[test]
+fn id_de_pratica_invalido_e_erro_de_configuracao() {
+    let repositorio = Repositorio::novo(&[]);
+    for principio in ["XX1", "RS", "rs1", "RS1a"] {
+        let config = json!({ "versao": 1, "regras": [{ "id": "R1", "principio": principio, "verificacao": { "tipo": "revisor" } }] });
+        let Err(erro) = validar(&repositorio.raiz, &config, "", &opcoes(None)) else {
+            panic!("{principio} deveria ser erro de configuração")
+        };
+        assert!(erro.0.contains("TS<n>, JV<n> ou RS<n>"), "{}", erro.0);
+    }
+}
+
+// ---------- mensagem do ast-grep ausente ----------
+
+#[test]
+fn ast_grep_ausente_sugere_versao_fixa() {
+    let violacoes = rodar_uma_regra(
+        &[("regras/r.yml", "id: x\n"), ("src/a.ts", "a;\n")],
+        json!({ "tipo": "ast-grep", "regras": "regras/r.yml", "binario": "ast-grep-que-nao-existe" }),
+        "D",
+    );
+    assert_eq!(violacoes.len(), 1);
+    assert!(
+        violacoes[0].2.contains("npm i -g @ast-grep/cli@0.51.0") && violacoes[0].2.contains("cargo install ast-grep --version 0.51.0 --locked"),
+        "{}",
+        violacoes[0].2
     );
 }

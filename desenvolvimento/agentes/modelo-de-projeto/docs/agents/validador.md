@@ -51,6 +51,21 @@ dos 22.
 | `comando` | `executar` (aceita `{arquivos}`) | Qualquer ferramenta: saída diferente de 0 é violação |
 | `revisor` | | Nada: marca a regra como julgamento do revisor |
 
+**`lint-cobre` falha fechado:** a regra conta só se algum arquivo de `config` a liga com nível que
+bloqueia; senão, a violação diz se ela falta, está comentada, está desligada ou se o arquivo é
+inválido. O nome casa inteiro (`panic` não casa com `panic_in_result_fn`).
+
+| Arquivo | Conta como ligada |
+|---|---|
+| `.toml` (`Cargo.toml`, `clippy.toml`) | Chave em `[lints.<grupo>]` ou `[workspace.lints.<grupo>]` com `"deny"` ou `"forbid"` (texto ou `{ level, priority }`); `clippy::x` só em `[lints.clippy]`; um grupo (`pedantic`) pela chave dele. No `clippy.toml`, o limite de primeiro nível que não é `false` |
+| `.xml` | Checkstyle `<module name="X">` sem `severity` `ignore`; PMD `<rule ref=".../X">` sem `<exclude name="X"/>`; Error Prone só `-Xep:X:ERROR`. Comentário `<!-- -->` não conta |
+| `.json`, `.jsonc` (`tsconfig.json`) | Chave em qualquer nível com valor que não é `false`, `"off"` nem `0` |
+| Outras (`eslint.config.js`, `build.gradle`) | O nome fora de comentário, sem `"off"`, `"allow"`, `false` ou `0` logo depois. Para o ESLint, prefira o `comando` com o próprio lint |
+
+Regra ligada só por preset, por grupo ou por padrão da ferramenta não aparece no arquivo: liste-a
+explicitamente. O `lint-cobre` prova que a regra está declarada; o `comando` com o próprio lint prova
+que o código a cumpre.
+
 Todos aceitam `arquivos` e `ignorar` (globs) quando leem código; o padrão vem de `projeto`. Em
 `comando`, `{arquivos}` vira a lista dos arquivos lidos (só os alterados, com `--base`); sem ele, a
 ferramenta roda no projeto inteiro.

@@ -70,7 +70,11 @@ impl Projeto {
             comando.env(nome, valor);
         }
         let mut processo = comando.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
-        processo.stdin.take().unwrap().write_all(entrada.as_bytes()).unwrap();
+        // O hook pode decidir e sair antes de ler a entrada (o pre-push lê só o que precisa): o cano
+        // fechado não é falha do teste.
+        if let Err(erro) = processo.stdin.take().unwrap().write_all(entrada.as_bytes()) {
+            assert_eq!(erro.kind(), std::io::ErrorKind::BrokenPipe, "falha ao escrever a entrada do hook: {erro}");
+        }
         let saida = processo.wait_with_output().unwrap();
         (
             saida.status.code().unwrap_or(-1),
