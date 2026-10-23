@@ -59,7 +59,7 @@ const linhasContexto = [
   `Issue ativa nesta sessão: ${estadoSessao.issuesAtivas.principal ? `#${estadoSessao.issuesAtivas.principal.numero} ${estadoSessao.issuesAtivas.principal.titulo}` : "nenhuma (editar código de produção está bloqueado)"}`,
   `Mapas iniciais (ativar issue exige os quatro e ${MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR.join(" + ")} fechados):\n${situacaoDosMapasIniciais}`,
   `Mapas do wayfinder abertos:\n${mapasAbertos}`,
-  "Grilling em todo ticket de decisão: o humano responde. Nenhuma recomendação sem pesquisa: cite docs/research/ ou a fonte primária; sem fonte, rode /research antes.",
+  "Grilling em todo ticket de decisão: o humano responde. Pergunta curta, em linguagem simples, com um exemplo real deste projeto. Nenhuma recomendação sem pesquisa: cite docs/research/ ou a fonte primária; sem fonte, rode /research antes.",
   "Rota: ideia grande → /wayfinder (1 ticket por sessão) → /to-spec → /to-tickets → 1 sessão limpa por issue com /implement + /tdd. Trabalho novo, fase nova ou janela cheia → /nova-sessao (janela nova). Assunto paralelo → sessão satélite e /voltar-a-principal.",
 ];
 emitirContextoAdicional("SessionStart", linhasContexto.join("\n"));

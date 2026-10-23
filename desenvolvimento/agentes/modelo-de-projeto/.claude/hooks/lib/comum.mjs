@@ -25,6 +25,25 @@ export const MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR = ["prototipo", "arquitetu
 // Tipos de ticket do wayfinder cuja resolução exige a seção "## Fontes" (pesquisa antes de recomendar).
 export const TIPOS_QUE_EXIGEM_FONTES = ["grilling", "task", "research"];
 
+// Skills que abrem uma sessão de grilling. Chamadas pelo Skill tool ou digitadas como /<nome>.
+export const SKILLS_DE_GRILLING = ["grilling", "grill-me", "grill-with-docs", "wayfinder"];
+
+// Linguagem das perguntas ao humano no grilling (AGENTS.md, regra 10). Injetada quando o grilling
+// começa e a cada resposta do humano, porque a skill sozinha deixa a pergunta crescer.
+export const REGRA_LINGUAGEM_GRILLING = [
+  "🗣️ [watchdog linguagem-grilling] Perguntas do grilling em linguagem simples:",
+  "- Curta: título de até 8 palavras e corpo de até 3 linhas. Sem parágrafo de contexto, sem repetir o que o humano já disse.",
+  "- Simples: palavras do dia a dia. Termo técnico só se for inevitável, explicado em meia linha.",
+  "- Com exemplo real do cenário deste projeto: uma tela, um usuário, um dado ou um caso que existe aqui, mostrando o que muda com cada opção. Nada de exemplo genérico (\"imagine um e-commerce\").",
+  "- Opções em lista A/B/C, uma linha cada. Recomendação em uma frase, com o porquê e a fonte.",
+  "Ex.: ❓ Q1 - Quem pode cancelar um pedido? A) Só o cliente, até o envio. B) Cliente e atendente. Ex.: a Ana pede às 10h, o pacote sai às 14h; às 15h ela quer cancelar. Em A, não pode; em B, o atendente cancela. ➡️ A: o fluxo de devolução já cobre depois do envio (docs/research/devolucao.md).",
+].join("\n");
+
+export function nomeDaSkillDeGrilling(textoOuNome) {
+  const nomeLimpo = String(textoOuNome || "").trim().replace(/^\//, "").split(/\s/)[0].split(":").pop();
+  return SKILLS_DE_GRILLING.includes(nomeLimpo) ? nomeLimpo : null;
+}
+
 // Caminhos que nenhum agente edita: são os próprios watchdogs e o estado deles.
 export const CAMINHOS_PROTEGIDOS = [".claude/hooks/", ".claude/githooks/", ".claude/agents/", ".claude/metodo.json", ".claude/settings.json", ".claude/state/", ".github/workflows/vigia-do-metodo.yml"];
 

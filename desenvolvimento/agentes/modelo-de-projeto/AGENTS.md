@@ -74,7 +74,9 @@ ideia grande demais para uma sessão
 ### 5. Humano na linha
 10. No grilling, **o humano responde**. Pergunte em uma rodada toda a fronteira de decisões
     independentes, numeradas, cada uma com sua recomendação **e a fonte dela**; espere as respostas
-    antes da próxima rodada. Fatos você busca; decisões são dele.
+    antes da próxima rodada. Fatos você busca; decisões são dele. Cada pergunta é **curta e em
+    linguagem simples** (até 3 linhas, sem jargão) e traz **um exemplo real do cenário do projeto**
+    mostrando o que muda com cada opção.
 11. Protótipo visual só é portado (`/portar-prototipo`) com **aprovação explícita** no comentário de
     resolução do ticket, depois do `/auditar-prototipo`.
 
