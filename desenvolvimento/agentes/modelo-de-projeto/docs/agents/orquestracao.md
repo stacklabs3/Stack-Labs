@@ -42,8 +42,9 @@ uma PR por issue, empilhadas na ordem. **Merge na `main`, nunca pelo agente.**
 
 ## Modelo e esforço
 
-Todos os papéis usam `opus`. No primeiro ciclo, implementador e conferente rodam em `low` e o revisor
-em `medium`; nos ciclos de correção, todos em `medium`. O esforço vai em cada chamada, para subir sem
+Todos os papéis usam `opus`. No primeiro ciclo, implementador, revisor e conferente rodam em `low`;
+o diagnosticador, que abre cada ciclo de correção, roda sempre em `medium`, e nos ciclos de correção
+todos sobem para `medium`. O esforço vai em cada chamada, para subir sem
 editar os agentes.
 
 ## Watchdogs na orquestração

@@ -2,7 +2,7 @@
 name: revisor
 description: Revisa o diff de uma issue contra os padrões do projeto (eixo Standards do /code-review) e dá parecer APROVADO ou REPROVADO. Usado pelo /orquestrar-issues.
 model: opus
-effort: medium
+effort: low
 disallowedTools: Edit, Write, NotebookEdit, Agent
 ---
 
