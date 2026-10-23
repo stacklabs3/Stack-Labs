@@ -35,6 +35,11 @@ método dizendo qual é o próximo passo. A lista técnica completa fica em
 
 Usou um escape? Avise os sócios e registre o motivo na issue ou na PR. O `/auditar-metodo` vai achar.
 
+## Atualizar os watchdogs de um projeto
+
+Rode `/setup-stacklabs` no projeto. O que for watchdog ele não sobrescreve sozinho: entrega a você o
+comando com `--atualizar-watchdogs`, que só você roda.
+
 ## Mudar um watchdog
 
 Por PR no Stack-Labs (`desenvolvimento/agentes/modelo-de-projeto/`), depois propague para os

@@ -63,6 +63,9 @@ if (/\bgit\b[^;&|\n]*--no-verify\b/.test(comando)) {
 if (/core\.hooksPath/i.test(comando) && !/git\s+config\s+(--get\s+)?core\.hooksPath\s*($|[;&|\n])/i.test(comando)) {
   bloquearFerramenta(NOME_WATCHDOG, "alterar core.hooksPath desliga o pre-push que protege a main. Só um humano altera.");
 }
+if (/--atualizar-watchdogs\b/.test(comando)) {
+  bloquearFerramenta(NOME_WATCHDOG, "--atualizar-watchdogs sobrescreve os watchdogs do projeto. Só um humano roda o setup-stacklabs com essa opção.");
+}
 if (/STACKLABS_PERMITIR_PUSH_MAIN/.test(comando)) {
   bloquearFerramenta(NOME_WATCHDOG, "STACKLABS_PERMITIR_PUSH_MAIN é o escape humano do pre-push. O agente não usa.");
 }

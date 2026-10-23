@@ -6,7 +6,7 @@ para o projeto, onde vira a constituição e os watchdogs dele. O guia para pess
 
 ```
 agentes/
-├── modelo-de-projeto/          ← copie o conteúdo para a raiz de todo projeto novo
+├── modelo-de-projeto/          ← o que o /setup-stacklabs instala na raiz de cada projeto
 │   ├── AGENTS.md               constituição: as regras duras
 │   ├── CLAUDE.md               @AGENTS.md
 │   ├── docs/agents/            o que a constituição aponta
@@ -19,41 +19,35 @@ agentes/
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
 │   └── .gitignore
 └── skills/
+    ├── setup-stacklabs/        instala e atualiza o método num projeto
     ├── auditar-metodo/         auditoria do projeto inteiro, sob demanda
-    └── recomendada/            cópia fiel das skills recomendadas (matheus3006/my-claude-skills):
-                                as do Matt Pocock, a família *-prototipo, human-architect-mindset e outras
+    └── recomendada/            cópia das skills recomendadas (matheus3006/my-claude-skills): a família
+                                *-prototipo, human-architect-mindset e outras; as do Matt foram atualizadas
+                                para mattpocock/skills 5beb35b (v1.3.1)
 ```
 
 ## Instalar num projeto novo
 
+Uma vez por máquina, instale a skill de setup:
+
 ```bash
-# 1. no clone do projeto novo, com o Stack-Labs clonado ao lado
-cp -r ../Stack-Labs/desenvolvimento/agentes/modelo-de-projeto/. .
-mkdir -p docs/adr docs/research
-
-# 2. o pre-push que protege a main (uma vez por clone, por pessoa)
-git config core.hooksPath .claude/githooks
-
-# 3. as labels do método
-#    (comando em docs/agents/issue-tracker.md, seção "Labels a criar no repositório novo")
-
-# 4. as skills: as recomendadas (Matt Pocock, família *-prototipo e outras) e a auditoria
-#    Não instale também o plugin mattpocock-skills: as skills dele já estão na cópia e ficariam duplicadas.
-cp -R ../Stack-Labs/desenvolvimento/agentes/skills/recomendada/* ~/.claude/skills/
-cp -R ../Stack-Labs/desenvolvimento/agentes/skills/auditar-metodo ~/.claude/skills/
+git clone https://github.com/stacklabs1/Stack-Labs
+cp -R Stack-Labs/desenvolvimento/agentes/skills/setup-stacklabs ~/.claude/skills/
 ```
 
-Depois, numa sessão nova do Claude Code, o `sessao-inicio` mostra o que falta. O primeiro trabalho
-é abrir os quatro mapas iniciais (`docs/agents/mapas-iniciais.md`).
+Depois, no projeto (novo ou existente), numa sessão do Claude Code: **`/setup-stacklabs`**. Ela
+instala o `modelo-de-projeto`, as labels, o pre-push e, em `.claude/skills/` do projeto, as skills da
+casa e as skills publicadas mais novas do Matt Pocock. Num projeto existente, mescla o `AGENTS.md`,
+o `CLAUDE.md` e o `settings.json` em vez de sobrescrever. Termina numa PR `chore/setup-metodo`.
+
+**Atualizar** um projeto é rodar `/setup-stacklabs` de novo. Watchdog desatualizado num projeto que
+já tem watchdogs só um humano atualiza:
+`~/.claude/skills/setup-stacklabs/instalar.sh --atualizar-watchdogs`.
+
+Não instale também o plugin `mattpocock-skills`: as skills dele já ficam no projeto e apareceriam
+duplicadas.
 
 Requisitos na máquina: `node` 18+, `gh` autenticado e `git`.
-
-## Projeto que já existe
-
-Copie igual e confira o `AGENTS.md` do projeto: o que ele tinha de próprio entra numa seção
-`## Regras deste projeto` no fim, sem contradizer as regras do modelo. O que já foi decidido antes
-do método vira ADR em `docs/adr/`. Os mapas iniciais que já estão resolvidos na prática se abrem e
-fecham na mesma sessão, com o ponteiro para a ADR ou o documento que registrou a decisão.
 
 ## Mudar o método
 

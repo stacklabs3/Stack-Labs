@@ -5,10 +5,10 @@ Marque na ordem. Cada passo diz quem faz.
 ## Dia 0: o repositório
 
 - [ ] **Você:** crie o repositório no GitHub da StackLabs e clone ao lado do Stack-Labs.
-- [ ] **Você:** copie o modelo de projeto e ative o pre-push
+- [ ] **Você:** tenha a skill `/setup-stacklabs` instalada na sua máquina
       ([instruções](../agentes/README.md#instalar-num-projeto-novo)).
-- [ ] **Você:** crie as labels do método.
-- [ ] **Você:** instale as skills do Matt Pocock, a família `*-prototipo` e o `/auditar-metodo`.
+- [ ] **Agente:** rode `/setup-stacklabs` no projeto. Ele mostra o que vai fazer, espera o seu sim,
+      instala o método e as skills e abre a PR `chore/setup-metodo`. Faça o merge.
 - [ ] **Você:** abra uma sessão do Claude Code e confira o aviso do `sessao-inicio`: setup ✅ e
       pre-push ✅. Os mapas iniciais aparecem como ❌; é o esperado.
 
