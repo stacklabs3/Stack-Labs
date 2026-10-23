@@ -1,5 +1,7 @@
 # Issues sem ninguém olhando rodam em sequência, uma sessão nova por issue
 
+> **Substituída pela [ADR 0005](0005-orquestracao-de-issues-com-subagentes.md).** Fica como registro do caminho.
+
 Para implementar várias issues `ready-for-agent` sem um humano olhando, havia dois caminhos do Matt
 Pocock: o `/implement-spec`, em que um orquestrador lança subagentes em paralelo, cada um numa
 worktree, e o padrão Ralph, um laço em shell que abre uma sessão nova do `claude -p` para cada tarefa,

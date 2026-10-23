@@ -24,8 +24,9 @@ ideia grande demais para uma sessão
 - **Ideia clara, mas com várias sessões:** `/grill-with-docs` → `/to-spec` → `/to-tickets`.
 - **Ideia clara que cabe numa sessão:** `/grill-with-docs` → `/implement`, com uma issue ativa.
 - **Bug ou pedido de fora:** `/triage` → `/implement`.
-- **Várias issues `ready-for-agent` sem ninguém olhando:** `/loop-de-issues`, uma sessão nova por
-  issue, em sequência ([docs/agents/loop-de-issues.md](docs/agents/loop-de-issues.md)).
+- **Issues em `ready-for-agent`:** a sessão que as deixou prontas (`/to-tickets` ou `/triage`)
+  recomenda a orquestração e gera, com o `/nova-sessao`, o kickoff que abre a janela do
+  orquestrador com `/orquestrar-issues <N>` ([docs/agents/orquestracao.md](docs/agents/orquestracao.md)).
 - **Pergunta que só se responde vendo:** ticket de protótipo. Aparência vai para a família
   `*-prototipo` ([docs/agents/roteiro-de-prototipo.md](docs/agents/roteiro-de-prototipo.md));
   comportamento vai para `/prototype`.
@@ -83,22 +84,22 @@ ideia grande demais para uma sessão
     retorno que o humano cola na sessão principal, com só o que a satélite fez e decidiu.
 13. **[W]** **Smart zone:** passou do limite, a próxima ação é o `/nova-sessao`, e o trabalho segue
     numa janela nova com o kickoff. (O `/handoff` do Matt é a alternativa quando não há humano para
-    colar a mensagem; o loop de issues faz o próprio handoff.)
-14. **[W]** **Uma issue por sessão de `/implement`.**
+    colar a mensagem.) O orquestrador de issues passa a rodada adiante já no aviso (450k).
+14. **[W]** **Uma issue por sessão de `/implement`**, e na orquestração uma issue por subagente implementador.
 
 ### 7. Implementação
 15. Use `/tdd` nas *seams* combinadas na spec. Teste pela interface pública.
 16. Typecheck e testes do arquivo com frequência; a suíte inteira antes do commit. Nunca diga
     "pronto" sem ter visto os testes passarem.
-17. **[W]** **A `main` só recebe merge de PR.** Branches: `issue/<n>-<slug>`, `prototype/<nome>`,
-    `research/<nome>` ou `chore/<nome>`. A PR cita a issue (`Closes #<n>`). Push forçado e `--no-verify` são proibidos.
+17. **[W]** **A `main` só recebe merge de PR.** Branches: `issue/<n>-<slug>`, `integracao/<nome>`
+    (a da orquestração), `prototype/<nome>`, `research/<nome>` ou `chore/<nome>`. A PR cita a issue (`Closes #<n>`). Push forçado e `--no-verify` são proibidos.
 18. Use o vocabulário do `GLOSSARY.md` e respeite as ADRs de `docs/adr/`. Contradição com ADR se
     aponta, nunca se sobrescreve em silêncio.
 19. Todo nome de variável diz o que guarda (`valorProduto = produto.valor`, nunca `p = x.valor`).
 
 ### 8. Os watchdogs
 20. **[W]** Você **não edita, move, apaga nem contorna** `.claude/hooks/`, `.claude/githooks/`,
-    `.claude/loop/`, `.claude/settings.json`, `.claude/state/`, `.github/workflows/vigia-do-metodo.yml` nem o
+    `.claude/agents/`, `.claude/settings.json`, `.claude/state/`, `.github/workflows/vigia-do-metodo.yml` nem o
     `core.hooksPath`. Se um watchdog estiver errado, explique ao usuário e peça que ele altere.
 21. Um bloqueio é uma informação, não um obstáculo. Leia o motivo e siga a rota que ele indica.
 

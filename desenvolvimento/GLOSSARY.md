@@ -119,6 +119,20 @@ Uma janela de contexto de um agente, do kickoff ao `/nova-sessao` que abre a pr�
 resolve um ticket de decisão, implementa uma issue ou conduz uma fase.
 _Evitar_: Chat, conversa
 
+**Orquestrador**:
+O agente principal da sessão aberta com `/orquestrar-issues`. Não escreve código: dispara em
+sequência os subagentes implementador, revisor, conferente e diagnosticador, um por vez, e cuida da
+branch de integração.
+_Evitar_: Loop, gerente, coordenador
+
+**Branch de integração**:
+A branch `integracao/<nome>` de uma rodada de orquestração. Cada issue parte dela e volta para ela
+por merge depois de aprovada; só no fim da fila ela chega à `main`, por PR.
+
+**Ciclo de correção**:
+Uma volta de diagnosticador → implementador → revisor → conferente depois de um parecer reprovado.
+Cada issue tem até dois; passou disso, a issue é devolvida para triagem.
+
 **Smart zone**:
 A faixa da janela de contexto em que o agente ainda raciocina bem. Passou dela, a próxima ação é o `/nova-sessao`.
 
@@ -130,7 +144,7 @@ _Evitar_: Resumo, prompt de continuação
 **Handoff**:
 O documento que guarda o estado de um trabalho para quem o retoma. Três formas: o
 `HANDOFF-<projeto>.md` na raiz, que o `/voltar-a-principal` mantém para cada tópico de sessão
-satélite; o do `/handoff` do Matt; e o que a sessão do loop de issues escreve na smart zone.
+satélite; o do `/handoff` do Matt; e o estado da rodada que o orquestrador de issues grava.
 Para abrir uma janela nova com humano, o padrão é o kickoff.
 
 **Sessão principal**:

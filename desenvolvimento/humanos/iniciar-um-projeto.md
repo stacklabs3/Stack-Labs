@@ -36,7 +36,7 @@ grilling amplo, cria o mapa e os tickets e dispara as pesquisas. Você responde.
 
 - [ ] Entre uma sessão e a próxima, `/nova-sessao`; assunto paralelo numa sessão satélite, de volta
       com o `/voltar-a-principal`.
-- [ ] Uma sessão por issue de implementação, PR com `Closes #<n>`. Com várias issues
-      `ready-for-agent` prontas, `/loop-de-issues` e revise as PRs que ele abrir.
+- [ ] Uma sessão por issue de implementação, PR com `Closes #<n>`. Com issues
+      `ready-for-agent` prontas, abra a orquestração (`/orquestrar-issues`) e revise as PRs do fim da fila.
 - [ ] `/auditar-metodo` a cada marco e antes de entregar ao cliente.
 - [ ] `/retro` ao fim de cada fase: o que ajustar no método vira PR no Stack-Labs.

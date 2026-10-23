@@ -5,7 +5,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, openSync, readSync, fstatSync, closeSync } from "node:fs";
 import { join, relative, resolve, isAbsolute } from "node:path";
 
-// Smart zone calibrada para modelos de contexto longo: acima disso, hora de /nova-sessao.
+// Smart zone calibrada para modelos de contexto longo: no aviso, feche a etapa (o orquestrador de
+// issues já passa a rodada adiante aqui); no limite duro, a próxima ação é /nova-sessao.
 export const LIMITE_AVISO_CONTEXTO = 450_000;
 export const LIMITE_DURO_CONTEXTO = 550_000;
 
@@ -25,7 +26,7 @@ export const MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR = ["prototipo", "arquitetu
 export const TIPOS_QUE_EXIGEM_FONTES = ["grilling", "task", "research"];
 
 // Caminhos que nenhum agente edita: são os próprios watchdogs e o estado deles.
-export const CAMINHOS_PROTEGIDOS = [".claude/hooks/", ".claude/githooks/", ".claude/loop/", ".claude/settings.json", ".claude/state/", ".github/workflows/vigia-do-metodo.yml"];
+export const CAMINHOS_PROTEGIDOS = [".claude/hooks/", ".claude/githooks/", ".claude/agents/", ".claude/settings.json", ".claude/state/", ".github/workflows/vigia-do-metodo.yml"];
 
 // Onde o git procura os hooks deste repo (pre-push que protege a main).
 export const CAMINHO_GITHOOKS = ".claude/githooks";
@@ -79,8 +80,18 @@ function caminhoEstadoSessao(diretorioProjeto, idSessao) {
 
 export function lerEstadoSessao(diretorioProjeto, idSessao) {
   const caminhoEstado = caminhoEstadoSessao(diretorioProjeto, idSessao);
-  if (!existsSync(caminhoEstado)) return { issueAtiva: null, ticketsWayfinderResolvidos: [] };
-  return JSON.parse(readFileSync(caminhoEstado, "utf8"));
+  if (!existsSync(caminhoEstado)) return { issuesAtivas: {}, ticketsWayfinderResolvidos: [] };
+  const estadoSessao = JSON.parse(readFileSync(caminhoEstado, "utf8"));
+  // Estado gravado antes da issue por agente: a issue única era da sessão principal.
+  if (!estadoSessao.issuesAtivas) estadoSessao.issuesAtivas = estadoSessao.issueAtiva ? { principal: estadoSessao.issueAtiva } : {};
+  delete estadoSessao.issueAtiva;
+  return estadoSessao;
+}
+
+// Quem está agindo: um subagente (agent_id, na orquestração) ou a própria sessão. Cada um tem a sua
+// issue ativa, para que o orquestrador dispare um implementador por issue na mesma sessão.
+export function chaveDoAgente(entradaHook) {
+  return entradaHook.agent_id || "principal";
 }
 
 export function gravarEstadoSessao(diretorioProjeto, idSessao, estadoSessao) {

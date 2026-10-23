@@ -49,7 +49,7 @@ const linhasContexto = [
   arquivosFaltando.length ? `❌ Setup incompleto, faltam: ${arquivosFaltando.join(", ")}. Copie o modelo-de-projeto do repositório Stack-Labs (desenvolvimento/agentes/) antes de qualquer fluxo.` : "✅ Setup do issue tracker (GitHub) presente.",
   caminhoHooksDoGit(diretorioProjeto) === CAMINHO_GITHOOKS ? "✅ pre-push da main ativo." : `❌ pre-push da main INATIVO neste clone. Peça ao usuário para rodar: git config core.hooksPath ${CAMINHO_GITHOOKS}`,
   `Branch atual: ${branchAtual(diretorioProjeto) || "(desconhecida)"}`,
-  `Issue ativa nesta sessão: ${estadoSessao.issueAtiva ? `#${estadoSessao.issueAtiva.numero} ${estadoSessao.issueAtiva.titulo}` : "nenhuma (editar código de produção está bloqueado)"}`,
+  `Issue ativa nesta sessão: ${estadoSessao.issuesAtivas.principal ? `#${estadoSessao.issuesAtivas.principal.numero} ${estadoSessao.issuesAtivas.principal.titulo}` : "nenhuma (editar código de produção está bloqueado)"}`,
   `Mapas iniciais (ativar issue exige os quatro e ${MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR.join(" + ")} fechados):\n${situacaoDosMapasIniciais}`,
   `Mapas do wayfinder abertos:\n${mapasAbertos}`,
   "Grilling em todo ticket de decisão: o humano responde. Nenhuma recomendação sem pesquisa: cite docs/research/ ou a fonte primária; sem fonte, rode /research antes.",
