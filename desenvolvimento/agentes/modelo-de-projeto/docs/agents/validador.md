@@ -1,13 +1,13 @@
 # Validador de regras de código
 
 Confere por máquina o que as regras de código decidiram (ADR 0010 do método). O motor é do método e
-fica protegido em `.claude/validador/`; o projeto decide **o que** validar em
+fica protegido em `.claude/watchdogs/` (o mesmo binário Rust dos watchdogs); o projeto decide **o que** validar em
 `docs/regras-de-codigo.json`. Princípio de julgamento fica com o revisor.
 
 ```bash
-node .claude/validador/validar.mjs --base origin/main  # só o que mudou desde a base (CI, implementador, revisor)
-node .claude/validador/validar.mjs                     # o repositório inteiro (auditoria)
-node .claude/validador/validar.mjs --so-cobertura      # só a tabela dos 22 contra o .json (fecha o mapa)
+sh .claude/watchdogs/rodar validar --base origin/main  # só o que mudou desde a base (CI, implementador, revisor)
+sh .claude/watchdogs/rodar validar                     # o repositório inteiro (auditoria)
+sh .claude/watchdogs/rodar validar --so-cobertura      # só a tabela dos 22 contra o .json (fecha o mapa)
 ```
 
 Sai com 0 aprovado, 1 violação, 2 configuração inválida; a última linha é sempre
@@ -17,7 +17,7 @@ rodam inteiras. `--completo` força o repositório inteiro.
 
 ## `docs/regras-de-codigo.json`
 
-Nasce do modelo `.claude/validador/modelos/regras-de-codigo.json` no ticket que escreve
+Nasce do modelo `.claude/watchdogs/modelos/regras-de-codigo.json` no ticket que escreve
 `docs/regras-de-codigo.md`. Cada regra do `.md` tem uma entrada, com o mesmo `id`:
 
 ```json
@@ -63,7 +63,7 @@ typecheck do projeto pelo comando deles.
 1. **Copie o modelo** do `.json` e, para cada regra, escolha o `tipo` que a linha *No validador* do
    princípio indica ([principios-de-codigo.md](principios-de-codigo.md)).
 2. **Preencha os parâmetros** com o que o grilling decidiu: pastas, pacotes, regex do commit.
-3. **Regra de padrão** (`ast-grep`): copie o modelo de `.claude/validador/modelos/ast-grep/` para
+3. **Regra de padrão** (`ast-grep`): copie o modelo de `.claude/watchdogs/modelos/ast-grep/` para
    `docs/regras-de-codigo/ast-grep/`, troque os marcadores `<...>` e apague os documentos das
    linguagens que o projeto não usa. Linguagem que falta: copie um documento e troque `language` e o
    `kind` (`ast-grep run --debug-query=cst -p '<trecho>' -l <linguagem>` mostra os nomes). Cada regra
@@ -72,13 +72,13 @@ typecheck do projeto pelo comando deles.
 4. **Nada no catálogo serve?** Use `comando` com a ferramenta da stack. Checagem que valeria para
    outros projetos vira proposta de PR no Stack-Labs, para entrar no motor.
 
-Pronto quando `node .claude/validador/validar.mjs` termina em `VALIDADOR: APROVADO` no código atual,
+Pronto quando `sh .claude/watchdogs/rodar validar` termina em `VALIDADOR: APROVADO` no código atual,
 ou as violações listadas viraram tickets.
 
 ## Onde roda
 
 - **CI do projeto**, configurado na primeira fatia da primeira fase, junto com o lint:
-  `node .claude/validador/validar.mjs --base origin/${{ github.base_ref }}`, com o ast-grep instalado
+  `sh .claude/watchdogs/rodar validar --base origin/${{ github.base_ref }}`, com o ast-grep instalado
   no passo anterior quando o `.json` usa `ast-grep` (`npm i -g @ast-grep/cli`).
 - **Implementador**, antes do commit; **revisor** da orquestração, como violação dura.
 - **Fechamento do mapa** de Regras de código, com `--so-cobertura`.

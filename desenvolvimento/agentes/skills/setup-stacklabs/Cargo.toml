@@ -1,0 +1,18 @@
+[package]
+name = "instalar"
+version = "1.0.0"
+edition = "2021"
+description = "Instalador do método StackLabs: modelo-de-projeto, skills da casa e skills do Matt Pocock"
+publish = false
+
+[[bin]]
+name = "instalar"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true

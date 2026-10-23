@@ -1,0 +1,14 @@
+#!/bin/sh
+# Compila os watchdogs na primeira vez e sempre que o fonte muda, e roda o subcomando pedido.
+pasta="$(cd "$(dirname "$0")" && pwd)"
+binario="$pasta/target/release/watchdogs"
+[ -x "$binario.exe" ] && binario="$binario.exe"
+if [ ! -x "$binario" ] || [ -n "$(find "$pasta/src" "$pasta/Cargo.toml" "$pasta/Cargo.lock" -newer "$binario" 2>/dev/null | head -n 1)" ]; then
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "[watchdogs] cargo não encontrado: instale o Rust (https://rustup.rs) e rode de novo." >&2
+    exit 2
+  fi
+  cargo build --release --locked --quiet --manifest-path "$pasta/Cargo.toml" >&2 || { echo "[watchdogs] a compilação falhou." >&2; exit 2; }
+  [ -x "$binario.exe" ] && binario="$binario.exe"
+fi
+exec "$binario" "$@"

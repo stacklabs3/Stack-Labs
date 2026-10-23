@@ -1,0 +1,23 @@
+[package]
+name = "watchdogs"
+version = "1.0.0"
+edition = "2021"
+description = "Watchdogs e validador de regras de código do método StackLabs"
+publish = false
+
+[lib]
+name = "watchdogs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "watchdogs"
+path = "src/main.rs"
+
+[dependencies]
+regex = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true

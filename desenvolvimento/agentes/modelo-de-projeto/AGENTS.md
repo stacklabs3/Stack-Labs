@@ -51,7 +51,7 @@ ideia grande demais para uma sessão
 
 ### 3. Planejar antes de construir
 3. **[W]** Código de produção só se edita com uma **issue ativa** na sessão
-   (`node .claude/hooks/ativar-issue.mjs <n>`): aberta, com `ready-for-agent` ou `ready-for-human`,
+   (`sh .claude/watchdogs/rodar ativar-issue <n>`): aberta, com `ready-for-agent` ou `ready-for-human`,
    e que não seja ticket do wayfinder. Ficam livres `AGENTS.md`, `CLAUDE.md`, `GLOSSARY*.md`,
    `README.md`, `HANDOFF-*.md` (na raiz), `docs/`, `.scratch/`, `prototipos/`, `.claude/` (fora os
    watchdogs) e as branches `prototype/*` e `research/*`.
@@ -96,14 +96,14 @@ ideia grande demais para uma sessão
     ([docs/agents/domain.md](docs/agents/domain.md)). Contradição com ADR se aponta por escrito.
 19. Todo código segue as **regras de código** (`docs/regras-de-codigo.md`). Contradição com uma regra
     se aponta por escrito; regra nova ou mudada passa por ticket no mapa de Regras de código ou num
-    mapa novo. O que é mecânico o validador confere (`node .claude/validador/validar.mjs`,
+    mapa novo. O que é mecânico o validador confere (`sh .claude/watchdogs/rodar validar`,
     [docs/agents/validador.md](docs/agents/validador.md)); onde elas calam, os princípios de código
     valem como julgamento ([docs/agents/principios-de-codigo.md](docs/agents/principios-de-codigo.md)).
 20. Todo nome de variável diz o que guarda (`valorProduto = produto.valor`, nunca `p = x.valor`).
 
 ### 8. Os watchdogs
-21. **[W]** Você **não edita, move, apaga nem contorna** `.claude/hooks/`, `.claude/githooks/`,
-    `.claude/agents/`, `.claude/validador/`, `.claude/metodo.json`, `.claude/settings.json`, `.claude/state/`,
+21. **[W]** Você **não edita, move, apaga nem contorna** `.claude/watchdogs/`, `.claude/githooks/`,
+    `.claude/agents/`, `.claude/metodo.json`, `.claude/settings.json`, `.claude/state/`,
     `.github/workflows/vigia-do-metodo.yml` nem o `core.hooksPath`. Um bloqueio é uma informação, não
     um obstáculo: leia o motivo e siga a rota que ele indica. Watchdog errado: explique ao usuário e
     peça que ele altere.

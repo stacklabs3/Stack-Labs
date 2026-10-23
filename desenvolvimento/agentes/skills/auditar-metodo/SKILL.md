@@ -19,7 +19,7 @@ caminho).
   marque como ⚠️ (esperado nesta etapa) o que a etapa ainda não cobra (`docs/agents/adocao.md`).
 
 **Setup**
-- `AGENTS.md`, `CLAUDE.md`, `docs/agents/*.md`, `.claude/settings.json`, `.claude/hooks/`,
+- `AGENTS.md`, `CLAUDE.md`, `docs/agents/*.md`, `.claude/settings.json`, `.claude/watchdogs/`,
   `.claude/agents/`, `.github/workflows/vigia-do-metodo.yml` existem e batem com o `modelo-de-projeto` do repositório
   Stack-Labs (diff resumido do que divergiu).
 - As labels do método existem (`docs/agents/issue-tracker.md`, seção *Labels*).
@@ -35,7 +35,7 @@ caminho).
   `docs/agents/principios-de-codigo.md`, cada um adotado, adaptado ou afastado com o porquê, e cada regra cita o princípio de onde nasceu. Cada ticket de grupo do mapa
   fechou com uma linha de decisão por princípio. Projeto anterior à ADR 0008 sem cobertura: ⚠️ e o
   ticket que a completa.
-- `node .claude/validador/validar.mjs` (o repositório inteiro) termina em `VALIDADOR: APROVADO` e roda no CI do projeto.
+- `sh .claude/watchdogs/rodar validar` (o repositório inteiro) termina em `VALIDADOR: APROVADO` e roda no CI do projeto.
   Projeto anterior à ADR 0010 sem `docs/regras-de-codigo.json`: ⚠️ e o ticket que o escreve.
 
 **Pesquisa antes de recomendar**

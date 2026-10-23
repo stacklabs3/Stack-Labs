@@ -22,8 +22,8 @@ princípios de cada um, estão em [mapas-iniciais/regras-de-codigo.md](../mapas-
 ## No ticket *Escrever docs/regras-de-codigo.md*
 
 Junte as decisões no modelo abaixo e escreva `docs/regras-de-codigo.json` a partir de
-`.claude/validador/modelos/regras-de-codigo.json`, uma entrada por regra, como manda
-[validador.md](../validador.md). Pronto quando `node .claude/validador/validar.mjs --so-cobertura`
+`.claude/watchdogs/modelos/regras-de-codigo.json`, uma entrada por regra, como manda
+[validador.md](../validador.md). Pronto quando `sh .claude/watchdogs/rodar validar --so-cobertura`
 termina em `VALIDADOR: APROVADO` e o humano aprovou o documento.
 
 ## Modelo de `docs/regras-de-codigo.md`

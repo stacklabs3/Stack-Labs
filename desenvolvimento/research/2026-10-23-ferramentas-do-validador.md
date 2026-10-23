@@ -53,6 +53,7 @@ pesquisa (Linux x86_64).
 | Opengrep, só 10 arquivos alterados | 2,97 s | 267 MB |
 | ast-grep, só 10 arquivos alterados | 0,01 s | 14 MB |
 | Motor do validador em Node (termo-evitado e todo-sem-issue), repositório inteiro | 0,32 s | 59 MB |
+| O mesmo motor reescrito em Rust (ADR 0011), mesma saída | 0,14 s | 11 MB |
 
 O custo do Opengrep é quase todo de arranque: mesmo com 10 arquivos ele leva 3 s. Com o ast-grep e o
 modo incremental (ler só o que mudou desde a base), o validador de uma PR típica cabe em décimos de

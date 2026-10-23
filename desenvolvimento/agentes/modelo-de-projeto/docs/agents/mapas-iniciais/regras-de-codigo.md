@@ -23,7 +23,7 @@ validador confere cada regra. É a régua do implementador e do revisor.
 - Depende do mapa de Arquitetura: tickets que dependem de uma escolha de stack ficam `blocked_by` o
   ticket dela. As restrições vêm antes e bloqueiam os tickets de grupo.
 - Lint, formatador e typecheck passam por pesquisa como toda escolha técnica. Configurá-los, e pôr o
-  validador (`node .claude/validador/validar.mjs`) no CI, é a primeira fatia da primeira fase.
+  validador (`sh .claude/watchdogs/rodar validar`) no CI, é a primeira fatia da primeira fase.
 - Regra que o revisor não consegue apontar num diff não entra.
 
 ## Decisions so far

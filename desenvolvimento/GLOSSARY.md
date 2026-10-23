@@ -33,7 +33,7 @@ que adota, adapta ou afasta cada um.
 _Evitar_: Boas práticas, clean code, style guide
 
 **Validador**:
-O motor do método em `.claude/validador/` que confere por máquina as regras de código decididas em
+O motor do método, no binário Rust de `.claude/watchdogs/`, que confere por máquina as regras de código decididas em
 `docs/regras-de-codigo.json` e a cobertura dos 22 princípios. O projeto refina a configuração; o
 motor é protegido como um watchdog.
 _Evitar_: Linter (quando é o validador), checker
@@ -136,7 +136,7 @@ O "aprovado" escrito pelo humano no comentário de resolução do ticket de prot
 
 **Issue ativa**:
 A única fatia vertical em que uma sessão de agente pode editar código de produção, ativada com
-`node .claude/hooks/ativar-issue.mjs <n>`.
+`sh .claude/watchdogs/rodar ativar-issue <n>`.
 
 **Sessão**:
 Uma janela de contexto de um agente, do kickoff ao `/nova-sessao` que abre a próxima. Uma sessão

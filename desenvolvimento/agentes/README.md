@@ -20,8 +20,9 @@ agentes/
 │   │   ├── principios-de-codigo.md    os 22 princípios (ADR 0008); grupos e grilling em principios-de-codigo/
 │   │   ├── validador.md               o formato de regras-de-codigo.json, o catálogo e como refinar
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
-│   ├── .claude/                hooks do Claude Code (watchdogs), os papéis da orquestração (agents/) e o
-│   │                           validador de regras de código (validador/, ADR 0010)
+│   ├── .claude/                watchdogs/: os hooks do Claude Code, o pre-push e o validador de regras
+│   │                           de código, num crate Rust compilado em cada máquina (ADRs 0010 e 0011);
+│   │                           agents/: os papéis da orquestração; githooks/: o pre-push
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
 │   └── .gitignore
 └── skills/
@@ -32,7 +33,8 @@ agentes/
     └── recomendada/            cópia das skills recomendadas (matheus3006/my-claude-skills): a família
                                 *-prototipo, /nova-sessao, /voltar-a-principal, human-architect-mindset
                                 e outras. Difere da origem em dois pontos: as skills do Matt seguem
-                                mattpocock/skills 5beb35b (v1.3.1) e o tirar-prints.sh virou só .mjs
+                                mattpocock/skills 5beb35b (v1.3.1) e os scripts da casa
+                                (gerar-folha, tirar-prints) são Rust
 ```
 
 ## Instalar num projeto novo
@@ -55,12 +57,13 @@ Depois, numa sessão do Claude Code dentro do projeto:
 
 **Atualizar** um projeto é rodar `/setup-stacklabs` de novo. Watchdog desatualizado num projeto que
 já tem watchdogs só um humano atualiza:
-`node ~/.claude/skills/setup-stacklabs/instalar.mjs --atualizar-watchdogs`.
+`sh ~/.claude/skills/setup-stacklabs/rodar --atualizar-watchdogs`.
 
 Não instale também o plugin `mattpocock-skills`: as skills dele já ficam no projeto e apareceriam
 duplicadas.
 
-Requisitos na máquina: `node` 18+, `gh` autenticado e `git`.
+Requisitos na máquina: `cargo` (Rust, https://rustup.rs), `gh` autenticado e `git`. O instalador e
+os watchdogs são compilados na máquina pelo `cargo` na primeira vez que rodam.
 
 ## Mudar o método
 
