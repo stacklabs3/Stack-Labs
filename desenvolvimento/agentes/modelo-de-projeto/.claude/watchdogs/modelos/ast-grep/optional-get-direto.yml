@@ -1,0 +1,17 @@
+# Princípio E4: ausência é resultado esperado e faz parte da interface. Pega `.get()` encadeado logo
+# depois de uma chamada que devolve Optional (findById, findBy..., findFirst, findAny, max, min, reduce,
+# Optional.of/ofNullable). Use orElseThrow com o erro do domínio, orElse ou map. Copie para
+# docs/regras-de-codigo/ast-grep/; sem marcador a trocar (acrescente à regex os métodos do projeto que
+# devolvem Optional). Limite: sem tipo, o ast-grep não sabe que `x.get()` é Optional, então o Optional
+# guardado em variável escapa. Nenhum checador gratuito (nem o Error Prone) cobre esse caso. Só Java.
+id: optional-get-direto-java
+language: Java
+message: "E4: Optional.get() sem tratar a ausência. Use orElseThrow(() -> new <ErroDoDominio>(...)), orElse ou map."
+severity: error
+rule:
+  any:
+    - pattern: $R.$M($$$).get()
+    - pattern: $M($$$).get()
+constraints:
+  M:
+    regex: '^(findById|findOne|findFirst|findAny|findBy\w+|max|min|reduce|of|ofNullable)$'

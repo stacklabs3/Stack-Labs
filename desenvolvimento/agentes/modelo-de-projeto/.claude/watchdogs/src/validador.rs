@@ -18,10 +18,20 @@ use std::sync::LazyLock;
 // Expressões usadas por nome declarado ou por linha: compiladas uma vez só.
 static CAMEL_CASE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"([a-z0-9])([A-Z])").expect("regex válida"));
 static SEPARADORES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\s_\-]+").expect("regex válida"));
+// "let mut" é só de Rust; em JS "let mut = 1" continua declarando "mut" (o "mut" opcional volta atrás).
 static DECLARACAO: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\b(?:function|class|const|let|var|def|type|interface|enum|struct|fn|func|record|trait|object)\s+([A-Za-zÀ-ÿ_][A-Za-z0-9_À-ÿ]*)")
+    Regex::new(r"\b(?:function|class|const|let(?:\s+mut)?|var|def|type|interface|enum|struct|fn|func|record|trait|object)\s+([A-Za-zÀ-ÿ_][A-Za-z0-9_À-ÿ]*)")
         .expect("regex válida")
 });
+// Rust tem declarações próprias (static, mod, union, macro_rules!) e "mut" antes do nome. Fica numa
+// regex separada para que "static" não vire declaração em Java e TypeScript ("static void" daria "void").
+static DECLARACAO_RUST: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\b(?:const|let(?:\s+mut)?|static(?:\s+mut)?|fn|struct|enum|union|trait|type|mod|macro_rules!)\s+(?:r#)?([A-Za-zÀ-ÿ_][A-Za-z0-9_À-ÿ]*)")
+        .expect("regex válida")
+});
+// ID de prática da linguagem, fora dos 22 princípios: TS (TypeScript), JV (Java), RS (Rust).
+static PRATICA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(?:TS|JV|RS)\d+$").expect("regex válida"));
+static ID_DE_REGRA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\bR\d+\b").expect("regex válida"));
 
 pub const PRINCIPIOS: [&str; 22] = [
     "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "S", "O", "L", "I", "D",
@@ -169,12 +179,19 @@ fn ler_texto(raiz: &Path, caminho_relativo: &str) -> String {
 }
 
 // ---------- cobertura: os 22 princípios decididos no .md e ligados às regras do .json ----------
+// Regra de prática da linguagem (TS<n>, JV<n>, RS<n>) fica fora dos 22: mora numa tabela de práticas
+// no mesmo formato (| RS1 | adotado | R12 |) e só a prática que tem regra no .json é exigida.
 
 pub struct LinhaDeCobertura {
     pub decisao: String,
     pub onde_ou_porque: String,
 }
 
+pub fn eh_pratica(principio: &str) -> bool {
+    PRATICA.is_match(principio)
+}
+
+// Linhas de tabela cuja primeira célula é um dos 22 princípios ou uma prática da linguagem.
 pub fn ler_tabela_de_cobertura(texto_md: &str) -> Vec<(String, LinhaDeCobertura)> {
     let mut linhas_da_tabela: Vec<(String, LinhaDeCobertura)> = Vec::new();
     for linha in texto_md.lines() {
@@ -183,7 +200,7 @@ pub fn ler_tabela_de_cobertura(texto_md: &str) -> Vec<(String, LinhaDeCobertura)
             continue;
         }
         let celulas: Vec<&str> = partes[1..partes.len() - 1].iter().map(|celula| celula.trim()).collect();
-        if !PRINCIPIOS.contains(&celulas[0]) {
+        if !PRINCIPIOS.contains(&celulas[0]) && !eh_pratica(celulas[0]) {
             continue;
         }
         let nova_linha = LinhaDeCobertura {
@@ -204,23 +221,42 @@ pub struct Regra {
     pub verificacao: Map<String, Value>,
 }
 
+// Confere os IDs de regra citados numa linha decidida: existem no .json e nascem daquele princípio.
+fn conferir_citacoes<'a>(principio: &str, linha: &'a LinhaDeCobertura, regras: &[Regra], violacoes: &mut Vec<Violacao>) -> Vec<&'a str> {
+    let ids_na_linha: Vec<&str> = ID_DE_REGRA.find_iter(&linha.onde_ou_porque).map(|encontrado| encontrado.as_str()).collect();
+    for id_citado in &ids_na_linha {
+        match regras.iter().find(|regra| regra.id == *id_citado) {
+            None => violacoes.push(Violacao::so_mensagem(format!(
+                "{principio} cita {id_citado}, que não está em regras-de-codigo.json"
+            ))),
+            Some(regra_citada) if regra_citada.principio != principio => violacoes.push(Violacao::so_mensagem(format!(
+                "{id_citado} nasce de {} no .json, mas a tabela a cita em {principio}",
+                regra_citada.principio
+            ))),
+            Some(_) => {}
+        }
+    }
+    ids_na_linha
+}
+
+fn decisao_invalida(principio: &str, linha: &LinhaDeCobertura) -> Option<Violacao> {
+    (!DECISOES.contains(&linha.decisao.as_str()))
+        .then(|| Violacao::so_mensagem(format!("{principio}: decisão \"{}\" não é uma de: {}", linha.decisao, DECISOES.join(", "))))
+}
+
 pub fn checar_cobertura(texto_md: &str, regras: &[Regra]) -> Vec<Violacao> {
     let mut violacoes = Vec::new();
     let tabela = ler_tabela_de_cobertura(texto_md);
-    let ids_das_regras: HashSet<&str> = regras.iter().map(|regra| regra.id.as_str()).collect();
-    let mut regras_citadas: HashSet<String> = HashSet::new();
-    let id_de_regra = Regex::new(r"\bR\d+\b").expect("regex válida");
+    // Citação na linha de um dos 22 não vale para regra de prática, e vice-versa.
+    let mut citadas_nos_22: HashSet<String> = HashSet::new();
+    let mut citadas_nas_praticas: HashSet<String> = HashSet::new();
     for principio in PRINCIPIOS {
         let Some((_, linha)) = tabela.iter().find(|(nome, _)| nome == principio) else {
             violacoes.push(Violacao::so_mensagem(format!("{principio} sem linha na tabela de cobertura")));
             continue;
         };
-        if !DECISOES.contains(&linha.decisao.as_str()) {
-            violacoes.push(Violacao::so_mensagem(format!(
-                "{principio}: decisão \"{}\" não é uma de: {}",
-                linha.decisao,
-                DECISOES.join(", ")
-            )));
+        if let Some(violacao) = decisao_invalida(principio, linha) {
+            violacoes.push(violacao);
             continue;
         }
         if linha.decisao == "afastado" {
@@ -229,29 +265,34 @@ pub fn checar_cobertura(texto_md: &str, regras: &[Regra]) -> Vec<Violacao> {
             }
             continue;
         }
-        let ids_na_linha: Vec<&str> = id_de_regra.find_iter(&linha.onde_ou_porque).map(|encontrado| encontrado.as_str()).collect();
+        let ids_na_linha = conferir_citacoes(principio, linha, regras, &mut violacoes);
         if ids_na_linha.is_empty() {
             violacoes.push(Violacao::so_mensagem(format!(
                 "{principio} {} sem regra (R<n>) na coluna \"Onde\"",
                 linha.decisao
             )));
         }
-        for id_citado in ids_na_linha {
-            regras_citadas.insert(id_citado.to_string());
-            if !ids_das_regras.contains(id_citado) {
-                violacoes.push(Violacao::so_mensagem(format!(
-                    "{principio} cita {id_citado}, que não está em regras-de-codigo.json"
-                )));
-            } else if let Some(regra_citada) = regras.iter().find(|regra| regra.id == id_citado).filter(|regra| regra.principio != principio) {
-                violacoes.push(Violacao::so_mensagem(format!(
-                    "{id_citado} nasce de {} no .json, mas a tabela a cita em {principio}",
-                    regra_citada.principio
-                )));
-            }
+        citadas_nos_22.extend(ids_na_linha.into_iter().map(String::from));
+    }
+    for (pratica, linha) in tabela.iter().filter(|(nome, _)| eh_pratica(nome)) {
+        if let Some(violacao) = decisao_invalida(pratica, linha) {
+            violacoes.push(violacao);
+            continue;
+        }
+        if linha.decisao != "afastado" {
+            let ids_na_linha = conferir_citacoes(pratica, linha, regras, &mut violacoes);
+            citadas_nas_praticas.extend(ids_na_linha.into_iter().map(String::from));
         }
     }
     for regra in regras {
-        if !regras_citadas.contains(&regra.id) {
+        if eh_pratica(&regra.principio) {
+            if !citadas_nas_praticas.contains(&regra.id) {
+                violacoes.push(Violacao::so_mensagem(format!(
+                    "{} nasce da prática {} e nenhuma linha da tabela de práticas a cita",
+                    regra.id, regra.principio
+                )));
+            }
+        } else if !citadas_nos_22.contains(&regra.id) {
             violacoes.push(Violacao::so_mensagem(format!(
                 "{} está no .json e nenhuma linha da tabela de cobertura a cita",
                 regra.id
@@ -369,6 +410,423 @@ fn ultimas_linhas(texto: &str, quantidade: usize) -> String {
     linhas[linhas.len().saturating_sub(quantidade)..].join("\n")
 }
 
+// "{dir_de_teste}": o primeiro segmento "src/main/" da pasta vira "src/test/".
+fn pasta_de_teste(pasta: &str) -> String {
+    let com_barra = format!("{pasta}/");
+    let inicio = com_barra
+        .match_indices("src/main/")
+        .map(|(posicao, _)| posicao)
+        .find(|posicao| *posicao == 0 || com_barra[..*posicao].ends_with('/'));
+    match inicio {
+        Some(posicao) => format!("{}src/test/{}", &com_barra[..posicao], &com_barra[posicao + "src/main/".len()..])
+            .trim_end_matches('/')
+            .to_string(),
+        None => pasta.to_string(),
+    }
+}
+
+// ---------- lint-cobre: a regra delegada está ligada, não só escrita, na configuração ----------
+
+// Resultado de uma regra num arquivo de configuração. A ordem é a de prioridade: entre vários
+// arquivos, vale o maior (Coberta em qualquer um basta).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+enum Cobertura {
+    Ausente,
+    Comentada,
+    // O nível ou valor que a deixa sem bloquear: "allow", "warn", "off", false, severity "ignore"...
+    Desligada(String),
+    Ilegivel(String),
+    Coberta,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Comentarios {
+    // # fora de string
+    Toml,
+    // <!-- -->
+    Xml,
+    // // e /* */ fora de string
+    Json,
+    // // e /* */ fora de string, e # no começo da linha ou depois de espaço
+    Generico,
+}
+
+// Separa o texto em (código, comentários). Cada parte tem uma letra por letra do original (o que é da
+// outra vira espaço) e as quebras de linha ficam nas duas, para as linhas continuarem batendo.
+fn separar_comentarios(texto: &str, estilo: Comentarios) -> (String, String) {
+    let letras: Vec<char> = texto.chars().collect();
+    let (mut codigo, mut comentarios) = (String::with_capacity(texto.len()), String::with_capacity(texto.len()));
+    let comeca = |indice: usize, marca: &str| {
+        marca
+            .chars()
+            .enumerate()
+            .all(|(deslocamento, letra)| letras.get(indice + deslocamento) == Some(&letra))
+    };
+    let aspas_do_estilo: &[char] = match estilo {
+        Comentarios::Toml => &['"', '\''],
+        Comentarios::Xml => &[],
+        Comentarios::Json => &['"'],
+        Comentarios::Generico => &['"', '\'', '`'],
+    };
+    let mut aspa_aberta: Option<char> = None;
+    let mut indice = 0;
+    while indice < letras.len() {
+        let letra = letras[indice];
+        if let Some(aspa) = aspa_aberta {
+            codigo.push(letra);
+            comentarios.push(if letra == '\n' { '\n' } else { ' ' });
+            if letra == '\\' && aspa != '\'' && indice + 1 < letras.len() {
+                indice += 1;
+                codigo.push(letras[indice]);
+                comentarios.push(if letras[indice] == '\n' { '\n' } else { ' ' });
+            } else if letra == aspa || (letra == '\n' && aspa != '`') {
+                aspa_aberta = None;
+            }
+            indice += 1;
+            continue;
+        }
+        if aspas_do_estilo.contains(&letra) {
+            aspa_aberta = Some(letra);
+            codigo.push(letra);
+            comentarios.push(' ');
+            indice += 1;
+            continue;
+        }
+        let depois_de_espaco = indice == 0 || letras[indice - 1].is_whitespace();
+        let fim_do_comentario: Option<(usize, &str)> = match estilo {
+            Comentarios::Xml if comeca(indice, "<!--") => Some((4, "-->")),
+            Comentarios::Json | Comentarios::Generico if comeca(indice, "/*") => Some((2, "*/")),
+            Comentarios::Json | Comentarios::Generico if comeca(indice, "//") => Some((2, "\n")),
+            Comentarios::Toml if letra == '#' => Some((1, "\n")),
+            Comentarios::Generico if letra == '#' && depois_de_espaco => Some((1, "\n")),
+            _ => None,
+        };
+        let Some((tamanho_da_abertura, fecho)) = fim_do_comentario else {
+            codigo.push(letra);
+            comentarios.push(if letra == '\n' { '\n' } else { ' ' });
+            indice += 1;
+            continue;
+        };
+        // O comentário vai até o fecho (a quebra de linha fica fora dele, nas duas partes).
+        let mut fim = indice + tamanho_da_abertura;
+        while fim < letras.len() && !comeca(fim, fecho) {
+            fim += 1;
+        }
+        if fecho != "\n" {
+            fim = (fim + fecho.chars().count()).min(letras.len());
+        }
+        for &letra_do_comentario in &letras[indice..fim] {
+            codigo.push(if letra_do_comentario == '\n' { '\n' } else { ' ' });
+            comentarios.push(letra_do_comentario);
+        }
+        indice = fim;
+    }
+    (codigo, comentarios)
+}
+
+fn letra_de_identificador(letra: char) -> bool {
+    letra.is_alphanumeric() || matches!(letra, '_' | '-' | '$' | '@' | '/')
+}
+
+// Posições (em bytes) onde o nome aparece inteiro: sem letra de identificador colada antes ou depois.
+// Assim "panic" não casa com "panic_in_result_fn" nem "max-depth" com "max-depth-x".
+fn ocorrencias_inteiras(texto: &str, nome: &str) -> Vec<usize> {
+    ocorrencias_com_fronteira(texto, nome, letra_de_identificador)
+}
+
+fn ocorrencias_com_fronteira(texto: &str, nome: &str, letra_de_identificador: fn(char) -> bool) -> Vec<usize> {
+    if nome.is_empty() {
+        return Vec::new();
+    }
+    texto
+        .match_indices(nome)
+        .map(|(posicao, _)| posicao)
+        .filter(|posicao| {
+            let antes = texto[..*posicao].chars().next_back();
+            let depois = texto[posicao + nome.len()..].chars().next();
+            !antes.is_some_and(letra_de_identificador) && !depois.is_some_and(letra_de_identificador)
+        })
+        .collect()
+}
+
+// Só escolhe a mensagem (as duas reprovam), então aceita o nome no fim de um caminho comentado
+// (<!-- <rule ref=".../GodClass"/> -->).
+fn comentada_ou_ausente(comentarios: &str, nome: &str) -> Cobertura {
+    let letra_de_nome = |letra: char| letra.is_alphanumeric() || matches!(letra, '_' | '-' | '$');
+    if ocorrencias_com_fronteira(comentarios, nome, letra_de_nome).is_empty() {
+        Cobertura::Ausente
+    } else {
+        Cobertura::Comentada
+    }
+}
+
+// Escolhe a leitura pela extensão do arquivo de configuração.
+fn cobertura_de_lint(caminho: &str, texto: &str, nome: &str) -> Cobertura {
+    let nome_do_arquivo = Path::new(caminho)
+        .file_name()
+        .map(|nome| nome.to_string_lossy().to_lowercase())
+        .unwrap_or_default();
+    let extensao = Path::new(caminho)
+        .extension()
+        .map(|extensao| extensao.to_string_lossy().to_lowercase())
+        .unwrap_or_default();
+    match extensao.as_str() {
+        "toml" => cobertura_toml(texto, nome, nome_do_arquivo.ends_with("clippy.toml")),
+        "xml" => cobertura_xml(texto, nome),
+        "json" | "jsonc" => cobertura_json(texto, nome),
+        _ => cobertura_generica(texto, nome),
+    }
+}
+
+// Cargo.toml e clippy.toml: a regra está em [lints.<grupo>] ou [workspace.lints.<grupo>] com nível
+// "deny" ou "forbid" (texto ou { level = ..., priority = ... }). "clippy::x" procura só em
+// [lints.clippy]; "x" em qualquer grupo. No clippy.toml, uma chave de primeiro nível (limite como
+// too-many-lines-threshold) conta se não for false.
+fn cobertura_toml(texto: &str, nome: &str, eh_clippy_toml: bool) -> Cobertura {
+    let (_, comentarios) = separar_comentarios(texto, Comentarios::Toml);
+    let tabela: toml::Table = match texto.parse() {
+        Ok(tabela) => tabela,
+        Err(erro_toml) => return Cobertura::Ilegivel(format!("não é TOML válido ({})", erro_toml.message())),
+    };
+    let (grupo_pedido, chave) = match nome.split_once("::") {
+        Some((grupo, chave)) => (Some(grupo), chave),
+        None => (None, nome),
+    };
+    let mut melhor = Cobertura::Ausente;
+    let tabelas_de_lints = [tabela.get("lints"), tabela.get("workspace").and_then(|workspace| workspace.get("lints"))];
+    for lints in tabelas_de_lints.into_iter().flatten().filter_map(toml::Value::as_table) {
+        for (grupo, regras_do_grupo) in lints {
+            if grupo_pedido.is_some_and(|pedido| pedido != grupo) {
+                continue;
+            }
+            let Some(valor) = regras_do_grupo.as_table().and_then(|regras| regras.get(chave)) else {
+                continue;
+            };
+            let nivel = match valor {
+                toml::Value::String(nivel) => nivel.as_str(),
+                toml::Value::Table(detalhe) => detalhe.get("level").and_then(toml::Value::as_str).unwrap_or(""),
+                _ => "",
+            };
+            let cobertura = if nivel == "deny" || nivel == "forbid" {
+                Cobertura::Coberta
+            } else {
+                Cobertura::Desligada(format!("\"{nivel}\""))
+            };
+            melhor = melhor.max(cobertura);
+        }
+    }
+    if eh_clippy_toml {
+        if let Some(valor) = tabela.get(nome) {
+            melhor = melhor.max(if valor.as_bool() == Some(false) {
+                Cobertura::Desligada("false".into())
+            } else {
+                Cobertura::Coberta
+            });
+        }
+    }
+    if melhor == Cobertura::Ausente {
+        return comentada_ou_ausente(&comentarios, chave);
+    }
+    melhor
+}
+
+static MODULO_OU_PROPRIEDADE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<(/?)(module|property)\b([^>]*?)(/?)>").expect("regex válida"));
+static ATRIBUTO_NAME: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"\bname\s*=\s*"([^"]*)""#).expect("regex válida"));
+static ATRIBUTO_VALUE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"\bvalue\s*=\s*"([^"]*)""#).expect("regex válida"));
+static REGRA_DO_PMD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"<rule\b[^>]*\bref\s*=\s*"([^"]*)""#).expect("regex válida"));
+static EXCLUSAO_DO_PMD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"<exclude\b[^>]*\bname\s*=\s*"([^"]*)""#).expect("regex válida"));
+static FLAG_DO_ERROR_PRONE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"-Xep:([A-Za-z0-9_]+)(?::([A-Za-z]+))?").expect("regex válida"));
+
+fn atributo(regex_do_atributo: &Regex, atributos: &str) -> String {
+    regex_do_atributo.captures(atributos).map(|achado| achado[1].to_string()).unwrap_or_default()
+}
+
+// Checkstyle, PMD e pom.xml com Error Prone, sem os comentários <!-- -->:
+// - Checkstyle: <module name="X"> (ou XCheck, ou o nome qualificado) sem severity "ignore" dentro dele;
+// - PMD: <rule ref=".../X"/>, desde que nenhum <exclude name="X"/> a tire;
+// - Error Prone: -Xep:X:ERROR (warning não quebra o build). O nome pode vir como "-Xep:X:ERROR" ou "X:ERROR".
+// Outro XML: o nome inteiro fora de comentário.
+fn cobertura_xml(texto: &str, nome: &str) -> Cobertura {
+    let (codigo, comentarios) = separar_comentarios(texto, Comentarios::Xml);
+    let sem_prefixo = nome.strip_prefix("-Xep:").unwrap_or(nome);
+    let base = [":ERROR", ":WARN", ":OFF"]
+        .iter()
+        .find_map(|nivel| sem_prefixo.strip_suffix(nivel))
+        .unwrap_or(sem_prefixo);
+    let (eh_checkstyle, eh_pmd, eh_error_prone) = (codigo.contains("<module"), codigo.contains("<rule"), codigo.contains("-Xep:"));
+    if !(eh_checkstyle || eh_pmd || eh_error_prone) {
+        return if ocorrencias_inteiras(&codigo, nome).is_empty() {
+            comentada_ou_ausente(&comentarios, nome)
+        } else {
+            Cobertura::Coberta
+        };
+    }
+    let mut melhor = Cobertura::Ausente;
+    if eh_checkstyle {
+        let casa_o_modulo = |nome_do_modulo: &str| {
+            let curto = nome_do_modulo.rsplit('.').next().unwrap_or(nome_do_modulo);
+            curto == base || curto.strip_suffix("Check") == Some(base)
+        };
+        // Pilha dos <module> abertos: Some(severidade ignorada?) quando é o módulo procurado.
+        let mut pilha: Vec<Option<bool>> = Vec::new();
+        for etiqueta in MODULO_OU_PROPRIEDADE.captures_iter(&codigo) {
+            let (fecha, tipo, atributos, auto_fecha) = (&etiqueta[1] == "/", &etiqueta[2], &etiqueta[3], &etiqueta[4] == "/");
+            match (tipo, fecha) {
+                ("module", false) => {
+                    let alvo = casa_o_modulo(&atributo(&ATRIBUTO_NAME, atributos));
+                    if auto_fecha {
+                        if alvo {
+                            melhor = melhor.max(Cobertura::Coberta);
+                        }
+                    } else {
+                        pilha.push(alvo.then_some(false));
+                    }
+                }
+                ("module", true) => {
+                    if let Some(Some(ignorada)) = pilha.pop() {
+                        melhor = melhor.max(if ignorada {
+                            Cobertura::Desligada("severity \"ignore\"".into())
+                        } else {
+                            Cobertura::Coberta
+                        });
+                    }
+                }
+                ("property", false) => {
+                    if let Some(Some(ignorada)) = pilha.last_mut() {
+                        if atributo(&ATRIBUTO_NAME, atributos) == "severity" && atributo(&ATRIBUTO_VALUE, atributos) == "ignore" {
+                            *ignorada = true;
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    if eh_pmd {
+        let excluida = EXCLUSAO_DO_PMD.captures_iter(&codigo).any(|exclusao| &exclusao[1] == base);
+        let referida = REGRA_DO_PMD
+            .captures_iter(&codigo)
+            .any(|regra| &regra[1] == base || regra[1].ends_with(&format!("/{base}")));
+        if excluida {
+            melhor = melhor.max(Cobertura::Desligada("<exclude>".into()));
+        } else if referida {
+            melhor = melhor.max(Cobertura::Coberta);
+        }
+    }
+    if eh_error_prone {
+        for flag in FLAG_DO_ERROR_PRONE.captures_iter(&codigo).filter(|flag| &flag[1] == base) {
+            melhor = melhor.max(match flag.get(2).map(|nivel| nivel.as_str()) {
+                Some("ERROR") => Cobertura::Coberta,
+                Some(nivel) => Cobertura::Desligada(format!("-Xep:{base}:{nivel}")),
+                None => Cobertura::Desligada(format!("-Xep:{base} sem :ERROR")),
+            });
+        }
+    }
+    if melhor == Cobertura::Ausente {
+        return comentada_ou_ausente(&comentarios, base);
+    }
+    melhor
+}
+
+// tsconfig.json, .eslintrc.json: sem comentários nem vírgula sobrando, a regra ou flag é uma chave
+// (em qualquer nível) cujo valor não é false, "off", 0 nem uma lista que começa por eles.
+fn cobertura_json(texto: &str, nome: &str) -> Cobertura {
+    let (codigo, comentarios) = separar_comentarios(texto, Comentarios::Json);
+    let sem_virgula_sobrando = tirar_virgulas_sobrando(&codigo);
+    let valor: Value = match serde_json::from_str(&sem_virgula_sobrando) {
+        Ok(valor) => valor,
+        Err(erro_json) => return Cobertura::Ilegivel(format!("não é JSON válido ({erro_json})")),
+    };
+    let mut achados = Vec::new();
+    juntar_valores_da_chave(&valor, nome, &mut achados);
+    let desliga = |valor: &Value| matches!(valor, Value::Bool(false)) || valor.as_str() == Some("off") || valor.as_f64() == Some(0.0);
+    let mut melhor = Cobertura::Ausente;
+    for achado in achados {
+        let primeiro = achado.as_array().and_then(|lista| lista.first()).unwrap_or(achado);
+        melhor = melhor.max(if desliga(primeiro) {
+            Cobertura::Desligada(primeiro.to_string())
+        } else {
+            Cobertura::Coberta
+        });
+    }
+    if melhor == Cobertura::Ausente {
+        return comentada_ou_ausente(&comentarios, nome);
+    }
+    melhor
+}
+
+fn juntar_valores_da_chave<'a>(valor: &'a Value, chave: &str, achados: &mut Vec<&'a Value>) {
+    match valor {
+        Value::Object(objeto) => {
+            for (nome, filho) in objeto {
+                if nome == chave {
+                    achados.push(filho);
+                }
+                juntar_valores_da_chave(filho, chave, achados);
+            }
+        }
+        Value::Array(lista) => lista.iter().for_each(|filho| juntar_valores_da_chave(filho, chave, achados)),
+        _ => {}
+    }
+}
+
+// JSONC aceita vírgula antes de } e ]; o serde_json não. Fora de string, ela some.
+fn tirar_virgulas_sobrando(codigo: &str) -> String {
+    let letras: Vec<char> = codigo.chars().collect();
+    let mut resultado = String::with_capacity(codigo.len());
+    let mut dentro_de_string = false;
+    let mut indice = 0;
+    while indice < letras.len() {
+        let letra = letras[indice];
+        if dentro_de_string {
+            if letra == '\\' && indice + 1 < letras.len() {
+                resultado.push(letra);
+                indice += 1;
+                resultado.push(letras[indice]);
+                indice += 1;
+                continue;
+            }
+            dentro_de_string = letra != '"';
+        } else if letra == '"' {
+            dentro_de_string = true;
+        } else if letra == ','
+            && letras[indice + 1..]
+                .iter()
+                .find(|seguinte| !seguinte.is_whitespace())
+                .is_some_and(|seguinte| matches!(seguinte, '}' | ']'))
+        {
+            indice += 1;
+            continue;
+        }
+        resultado.push(letra);
+        indice += 1;
+    }
+    resultado
+}
+
+// Valor desligado logo depois do nome, na mesma linha: "max-depth": "off", unwrap_used = "allow", x: false.
+static VALOR_DESLIGADO: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"^["'`]?\s*[:=,]?\s*\[?\s*("off"|'off'|"allow"|'allow'|false\b|0\b)"#).expect("regex válida"));
+
+// Outros arquivos (eslint.config.js, build.gradle): o nome inteiro fora de comentário (//, /* */, #),
+// sem um valor desligado logo depois dele na mesma linha. É compatibilidade: para o ESLint, o que
+// prova a regra ligada é o comando com eslint --print-config.
+fn cobertura_generica(texto: &str, nome: &str) -> Cobertura {
+    let (codigo, comentarios) = separar_comentarios(texto, Comentarios::Generico);
+    let mut melhor = Cobertura::Ausente;
+    for posicao in ocorrencias_inteiras(&codigo, nome) {
+        let resto_da_linha = codigo[posicao + nome.len()..].split('\n').next().unwrap_or("");
+        melhor = melhor.max(match VALOR_DESLIGADO.captures(resto_da_linha) {
+            Some(desligado) => Cobertura::Desligada(desligado[1].to_string()),
+            None => Cobertura::Coberta,
+        });
+    }
+    if melhor == Cobertura::Ausente {
+        return comentada_ou_ausente(&comentarios, nome);
+    }
+    melhor
+}
+
 pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mut Contexto) -> Result<Vec<Violacao>, ErroDeConfiguracao> {
     let raiz = contexto.raiz.clone();
     Ok(match tipo {
@@ -397,8 +855,9 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
                     .map(|nome| nome.to_string_lossy().to_string())
                     .unwrap_or_default();
                 let mut nomes: Vec<(String, Option<u64>)> = vec![(nome_do_arquivo, None)];
+                let declaracao: &Regex = if caminho_relativo.ends_with(".rs") { &DECLARACAO_RUST } else { &DECLARACAO };
                 for (indice, texto_da_linha) in ler_texto(&raiz, &caminho_relativo).split('\n').enumerate() {
-                    for declarado in DECLARACAO.captures_iter(texto_da_linha) {
+                    for declarado in declaracao.captures_iter(texto_da_linha) {
                         nomes.push((declarado[1].to_string(), Some(indice as u64 + 1)));
                     }
                 }
@@ -425,7 +884,8 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
         }
 
         // L: toda port tem um teste de contrato. "{dir}" e "{nome}" vêm do arquivo da port; arquivos de
-        // teste na pasta das ports não contam como port.
+        // teste na pasta das ports não contam como port. "{dir_de_teste}" é o "{dir}" com o primeiro
+        // "src/main/" trocado por "src/test/" (layout Maven/Gradle); sem "src/main/", fica igual ao "{dir}".
         "teste-de-contrato-por-port" => {
             exigir(parametros, &["ports", "contrato"], tipo)?;
             let padroes_das_ports = lista_de_texto(&parametros["ports"]);
@@ -447,14 +907,18 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
                         .filter(|pasta| !pasta.is_empty())
                         .unwrap_or_else(|| ".".into());
                     let nome_da_port = caminho.file_stem().map(|nome| nome.to_string_lossy().to_string()).unwrap_or_default();
-                    let caminho_do_contrato = modelo_do_contrato.replace("{dir}", &pasta).replace("{nome}", &nome_da_port);
+                    let caminho_do_contrato = modelo_do_contrato
+                        .replace("{dir_de_teste}", &pasta_de_teste(&pasta))
+                        .replace("{dir}", &pasta)
+                        .replace("{nome}", &nome_da_port);
                     (!raiz.join(&caminho_do_contrato).exists())
                         .then(|| Violacao::em(caminho_da_port, None, format!("port sem teste de contrato em {caminho_do_contrato}")))
                 })
                 .collect()
         }
 
-        // "garantido pelo lint": a configuração do lint tem as regras que o projeto delegou a ele.
+        // "garantido pelo lint": a configuração do lint liga as regras que o projeto delegou a ele.
+        // Falha fechado: regra desligada, comentada ou só parecida com outra não conta (veja cobertura_de_lint).
         "lint-cobre" => {
             exigir(parametros, &["config", "regras"], tipo)?;
             let caminhos_de_config = lista_de_texto(&parametros["config"]);
@@ -465,12 +929,28 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
                     caminhos_de_config.join(", ")
                 ))]);
             }
-            let texto_das_configs = existentes.iter().map(|caminho| ler_texto(&raiz, caminho)).collect::<Vec<_>>().join("\n");
-            lista_de_texto(&parametros["regras"])
-                .into_iter()
-                .filter(|nome_da_regra| !texto_das_configs.contains(nome_da_regra.as_str()))
-                .map(|nome_da_regra| Violacao::em(existentes[0], None, format!("a regra de lint \"{nome_da_regra}\" não está configurada")))
-                .collect()
+            let configs: Vec<(&String, String)> = existentes.iter().map(|caminho| (*caminho, ler_texto(&raiz, caminho))).collect();
+            let mut violacoes = Vec::new();
+            for nome_da_regra in lista_de_texto(&parametros["regras"]) {
+                // Coberta em qualquer arquivo basta; senão, vale o motivo mais informativo entre eles.
+                let mut melhor = (Cobertura::Ausente, existentes[0]);
+                for (caminho, texto) in &configs {
+                    let cobertura = cobertura_de_lint(caminho, texto, &nome_da_regra);
+                    if cobertura > melhor.0 {
+                        melhor = (cobertura, *caminho);
+                    }
+                }
+                let (cobertura, arquivo) = melhor;
+                let motivo = match cobertura {
+                    Cobertura::Coberta => continue,
+                    Cobertura::Ausente => "não está configurada".to_string(),
+                    Cobertura::Comentada => "só aparece comentada".to_string(),
+                    Cobertura::Desligada(nivel) => format!("está configurada como {nivel}, que não bloqueia"),
+                    Cobertura::Ilegivel(erro_de_leitura) => format!("não foi conferida: {erro_de_leitura}"),
+                };
+                violacoes.push(Violacao::em(arquivo, None, format!("a regra de lint \"{nome_da_regra}\" {motivo}")));
+            }
+            violacoes
         }
 
         // E6: TODO e FIXME só com a issue que vai resolvê-los.
@@ -585,7 +1065,7 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
                 let saida = match saida {
                     Err(_) => {
                         violacoes.push(Violacao::so_mensagem(format!(
-                            "ast-grep não encontrado ({binario}); instale-o no CI: npm i -g @ast-grep/cli ou cargo install ast-grep"
+                            "ast-grep não encontrado ({binario}); instale-o no CI: npm i -g @ast-grep/cli@0.51.0 ou cargo install ast-grep --version 0.51.0 --locked"
                         )));
                         continue;
                     }
@@ -678,10 +1158,11 @@ pub fn ler_regras(config: &Value) -> Result<Vec<Regra>, ErroDeConfiguracao> {
             ));
         }
         let principio = regra["principio"].as_str().unwrap_or("");
-        if !PRINCIPIOS.contains(&principio) {
+        if !PRINCIPIOS.contains(&principio) && !eh_pratica(principio) {
             return erro(format!(
-                "{id}: princípio \"{}\" não existe",
-                if regra["principio"].is_null() { "undefined" } else { principio }
+                "{id}: princípio \"{}\" não existe (use um dos 22 princípios, {}, ou uma prática da linguagem: TS<n>, JV<n> ou RS<n>)",
+                if regra["principio"].is_null() { "undefined" } else { principio },
+                PRINCIPIOS.join(", ")
             ));
         }
         let tipo = regra["verificacao"]["tipo"].as_str().unwrap_or("");

@@ -20,6 +20,10 @@ Cada um vira uma pergunta sobre o seu projeto, e você decide se ele é **adotad
   Por exemplo: "Quando o cupom está vencido, o sistema devolve uma resposta 'cupom vencido' que a
   tela trata, ou lança um erro? Recomendo a resposta, pelo princípio E4: a tela fica obrigada a
   tratar o caso."
+- **Práticas da linguagem:** para TypeScript, Java e Rust, cada princípio já vem com a regra de
+  ferramenta que o confere naquela linguagem, e cada linguagem traz práticas só dela (em Rust, por
+  exemplo, não usar `unsafe`). Você decide cada uma no ticket de lint; elas ficam fora da conta dos 22
+  ([ADR 0012](../adr/0012-praticas-da-linguagem.md)).
 - **No fim**, você aprova o `docs/regras-de-codigo.md`, com os 22 princípios na tabela de cobertura.
 
 ## O que vale depois

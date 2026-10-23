@@ -1,0 +1,29 @@
+// tsconfig de REFERÊNCIA para TypeScript 6.0.3 (ver eslint.config.js: o typescript-eslint 8.72.0 não
+// aceita o 7). Adoção por etapas: o projeto copia só as flags que o grilling decidiu. O `lint-cobre`
+// confere a presença da flag; o `comando` `npx tsc --noEmit -p tsconfig.json` confere que o código
+// obedece. Cada flag traz o princípio que concretiza.
+{
+  "compilerOptions": {
+    "target": "es2024",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noEmit": true,
+    "jsx": "react-jsx", // só frontend React; projeto Node apaga
+    "skipLibCheck": true,
+
+    "strict": true, // E3, E4: null/undefined e any implícito viram erro; o erro do catch é unknown
+    "noUncheckedIndexedAccess": true, // E3: lista[0] e mapa[chave] podem faltar
+    "exactOptionalPropertyTypes": true, // E3: "ausente" e "presente com undefined" são estados diferentes
+    "noPropertyAccessFromIndexSignature": true, // E3: o ponto significa "campo declarado"
+    "noImplicitReturns": true, // E4: caminho esquecido não vira undefined silencioso
+    "noFallthroughCasesInSwitch": true, // E2
+    "noImplicitOverride": true, // L: a subclasse acompanha o contrato da base
+    "noUnusedLocals": true, // E6, P7
+    "noUnusedParameters": true, // E6, P7
+    "allowUnreachableCode": false, // E6
+    "erasableSyntaxOnly": true, // TS1: sem enum, namespace com código e parameter properties
+    "isolatedModules": true, // TS2: cada arquivo transpila sozinho
+    "verbatimModuleSyntax": true // TS2, P8: import só de tipo é `import type`
+  },
+  "include": ["src"]
+}

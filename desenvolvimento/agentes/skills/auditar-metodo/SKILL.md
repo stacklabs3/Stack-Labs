@@ -35,6 +35,9 @@ caminho).
   `docs/agents/principios-de-codigo.md`, cada um adotado, adaptado ou afastado com o porquê, e cada regra cita o princípio de onde nasceu. Cada ticket de grupo do mapa
   fechou com uma linha de decisão por princípio. Projeto anterior à ADR 0008 sem cobertura: ⚠️ e o
   ticket que a completa.
+- Em projeto TypeScript, Java ou Rust, `docs/regras-de-codigo.md` tem a tabela *Práticas da
+  linguagem* com cada prática do arquivo da linguagem (`docs/agents/principios-de-codigo/<linguagem>.md`)
+  adotada ou afastada. Projeto anterior à ADR 0012 sem a tabela: ⚠️ e o ticket que a completa.
 - `sh .claude/watchdogs/rodar validar` (o repositório inteiro) termina em `VALIDADOR: APROVADO` e roda no CI do projeto.
   Projeto anterior à ADR 0010 sem `docs/regras-de-codigo.json`: ⚠️ e o ticket que o escreve.
 

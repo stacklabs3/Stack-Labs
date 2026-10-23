@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<!--
+  Ruleset de REFERÊNCIA do PMD 7.28.0 para Java (21+). Adoção por etapas: o projeto copia para
+  config/pmd.xml só as regras que o grilling de Regras de código decidiu, não o arquivo inteiro.
+  Cada regra traz o princípio que concretiza (E1-E8, P1-P9, S O L I D, JV1-JV6).
+
+  Maven (pom.xml), com o PMD fixado:
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-pmd-plugin</artifactId><version>3.28.0</version>
+      <configuration><rulesets><ruleset>config/pmd.xml</ruleset></rulesets><printFailingErrors>true</printFailingErrors>
+        <failurePriority>5</failurePriority><includeTests>true</includeTests></configuration>
+      <dependencies>
+        <dependency><groupId>net.sourceforge.pmd</groupId><artifactId>pmd-java</artifactId><version>7.28.0</version></dependency>
+        <dependency><groupId>net.sourceforge.pmd</groupId><artifactId>pmd-core</artifactId><version>7.28.0</version></dependency>
+      </dependencies>
+    </plugin>
+  Comando: mvn -B -q compile pmd:check (failurePriority 5: toda prioridade reprova)
+  Gradle: plugin `pmd`, toolVersion = '7.28.0', ruleSets = [], ruleSetFiles = files('config/pmd.xml');
+  comando: gradle pmdMain
+
+  No PMD 7.28, AvoidCatchingGenericException mudou para a categoria errorprone (a de design está
+  obsoleta) e passou a cobrir Throwable (AvoidCatchingThrowable está marcada para remoção). O `lint-cobre` procura o nome da regra no texto; regra comentada também "aparece".
+-->
+<ruleset name="regras-de-codigo" xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>Regras delegadas ao PMD pelo docs/regras-de-codigo.json</description>
+
+  <!-- E2: poucos parâmetros, aninhamento raso, leitura simples. -->
+  <rule ref="category/java/design.xml/ExcessiveParameterList"> <!-- E2 -->
+    <properties><property name="minimum" value="4"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts"> <!-- E2 -->
+    <properties><property name="problemDepth" value="3"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml/CognitiveComplexity"/> <!-- E2 -->
+
+  <!-- E4: erro nunca é engolido; causa encadeada; exceção da abstração certa. -->
+  <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/> <!-- E4 -->
+  <rule ref="category/java/errorprone.xml/AvoidCatchingGenericException"/> <!-- E4: Exception, RuntimeException e Throwable -->
+  <rule ref="category/java/bestpractices.xml/PreserveStackTrace"/> <!-- E4 -->
+  <rule ref="category/java/design.xml/AvoidThrowingRawExceptionTypes"/> <!-- E4 -->
+  <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace"/> <!-- E4 -->
+  <rule ref="category/java/errorprone.xml/ReturnEmptyCollectionRatherThanNull"/> <!-- E4: ausência é resultado -->
+
+  <!-- E5: dado não se muta por fora. -->
+  <rule ref="category/java/design.xml/ImmutableField"/> <!-- E5 -->
+  <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters"/> <!-- E5 -->
+  <rule ref="category/java/design.xml/MutableStaticState"/> <!-- E5 -->
+
+  <!-- E6 e P7: código morto sai. -->
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/> <!-- E6, P7 -->
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/> <!-- E6, P7 -->
+  <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/> <!-- E6, P7 -->
+  <rule ref="category/java/bestpractices.xml/UnusedAssignment"/> <!-- E6, P7 -->
+
+  <!-- E8: literal com significado tem nome. -->
+  <rule ref="category/java/errorprone.xml/AvoidLiteralsInIfCondition"/> <!-- E8 -->
+
+  <!-- P2: referir-se ao objeto pela interface. -->
+  <rule ref="category/java/bestpractices.xml/LooseCoupling"/> <!-- P2 -->
+
+  <!-- P8: saída pelo logger do projeto. -->
+  <rule ref="category/java/bestpractices.xml/SystemPrintln"/> <!-- P8, E4 -->
+
+  <!-- S, opcional: sinais de classe que faz coisa demais; o julgamento é do revisor.
+  <rule ref="category/java/design.xml/GodClass"/>
+  <rule ref="category/java/design.xml/TooManyMethods"/>
+  -->
+
+  <!-- JV1: recurso se fecha em todo caminho. -->
+  <rule ref="category/java/errorprone.xml/CloseResource"/> <!-- JV1 -->
+  <rule ref="category/java/bestpractices.xml/UseTryWithResources"/> <!-- JV1 -->
+
+  <!-- JV2: contratos de Object. -->
+  <rule ref="category/java/errorprone.xml/OverrideBothEqualsAndHashcode"/> <!-- JV2 -->
+
+  <!-- JV4: segredo e IV não vêm no código. -->
+  <rule ref="category/java/security.xml/HardCodedCryptoKey"/> <!-- JV4 -->
+  <rule ref="category/java/security.xml/InsecureCryptoIv"/> <!-- JV4 -->
+
+  <!-- JV5: construtor não chama método sobrescrevível. -->
+  <rule ref="category/java/errorprone.xml/ConstructorCallsOverridableMethod"/> <!-- JV5 -->
+
+  <!-- JV6: objeto se compara com equals. -->
+  <rule ref="category/java/errorprone.xml/CompareObjectsWithEquals"/> <!-- JV6 -->
+</ruleset>

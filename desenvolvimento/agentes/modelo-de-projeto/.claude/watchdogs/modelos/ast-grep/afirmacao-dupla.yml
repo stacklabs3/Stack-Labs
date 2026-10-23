@@ -1,0 +1,25 @@
+# Princípio E3: o tipo do domínio se constrói válido, na borda. `x as unknown as T` (e `as any as T`,
+# `<T><unknown>x`) desliga o compilador e fabrica o tipo sem validar; nenhuma regra dos presets do
+# typescript-eslint pega a forma dupla (o Google TypeScript Style Guide exige razão explícita). Copie
+# para docs/regras-de-codigo/ast-grep/; sem marcador a trocar. Se o projeto aceita a forma em teste,
+# acrescente `ignores: ["**/*.test.ts"]`. Só TypeScript e Tsx (o documento Tsx não tem `<T>x`, que
+# em TSX é JSX); JavaScript não tem afirmação de tipo.
+id: afirmacao-dupla
+language: TypeScript
+message: "E3: afirmação de tipo dupla fabrica o tipo sem validar. Converta na borda com a função que valida."
+severity: error
+rule:
+  any:
+    - pattern: $X as unknown as $T
+    - pattern: $X as any as $T
+    - pattern: <$T><unknown>$X
+
+---
+id: afirmacao-dupla-tsx
+language: Tsx
+message: "E3: afirmação de tipo dupla fabrica o tipo sem validar. Converta na borda com a função que valida."
+severity: error
+rule:
+  any:
+    - pattern: $X as unknown as $T
+    - pattern: $X as any as $T

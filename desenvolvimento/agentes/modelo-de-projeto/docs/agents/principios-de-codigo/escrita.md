@@ -24,7 +24,7 @@ const pedidosEmPreparo = pedidos.filter((pedido) => pedido.status === StatusPedi
 **No diff:** nome de uma letra fora de laço curto, sinônimo de termo do glossário, `data`, `info`,
 `manager`, `helper`, `utils` como nome de módulo.
 
-**No validador:** `termo-evitado`; a convenção de caixa (camelCase, snake_case) pelo `lint-cobre`.
+**No validador:** `termo-evitado`; a convenção de caixa pelo `lint-cobre` (as regras da linguagem estão no arquivo dela).
 
 ### E2. Função curta, num só nível de abstração, com saída cedo
 
@@ -53,7 +53,7 @@ function confirmarPedido(pedido: Pedido, condicoes: CondicoesDeVenda): PedidoCon
 **No diff:** três ou mais níveis de aninhamento, função que mistura regra de negócio com SQL ou HTML,
 lista longa de parâmetros soltos.
 
-**No validador:** `lint-cobre` (no ESLint: `max-depth`, `max-params`, `max-lines-per-function`).
+**No validador:** `lint-cobre` com os limites de aninhamento, parâmetros e tamanho (as regras da linguagem estão no arquivo dela).
 
 ### E3. Conceito do domínio tem tipo próprio; valide na borda, uma vez
 
@@ -77,7 +77,7 @@ function aplicarDesconto(valor: Dinheiro, desconto: Percentual): Dinheiro {}
 **No diff:** a mesma checagem em dois lugares, `string` passando por três funções até virar algo,
 `any` ou `unknown` atravessando a borda.
 
-**No validador:** `lint-cobre` (no TypeScript: `@typescript-eslint/no-explicit-any`); o tipo próprio na borda fica com o revisor.
+**No validador:** `lint-cobre` e o typecheck contra o tipo genérico (`any`, `Object`, `serde_json::Value`; as regras da linguagem estão no arquivo dela); o tipo próprio na borda fica com o revisor.
 
 ### E4. Erro nunca é engolido; erro esperado é parte da interface
 
@@ -89,7 +89,9 @@ Separe dois tipos de erro:
   está fora (status HTTP, mensagem na tela).
 
 `catch` vazio, `catch` que só loga e segue, e erro genérico sem contexto são proibidos. A mensagem
-diz o que falhou e com qual dado (sem dado pessoal sensível).
+diz o que falhou e com qual dado (sem dado pessoal sensível). O aviso do compilador e do lint também
+é erro: calar o verificador (`@ts-ignore`, `eslint-disable`, `@SuppressWarnings`, `#[allow]`) só com
+o porquê escrito ao lado.
 
 **Por quê:** erro engolido vira dado corrompido descoberto semanas depois, longe da causa.
 
@@ -104,9 +106,9 @@ if (cobranca.tipo === "recusada") return avisarClienteDaRecusa(pedido, cobranca.
 **No grilling:** Nesta stack, o erro que o negócio prevê (cupom vencido) volta como resultado ou como exceção com tipo próprio? Quem registra o erro inesperado, e com o quê?
 
 **No diff:** `catch` sem relançar nem tratar, `throw new Error("erro")`, erro de domínio como
-`string` comparada por texto.
+`string` comparada por texto, verificador calado sem o porquê.
 
-**No validador:** `ast-grep` com o modelo `catch-vazio.yml`.
+**No validador:** `ast-grep` com o modelo `catch-vazio.yml`; promessa e `Result` descartados e verificador calado pelo `lint-cobre` (as regras da linguagem estão no arquivo dela).
 
 ### E5. Comando ou consulta, e imutável por padrão
 
@@ -129,7 +131,7 @@ function calcularTotal(carrinho: Carrinho): Dinheiro { return somar(carrinho.ite
 **No diff:** `get`/`calcular`/`buscar` que grava, parâmetro recebido e alterado por dentro,
 `let` que nunca é reatribuído.
 
-**No validador:** `lint-cobre` (no ESLint: `prefer-const`, `no-param-reassign`).
+**No validador:** `lint-cobre` (as regras da linguagem estão no arquivo dela).
 
 ### E6. Comentário explica o porquê; o resto se apaga
 
@@ -184,7 +186,7 @@ cinco lugares quando o cliente mudar a regra.
 **No diff:** literal numérico que não é 0, 1 ou -1 numa regra de negócio; status comparado como
 texto solto.
 
-**No validador:** `lint-cobre` (no ESLint: `no-magic-numbers`).
+**No validador:** `lint-cobre` (as regras da linguagem estão no arquivo dela; em Rust, só o revisor).
 
 ## Fontes
 

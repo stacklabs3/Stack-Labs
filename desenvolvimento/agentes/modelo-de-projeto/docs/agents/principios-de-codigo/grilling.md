@@ -5,19 +5,27 @@ princípios de cada um, estão em [mapas-iniciais/regras-de-codigo.md](../mapas-
 
 ## Num ticket de grupo
 
-1. **Leia o arquivo do grupo** e, em projeto com código, o resultado do ticket *Atrito do código
-   existente*. Pronto quando cada princípio do grupo tem a sua pergunta-guia **No grilling** e, se
-   houver, o atrito que o quebra.
+1. **Leia o arquivo do grupo**, o arquivo da linguagem do projeto (TypeScript, Java ou Rust, em
+   [principios-de-codigo.md](../principios-de-codigo.md)) e, em projeto com código, o resultado do
+   ticket *Atrito do código existente*. Pronto quando cada princípio do grupo tem a sua pergunta-guia
+   **No grilling**, a linha da linguagem e, se houver, o atrito que o quebra.
 2. **Monte a rodada.** Cada pergunta-guia vira uma pergunta do projeto, no formato da regra 10 da
    constituição, com o atrito como exemplo quando houver. A recomendação é **adotar**, **adaptar**
    (e como) ou **afastar** (e por quê), com a fonte: *Fontes* do arquivo do grupo para o princípio,
-   `docs/research/` para o que depende da stack, as restrições para o que depende do time. Princípio
+   `docs/research/` para o que depende da stack, a linha do arquivo da linguagem para a regra que o
+   confere, as restrições para o que depende do time. Princípio
    que a linha **No validador** confere por máquina leva, na mesma pergunta, o parâmetro que a
    checagem precisa (a pasta do domínio, o formato do commit). Pronto quando todo princípio do grupo
    está numa pergunta numerada.
 3. **Resolva o ticket** com uma linha por princípio (`E3: adaptado, erro esperado como exceção com
    tipo próprio`) e as `## Fontes`. Atrito que o projeto vai corrigir vira ticket novo. Pronto quando
    todo princípio do grupo tem linha.
+
+## No ticket *Lint e formatador*
+
+Além das ferramentas, decida cada prática **só desta linguagem** (a seção do arquivo da linguagem):
+adotada ou afastada, com o porquê. A adotada vira regra com o ID da prática em `Nasce de:`. Pronto
+quando toda prática da linguagem do projeto tem decisão.
 
 ## No ticket *Escrever docs/regras-de-codigo.md*
 
@@ -53,4 +61,14 @@ Exemplo: <trecho do próprio projeto>
 | E2 | garantido pelo lint | <regra do lint> |
 | E6 | afastado | <o porquê, da restrição ou da pesquisa> |
 | ... uma linha para cada um dos 22 (E1 a E8, P1 a P9, S, O, L, I, D) |
+
+## Práticas da linguagem
+
+| Prática | Decisão | Onde ou por quê |
+|---|---|---|
+| RS2 | adotado | R12 |
+| RS5 | afastado | <o porquê> |
 ```
+
+Regra que nasce de prática leva o ID dela (`TS<n>`, `JV<n>`, `RS<n>`) em `principio` no `.json`; a
+`cobertura` confere que a tabela de práticas a cita.

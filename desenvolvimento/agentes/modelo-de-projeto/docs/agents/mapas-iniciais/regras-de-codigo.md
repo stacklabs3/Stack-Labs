@@ -45,5 +45,5 @@ Os de grupo são obrigatórios; um grupo que não cabe numa sessão vira mais de
 | *Tipos, erros e validação* | grilling | E3, E4, E5 ([escrita](../principios-de-codigo/escrita.md)) | `/domain-modeling` |
 | *Desenho de módulos e SOLID* | grilling | P1 a P4 ([padrões](../principios-de-codigo/padroes.md)), S, O, L, I, D ([SOLID](../principios-de-codigo/solid.md)) | `/codebase-design` |
 | *Testes e fluxo de trabalho* | grilling | P5 a P9 ([padrões](../principios-de-codigo/padroes.md)) | `/tdd` |
-| *Opções de lint, formatador e typecheck* → *Lint e formatador* | pesquisa → grilling | os que a ferramenta garante sozinha | `/research` |
+| *Opções de lint, formatador e typecheck* → *Lint e formatador* | pesquisa → grilling | os que a ferramenta garante sozinha; as práticas só da linguagem (TS, JV, RS) | `/research` |
 | *Escrever docs/regras-de-codigo.md e .json*: junta as decisões nos modelos; fecha o mapa com `--so-cobertura` aprovado | tarefa | os 22 na cobertura | |

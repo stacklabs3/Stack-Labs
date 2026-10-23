@@ -1,0 +1,16 @@
+# Princípios P3 e P5: o domínio não lê o relógio nem sorteia; recebe o instante ou o gerador por
+# parâmetro (ou por um trait), e o teste fica determinístico. Pega Instant/SystemTime/Utc/Local/
+# OffsetDateTime/Timestamp/Zoned::now, rand::random/thread_rng/rng e Uuid::new_v4/now_v7. Copie para
+# docs/regras-de-codigo/ast-grep/ e troque <PASTA_DO_DOMINIO> (ex.: src/dominio). Alternativa por
+# lint, no crate inteiro: clippy::disallowed_methods (modelos/lint/clippy.toml). Só Rust; em TS o
+# equivalente é efeito-global-no-dominio.yml.
+id: relogio-e-acaso-entram
+language: Rust
+message: "P3: o domínio cria a própria dependência (relógio ou acaso). Receba o instante ou o gerador por parâmetro."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: '^(.*::)?((Instant|SystemTime|Utc|Local|OffsetDateTime|Timestamp|Zoned)::now(_utc|_local)?|rand::(random|thread_rng|rng)|Uuid::(new_v4|now_v7))(::<.+>)?$'

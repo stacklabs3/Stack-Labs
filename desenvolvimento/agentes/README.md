@@ -17,11 +17,13 @@ agentes/
 │   │   ├── caminho-ate-ready-for-agent.md   rotas e definição de pronto
 │   │   ├── orquestracao.md            a orquestração de issues
 │   │   ├── adocao.md                  as etapas de adoção num projeto que já existia
-│   │   ├── principios-de-codigo.md    os 22 princípios (ADR 0008); grupos e grilling em principios-de-codigo/
+│   │   ├── principios-de-codigo.md    os 22 princípios (ADR 0008); grupos, grilling e práticas de
+│   │   │                              TypeScript, Java e Rust (ADR 0012) em principios-de-codigo/
 │   │   ├── validador.md               o formato de regras-de-codigo.json, o catálogo e como refinar
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
 │   ├── .claude/                watchdogs/: os hooks do Claude Code, o pre-push e o validador de regras
-│   │                           de código, num crate Rust compilado em cada máquina (ADRs 0010 e 0011);
+│   │                           de código, num crate Rust compilado em cada máquina (ADRs 0010 e 0011),
+│   │                           e os modelos por linguagem em watchdogs/modelos/;
 │   │                           agents/: os papéis da orquestração; githooks/: o pre-push
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
 │   └── .gitignore

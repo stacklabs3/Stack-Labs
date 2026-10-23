@@ -1,0 +1,18 @@
+# Princípio E4: erro esperado é parte da interface (Rust API Guidelines, C-GOOD-ERR). Função pública do
+# domínio devolve um tipo de erro que quem chama consegue casar (enum, com thiserror), não texto
+# (String, &str) nem erro apagado (Box<dyn Error>, anyhow). anyhow e Box<dyn Error> ficam na borda
+# (main, CLI). Copie para docs/regras-de-codigo/ast-grep/ e troque <PASTA_DO_DOMINIO> (ex.:
+# src/dominio). Result<_, ()> o Clippy já pega (result_unit_err, ligado por padrão). Só Rust; em TS o
+# equivalente é erro-generico-no-dominio.yml.
+id: erro-sem-tipo
+language: Rust
+message: "E4: erro esperado sem tipo. Devolva um enum de erro do domínio (thiserror); anyhow e Box<dyn Error> só na borda."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  kind: function_item
+  all:
+    - has: { kind: visibility_modifier }
+    - has:
+        field: return_type
+        regex: '^((std::)?result::)?Result<.+,\s*(String|&(''static\s+)?str|Box<dyn\s+(std::error::)?Error\b.*>|anyhow::Error)\s*>$|^anyhow::Result<'

@@ -32,9 +32,17 @@ P9 e SOLID), em `docs/agents/principios-de-codigo.md`. Guiam o grilling do mapa 
 que adota, adapta ou afasta cada um.
 _Evitar_: Boas práticas, clean code, style guide
 
+**Prática da linguagem**:
+Como um princípio de código aparece numa linguagem da casa (TypeScript, Java, Rust), com a regra de
+máquina que o confere, ou uma prática que só aquela linguagem tem e nenhum dos 22 cobre (`TS<n>`,
+`JV<n>`, `RS<n>`), em `docs/agents/principios-de-codigo/<linguagem>.md`. O grilling decide cada uma
+como regra do projeto, fora da tabela dos 22.
+_Evitar_: Boa prática, style guide, princípio da linguagem
+
 **Validador**:
 O motor do método, no binário Rust de `.claude/watchdogs/`, que confere por máquina as regras de código decididas em
-`docs/regras-de-codigo.json` e a cobertura dos 22 princípios. O projeto refina a configuração; o
+`docs/regras-de-codigo.json` e a cobertura dos 22 princípios e das práticas da linguagem adotadas. O
+projeto refina a configuração; o
 motor é protegido como um watchdog.
 _Evitar_: Linter (quando é o validador), checker
 

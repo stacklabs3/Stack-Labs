@@ -35,6 +35,11 @@ vence preferência · P9 commit conta uma mudança.
 por módulo · O variante nova como adapter, nas seams reais · L adapter cumpre a interface inteira ·
 I quem chama conhece só o que usa · D a regra define a port.
 
+**Ao escrever, revisar ou conduzir o grilling em TypeScript, Java ou Rust**, leia também o arquivo
+da linguagem: como cada princípio aparece nela, a regra que o confere e as práticas só dela.
+[TypeScript](principios-de-codigo/typescript.md) (TS1 a TS5) ·
+[Java](principios-de-codigo/java.md) (JV1 a JV6) · [Rust](principios-de-codigo/rust.md) (RS1 a RS6).
+
 **Ao conduzir um ticket do mapa de Regras de código**, leia
 [principios-de-codigo/grilling.md](principios-de-codigo/grilling.md): os tickets por grupo, como
 cada rodada anda e o modelo de `docs/regras-de-codigo.md`.

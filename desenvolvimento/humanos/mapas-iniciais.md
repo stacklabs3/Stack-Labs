@@ -78,6 +78,8 @@ digita? O que se testa e o que se mocka? Qual lint e qual formatador?
 **Como anda:** depois da Arquitetura. O grilling roda em torno dos
 [princípios de código](principios-de-codigo.md) da casa: primeiro as restrições, depois um ticket
 por grupo de princípios, e cada princípio sai adotado, adaptado ou deixado de fora, com o porquê.
+No ticket de lint, você decide também as práticas só da linguagem do projeto (TypeScript, Java ou
+Rust).
 
 **Fecha quando:** `docs/regras-de-codigo.md` está escrito, com os 22 princípios decididos na tabela
 de cobertura, e você aprovou. **Bloqueia a implementação.** Regra nova ou mudada depois passa por
