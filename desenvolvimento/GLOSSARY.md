@@ -115,15 +115,29 @@ A única fatia vertical em que uma sessão de agente pode editar código de prod
 `node .claude/hooks/ativar-issue.mjs <n>`.
 
 **Sessão**:
-Uma janela de contexto de um agente, do início ao `/handoff`. Uma sessão resolve um ticket de decisão
-ou implementa uma issue.
+Uma janela de contexto de um agente, do kickoff ao `/nova-sessao` que abre a próxima. Uma sessão
+resolve um ticket de decisão, implementa uma issue ou conduz uma fase.
 _Evitar_: Chat, conversa
 
 **Smart zone**:
-A faixa da janela de contexto em que o agente ainda raciocina bem. Passou dela, a próxima ação é o `/handoff`.
+A faixa da janela de contexto em que o agente ainda raciocina bem. Passou dela, a próxima ação é o `/nova-sessao`.
+
+**Kickoff**:
+A mensagem autossuficiente de copiar e colar que o `/nova-sessao` gera para abrir a próxima janela:
+pré-voo com as premissas a conferir, skills a invocar, decisões já tomadas e critério de aceite.
+_Evitar_: Resumo, prompt de continuação
 
 **Handoff**:
-O documento que passa o trabalho de uma sessão para a próxima, gerado pelo `/handoff`.
+O documento que passa o trabalho de uma sessão para a próxima sem humano no meio: o do `/handoff` do
+Matt ou o que a sessão do loop de issues escreve na smart zone. Com humano, o padrão é o kickoff.
+
+**Sessão principal**:
+A sessão onde o trabalho em curso acontece e cujo contexto se protege.
+
+**Sessão lateral**:
+Uma sessão aberta à parte para discutir ou explorar algo fora do foco da sessão principal, sem gastar
+nem corromper o contexto dela. Termina no `/voltar-a-principal`, que leva à principal só o aprendido.
+_Evitar_: Sessão paralela (que soa como trabalho simultâneo), subagente
 
 **Watchdog**:
 Um hook do Claude Code, um hook do git ou um check de CI que transforma uma regra do método em

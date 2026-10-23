@@ -75,8 +75,14 @@ ideia grande demais para uma sessão
     resolução do ticket, depois do `/auditar-prototipo`.
 
 ### 6. Higiene de contexto
-12. Do grilling até o `/to-tickets`, uma janela só: nada de `/compact` nem `/clear` no meio da fase.
-13. **[W]** **Smart zone:** passou do limite, a próxima ação é o `/handoff` e o trabalho segue numa sessão nova.
+12. **Uma janela por fase.** Do grilling até o `/to-tickets`, uma janela só: nada de `/compact` nem
+    `/clear` no meio da fase. Trabalho novo, fase nova ou continuação começa numa **janela nova**,
+    aberta com o kickoff que o `/nova-sessao` gera no fim da janela anterior. Assunto paralelo (uma
+    dúvida lateral, uma exploração fora do foco) vai para uma **sessão lateral**, nunca para a
+    principal; ao fim dela, o `/voltar-a-principal` devolve à sessão principal só o que ela aprendeu.
+13. **[W]** **Smart zone:** passou do limite, a próxima ação é o `/nova-sessao`, e o trabalho segue
+    numa janela nova com o kickoff. (O `/handoff` do Matt é a alternativa quando não há humano para
+    colar a mensagem; o loop de issues faz o próprio handoff.)
 14. **[W]** **Uma issue por sessão de `/implement`.**
 
 ### 7. Implementação

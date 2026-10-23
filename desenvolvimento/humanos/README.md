@@ -18,7 +18,7 @@ iniciais, a pesquisa antes de recomendar e a família `*-prototipo`. O projeto d
 | Responde o grilling e decide | Pergunta, recomenda e mostra a fonte |
 | Aprova protótipo por escrito | Constrói, audita e leva a aprovação até você |
 | Revisa e faz merge da PR | Implementa uma issue por sessão, com testes |
-| Abre a sessão nova quando a janela enche | Avisa e gera o `/handoff` |
+| Abre a janela nova e cola o kickoff | Gera o kickoff com o `/nova-sessao` |
 | Muda os watchdogs, se precisar | Nunca mexe neles |
 
 ## A rota
@@ -82,7 +82,13 @@ cada uma numa sessão nova, e entrega PRs para você revisar. Veja [loop-de-issu
 ## Hábitos de sessão
 
 - **Uma janela do grilling até o `/to-tickets`.** Nada de `/compact` ou `/clear` no meio.
-- **Janela cheia, sessão nova.** O watchdog avisa; rode `/handoff` e continue numa sessão nova.
+- **Trabalho novo ou continuação: janela nova.** No fim de uma fase, ou quando o watchdog avisa que
+  a janela encheu, rode **`/nova-sessao`**. Ele confere que nada ficou de fora, escolhe as skills e
+  entrega uma mensagem de kickoff; abra uma janela nova e cole. A mensagem traz um pré-voo: se algo
+  mudou desde que ela foi gerada, a sessão nova para e pergunta.
+- **Assunto paralelo: sessão lateral.** Uma dúvida que foge do foco não entra na sessão principal.
+  Abra outra sessão, discuta lá e rode **`/voltar-a-principal`** para levar à principal só o que
+  você aprendeu. A sessão principal não gasta contexto com o desvio.
 - **Um ticket de decisão por sessão** no wayfinder. Contexto limpo decide melhor.
 - **Use o glossário do projeto.** Se o agente usa outra palavra para a mesma coisa, corrija.
 

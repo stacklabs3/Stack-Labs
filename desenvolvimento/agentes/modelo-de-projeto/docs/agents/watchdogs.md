@@ -8,7 +8,7 @@ máquina) e o `vigia-do-metodo` do GitHub Actions (todos, na PR). O estado de ca
 | Watchdog | Onde | O que garante | Ação |
 |---|---|---|---|
 | `sessao-inicio` | SessionStart | Confere o setup e o pre-push, mostra a branch, a issue ativa, a situação dos **mapas iniciais** e os mapas abertos, e reancora a constituição | Injeta contexto |
-| `vigia-prompt` | UserPromptSubmit | Mede o contexto: avisa em 450k e exige `/handoff` a partir de 550k (constantes em `.claude/hooks/lib/comum.mjs`) | Injeta alerta |
+| `vigia-prompt` | UserPromptSubmit | Mede o contexto: avisa em 450k e exige `/nova-sessao` a partir de 550k (constantes em `.claude/hooks/lib/comum.mjs`) | Injeta alerta |
 | `guarda-edicao` | PreToolUse `Write\|Edit\|NotebookEdit` | Protege os watchdogs, aplica a smart zone e só libera código de produção com issue ativa, fora da `main` | **Bloqueia** |
 | `guarda-bash` | PreToolUse `Bash` | Protege os watchdogs; ativa issue (uma por sessão) só com os **quatro mapas iniciais** criados e Protótipo, Arquitetura e Fases fechados; exige claim antes de comentar ou fechar ticket; exige comentário de resolução **com `## Fontes`** em grilling, tarefa e pesquisa; um ticket de decisão por sessão; nada de commit na `main`, push forçado, `--no-verify` nem `--atualizar-watchdogs` | **Bloqueia** |
 | `vigia-parada` | Stop | O turno não termina sem o ponteiro do ticket resolvido em *Decisions so far* | **Bloqueia o fim do turno** |

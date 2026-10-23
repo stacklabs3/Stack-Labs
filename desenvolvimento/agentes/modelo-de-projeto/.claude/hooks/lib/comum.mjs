@@ -5,7 +5,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, openSync, readSync, fstatSync, closeSync } from "node:fs";
 import { join, relative, resolve, isAbsolute } from "node:path";
 
-// Smart zone calibrada para modelos de contexto longo: acima disso, hora de /handoff.
+// Smart zone calibrada para modelos de contexto longo: acima disso, hora de /nova-sessao.
 export const LIMITE_AVISO_CONTEXTO = 450_000;
 export const LIMITE_DURO_CONTEXTO = 550_000;
 
