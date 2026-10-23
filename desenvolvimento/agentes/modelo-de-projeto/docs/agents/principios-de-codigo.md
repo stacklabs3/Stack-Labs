@@ -9,7 +9,8 @@ o **guia do grilling do mapa de Regras de código** e, depois, a régua de julga
 - **`docs/regras-de-codigo.md` vence.** Princípio **adotado** ou **adaptado** no mapa vira regra
   dura lá, com exemplo do projeto e o ID de onde nasceu (`Nasce de: E3`).
 - **Princípio afastado** fica fora da régua e do revisor: o projeto decidiu, com o porquê registrado.
-  O **E1** é a exceção: é regra 20 da constituição, e o projeto o adapta, mas não o afasta.
+  O **E1** e o **P5** são a exceção: são as regras 20 e 15 da constituição, e o projeto os adapta,
+  mas não os afasta.
 - **Onde nenhuma regra alcança o trecho**, o princípio é julgamento, como os *smells* do
   `/code-review`: o revisor aponta pelo ID e só reprova com o dano concreto nesta issue.
 - O que o lint garante é da ferramenta.
@@ -28,9 +29,9 @@ engolido, erro esperado na interface · E5 comando ou consulta, imutável por pa
 diz o porquê · E7 duplicação de conhecimento se remove · E8 valor com significado tem nome.
 
 **[Padrões](principios-de-codigo/padroes.md)**: P1 módulo profundo · P2 seam só onde algo varia ·
-P3 dependência entra, domínio sem infraestrutura · P4 o que muda junto fica junto · P5 teste pela
-interface · P6 vermelho, verde, refatorar · P7 nada para requisito que não existe · P8 consistência
-vence preferência · P9 commit conta uma mudança.
+P3 dependência entra, domínio sem infraestrutura · P4 o que muda junto fica junto · P5 teste cobre
+um risco, pela interface · P6 vermelho, verde, refatorar · P7 nada para requisito que não existe ·
+P8 consistência vence preferência · P9 commit conta uma mudança.
 
 **[SOLID](principios-de-codigo/solid.md)**, lido com o vocabulário do `/codebase-design`: S um ator
 por módulo · O variante nova como adapter, nas seams reais · L adapter cumpre a interface inteira ·

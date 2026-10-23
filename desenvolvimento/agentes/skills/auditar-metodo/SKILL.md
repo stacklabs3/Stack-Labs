@@ -32,12 +32,15 @@ caminho).
 - `docs/regras-de-codigo.md` existe, cada regra tem o porquê e um exemplo, e o mapa de Regras de
   código aponta para ele. Amostra de 3 PRs mergeadas: o diff segue as regras.
 - `docs/regras-de-codigo.md` tem a tabela de cobertura com os 22 princípios de
-  `docs/agents/principios-de-codigo.md`, cada um adotado, adaptado ou afastado com o porquê (o E1 nunca afastado), e cada regra cita o princípio de onde nasceu. Cada ticket de grupo do mapa
+  `docs/agents/principios-de-codigo.md`, cada um adotado, adaptado ou afastado com o porquê (o E1 e o P5 nunca afastados), e cada regra cita o princípio de onde nasceu. Cada ticket de grupo do mapa
   fechou com uma linha de decisão por princípio. Projeto anterior à ADR 0008 sem cobertura: ⚠️ e o
   ticket que a completa.
 - Em projeto TypeScript, Java ou Rust, `docs/regras-de-codigo.md` tem a tabela *Práticas da
   linguagem* com cada prática do arquivo da linguagem (`docs/agents/principios-de-codigo/<linguagem>.md`)
   adotada ou afastada. Projeto anterior à ADR 0012 sem a tabela: ⚠️ e o ticket que a completa.
+- `docs/riscos.md` existe, cada risco tem origem com a aprovação do humano, e o P5 da tabela de
+  cobertura cita a regra com `teste-cobre-risco`. Amostra de 3 PRs mergeadas: cada teste novo exercita
+  o risco que cita. Projeto anterior à ADR 0014 sem o registro: ⚠️ e o ticket que o escreve.
 - `sh .claude/watchdogs/rodar validar` (o repositório inteiro) termina em `VALIDADOR: APROVADO` e roda no CI do projeto.
   Projeto anterior à ADR 0010 sem `docs/regras-de-codigo.json`: ⚠️ e o ticket que o escreve.
 

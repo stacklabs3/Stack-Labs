@@ -1,0 +1,52 @@
+# Princípio P5 (regra 15 da constituição): a suíte inteira roda sempre. `.skip`, `.todo`, `xit`,
+# #[ignore] e @Disabled tiram o teste sem que o CI acuse; `.only` e `fit` fazem o resto da suíte sumir
+# (o "Ignored Test" do tsDetect). O risco sem teste fica visível no registro, como `pendente #<issue>`.
+# Copie para docs/regras-de-codigo/ast-grep/ e aponte `arquivos` para os testes; apague os documentos
+# das linguagens que o projeto não usa. Sem marcador a trocar.
+id: teste-desligado
+language: TypeScript
+message: "P5: teste desligado ou focado tira testes da suíte sem ninguém ver. Conserte ou apague; risco que ainda não tem teste fica pendente em docs/riscos.md."
+severity: error
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: '^((it|test|describe|suite|context)\.(skip|only|todo)|xit|xtest|xdescribe|fit|fdescribe)$'
+---
+id: teste-desligado-tsx
+language: Tsx
+message: "P5: teste desligado ou focado tira testes da suíte sem ninguém ver. Conserte ou apague; risco que ainda não tem teste fica pendente em docs/riscos.md."
+severity: error
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: '^((it|test|describe|suite|context)\.(skip|only|todo)|xit|xtest|xdescribe|fit|fdescribe)$'
+---
+id: teste-desligado-js
+language: JavaScript
+message: "P5: teste desligado ou focado tira testes da suíte sem ninguém ver. Conserte ou apague; risco que ainda não tem teste fica pendente em docs/riscos.md."
+severity: error
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: '^((it|test|describe|suite|context)\.(skip|only|todo)|xit|xtest|xdescribe|fit|fdescribe)$'
+---
+id: teste-desligado-rust
+language: Rust
+message: "P5: teste desligado ou focado tira testes da suíte sem ninguém ver. Conserte ou apague; risco que ainda não tem teste fica pendente em docs/riscos.md."
+severity: error
+rule:
+  kind: attribute_item
+  regex: '^#\[ignore\b'
+
+---
+id: teste-desligado-java
+language: Java
+message: "P5: teste desligado ou focado tira testes da suíte sem ninguém ver. Conserte ou apague; risco que ainda não tem teste fica pendente em docs/riscos.md."
+severity: error
+rule:
+  any:
+    - { kind: marker_annotation, regex: '^@(Disabled\w*|Ignore)$' }
+    - { kind: annotation, regex: '^@(Disabled\w*|Ignore)\b' }

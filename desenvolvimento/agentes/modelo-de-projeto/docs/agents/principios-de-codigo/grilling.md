@@ -11,7 +11,7 @@ princípios de cada um, estão em [mapas-iniciais/regras-de-codigo.md](../mapas-
    **No grilling**, a linha da linguagem e, se houver, o atrito que o quebra.
 2. **Monte a rodada.** Cada pergunta-guia vira uma pergunta do projeto, no formato da regra 10 da
    constituição, com o atrito como exemplo quando houver. A recomendação é **adotar**, **adaptar**
-   (e como) ou **afastar** (e por quê; o E1 nunca se afasta), com a fonte: *Fontes* do arquivo do grupo para o princípio,
+   (e como) ou **afastar** (e por quê; o E1 e o P5 nunca se afastam), com a fonte: *Fontes* do arquivo do grupo para o princípio,
    `docs/research/` para o que depende da stack, a linha do arquivo da linguagem para a regra que o
    confere, as restrições para o que depende do time. Princípio
    que a linha **No validador** confere por máquina leva, na mesma pergunta, o parâmetro que a
@@ -27,12 +27,26 @@ Além das ferramentas, decida cada prática **só desta linguagem** (a seção d
 adotada ou afastada, com o porquê. A adotada vira regra com o ID da prática em `Nasce de:`. Pronto
 quando toda prática da linguagem do projeto tem decisão.
 
+## No ticket *Riscos que os testes cobrem*
+
+1. **Levante os candidatos** nas fontes que já existem: as decisões do mapa de Arquitetura, o
+   protótipo aprovado, o `GLOSSARY.md` e, em projeto com código, os bugs fechados e o resultado do
+   *Atrito do código existente*. Encaixe cada um numa classe de [riscos.md](../riscos.md), com o dano
+   concreto. Pronto quando cada classe tem candidato ou o motivo de não ter.
+2. **Monte a rodada** no formato da regra 10: cada candidato vira uma pergunta ("Cobrar duas vezes o
+   mesmo pedido é risco que o teste cobre?"), com o exemplo do projeto e a recomendação. Use o
+   `/human-architect-mindset` para o que é caro de errar e o `/domain-modeling` para o nome de cada
+   risco na língua do glossário. Pronto quando todo candidato está numa pergunta numerada.
+3. **Escreva `docs/riscos.md`** só com os aprovados, a origem apontando este ticket e a situação
+   `pendente #<n>` até a fatia que os cobre. Pronto quando o humano aprovou o registro.
+
 ## No ticket *Escrever docs/regras-de-codigo.md*
 
 Junte as decisões no modelo abaixo e escreva `docs/regras-de-codigo.json` a partir de
 `.claude/watchdogs/modelos/regras-de-codigo.json`, uma entrada por regra, como manda
-[validador.md](../validador.md). Pronto quando `sh .claude/watchdogs/rodar validar --so-cobertura`
-termina em `VALIDADOR: APROVADO` e o humano aprovou o documento.
+[validador.md](../validador.md). O P5 cita a regra com `teste-cobre-risco`, que lê o `docs/riscos.md`
+do ticket de riscos. Pronto quando `sh .claude/watchdogs/rodar validar --so-cobertura` termina em
+`VALIDADOR: APROVADO` e o humano aprovou o documento.
 
 ## Modelo de `docs/regras-de-codigo.md`
 

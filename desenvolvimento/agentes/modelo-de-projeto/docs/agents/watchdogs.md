@@ -18,6 +18,7 @@ instala o Rust (https://rustup.rs). Testes: `cargo test --release --manifest-pat
 | `vigia-skill` | PostToolUse `Skill` | Quando uma skill de grilling carrega, marca o grilling na sessão e injeta a regra de linguagem simples (regra 10) | Injeta contexto |
 | `guarda-edicao` | PreToolUse `Write\|Edit\|NotebookEdit` | Protege os watchdogs, aplica a smart zone e só libera código de produção com issue ativa e fora da `main` (os caminhos livres da regra 3 passam) | **Bloqueia** |
 | `guarda-bash` | PreToolUse `Bash` | Protege os watchdogs; ativa issue (uma por sessão ou por subagente, e uma por comando) só com os **cinco mapas iniciais** criados e Protótipo, Arquitetura, Fases e Regras de código fechados, e nunca um `spec`; exige claim antes de comentar ou fechar ticket; exige comentário de resolução **com `## Fontes`** em grilling, tarefa e pesquisa; um ticket de decisão por sessão; barra commit na `main`, push forçado, `--no-verify`, mudança no `core.hooksPath`, `STACKLABS_PERMITIR_PUSH_MAIN` e `--atualizar-watchdogs` | **Bloqueia** |
+| `vigia-teste` | PostToolUse `Write\|Edit\|MultiEdit` | No teste que acabou de ser editado, roda as regras do P5 de `docs/regras-de-codigo.json`: teste sem `RK<n>` ou com risco fora do registro, sem afirmação, com afirmação trivial, desligado ou focado ([riscos.md](riscos.md)). Projeto sem `docs/regras-de-codigo.json` passa; na etapa de observação, só avisa | **Devolve ao agente para corrigir** |
 | `vigia-parada` | Stop | O turno só termina com o ponteiro do ticket resolvido em *Decisions so far* | **Bloqueia o fim do turno** |
 | `orquestrar-issues` | Sessão do orquestrador, com os papéis de `.claude/agents/` | Ciclo e limites da [orquestração](orquestracao.md); nunca faz merge na base | **Devolve a issue / para a rodada** |
 | `validador` | CI do projeto, implementador e revisor | As regras de `docs/regras-de-codigo.json` e a cobertura dos 22 princípios e das práticas da linguagem ([validador.md](validador.md)); o motor é o mesmo binário dos watchdogs, protegido como eles | **Reprova a fatia / o CI** |
@@ -60,3 +61,6 @@ Ao dar com um destes, entregue o comando ao usuário:
 - A regra de fontes confere que a seção e o link existem, não que a fonte sustenta a recomendação.
   Isso é do humano no grilling e do `/auditar-metodo`.
 - Grilling com o humano respondendo e TDD não dão para checar por máquina.
+- O `vigia-teste` e o validador conferem que o teste cita um risco do registro e tem afirmação que
+  não é trivial; não conferem que ele exercita o risco que cita, nem que o esperado não copia o
+  código. Isso é do revisor, e o teste de mutação, quando adotado, mede.

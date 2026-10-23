@@ -17,7 +17,9 @@ diagnosticador. O `AGENTS.md` vale inteiro.
 2. Ative a issue (`sh .claude/watchdogs/rodar ativar-issue <n>`) e confira com `git branch --show-current`
    que está na branch que o orquestrador passou.
 3. Implemente com `/tdd` nas seams que a issue ou o spec combinam, testando pela interface pública,
-   seguindo as regras de código e, onde elas calam, os princípios de código. Num ciclo de correção,
+   seguindo as regras de código e, onde elas calam, os princípios de código. Cada teste cobre um
+   risco de `docs/riscos.md` que a issue toca e o cita (`RK<n>`); teste que você não liga a um risco
+   não se escreve, e risco que falta no registro vira `BLOQUEADO` (`docs/agents/riscos.md`). Num ciclo de correção,
    faça **só** o que o plano pede, item por item.
 4. Rode o typecheck, a suíte completa e, quando `docs/regras-de-codigo.json` existe, o validador
    (`sh .claude/watchdogs/rodar validar --base <branch de integração>`). Pronto quando você viu **os

@@ -86,7 +86,10 @@ ideia grande demais para uma sessão
 14. **[W]** **Uma issue por sessão de `/implement`**; na orquestração, uma issue por subagente implementador.
 
 ### 7. Implementação
-15. Use `/tdd` nas *seams* combinadas na spec. Teste pela interface pública.
+15. **[W]** Use `/tdd` nas *seams* combinadas na spec. Teste pela interface pública. **Todo teste
+    cobre um risco** de `docs/riscos.md` e o cita (`RK<n>`): falha quando o risco acontece, afirma o
+    resultado observável e roda sempre. Risco você propõe, o humano aprova; sem risco, o teste não
+    entra ([docs/agents/riscos.md](docs/agents/riscos.md)). Nenhum projeto afasta esta regra (P5).
 16. Typecheck e testes do arquivo com frequência; a suíte inteira antes do commit. Diga "pronto" só
     depois de ver os testes passarem.
 17. **[W]** **A `main` só recebe merge de PR.** Branches: `issue/<n>-<slug>`, `integracao/<nome>`

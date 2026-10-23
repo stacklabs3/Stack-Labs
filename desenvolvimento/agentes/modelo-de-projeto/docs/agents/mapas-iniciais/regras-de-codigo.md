@@ -2,7 +2,7 @@
 
 Parte dos [mapas iniciais](../mapas-iniciais.md). Label `mapa-inicial:regras-de-codigo`. O grilling
 roda em torno dos [princípios de código](../principios-de-codigo.md): um ticket por grupo, cada
-princípio sai **adotado**, **adaptado** ou **afastado** (o E1 nunca, pela regra 20 da constituição). **Ao conduzir qualquer ticket deste mapa**,
+princípio sai **adotado**, **adaptado** ou **afastado** (o E1 e o P5 nunca, pelas regras 20 e 15 da constituição). **Ao conduzir qualquer ticket deste mapa**,
 leia [principios-de-codigo/grilling.md](../principios-de-codigo/grilling.md): como cada rodada anda
 e o modelo de `docs/regras-de-codigo.md`.
 
@@ -14,7 +14,8 @@ e o modelo de `docs/regras-de-codigo.md`.
 docs/regras-de-codigo.md escrito e aprovado: os 22 princípios de código da casa (E1 a E8, P1 a P9,
 S, O, L, I, D) decididos na tabela de cobertura, as regras que saíram deles com exemplo do próprio
 projeto e o que o lint e o formatador garantem sozinhos. docs/regras-de-codigo.json diz como o
-validador confere cada regra. É a régua do implementador e do revisor.
+validador confere cada regra. docs/riscos.md registra os riscos que os testes cobrem, aprovados pelo
+humano. É a régua do implementador e do revisor.
 
 ## Notes
 
@@ -44,6 +45,7 @@ Os de grupo são obrigatórios; um grupo que não cabe numa sessão vira mais de
 | *Escrita de código* | grilling | E1, E2, E6, E7, E8 ([escrita](../principios-de-codigo/escrita.md)) | `/domain-modeling` |
 | *Tipos, erros e validação* | grilling | E3, E4, E5 ([escrita](../principios-de-codigo/escrita.md)) | `/domain-modeling` |
 | *Desenho de módulos e SOLID* | grilling | P1 a P4 ([padrões](../principios-de-codigo/padroes.md)), S, O, L, I, D ([SOLID](../principios-de-codigo/solid.md)) | `/codebase-design` |
-| *Testes e fluxo de trabalho* | grilling | P5 a P9 ([padrões](../principios-de-codigo/padroes.md)) | `/tdd` |
+| *Riscos que os testes cobrem*: as classes de risco do produto, com exemplo, e o primeiro `docs/riscos.md` ([riscos.md](../riscos.md)) | grilling | P5 | `/human-architect-mindset`, `/domain-modeling` |
+| *Testes e fluxo de trabalho* | grilling | P5 a P9 ([padrões](../principios-de-codigo/padroes.md)); teste de mutação nos módulos de risco alto | `/tdd` |
 | *Opções de lint, formatador e typecheck* → *Lint e formatador* | pesquisa → grilling | os que a ferramenta garante sozinha; as práticas só da linguagem (TS, JV, RS) | `/research` |
 | *Escrever docs/regras-de-codigo.md e .json*: junta as decisões nos modelos; fecha o mapa com `--so-cobertura` aprovado | tarefa | os 22 na cobertura | |

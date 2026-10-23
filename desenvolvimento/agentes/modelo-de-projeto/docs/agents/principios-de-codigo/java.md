@@ -48,6 +48,7 @@ Error Prone exige `-XDaddTypeAnnotationsToSymbol=true`.
 | P3, D | Injeção por construtor, campo `final`; domínio sem Spring, JPA, SQL ou SDK; configuração tipada (`@ConfigurationProperties`) lida na montagem | ast-grep `injecao-por-campo.yml`, `dominio-sem-infra.yml`, `ambiente-so-na-montagem.yml`; ArchUnit (abaixo) |
 | P3 | Saída no terminal e log por uma biblioteca só | ast-grep `saida-padrao.yml` |
 | P4 | Pacote por conceito do domínio, sem ciclo entre fatias | ArchUnit `slices().matching("<base>.(*)..").should().beFreeOfCycles()` ou Spring Modulith `verify()` |
+| P5 (obrigatório) | Todo `@Test` cita o `RK<n>` (no nome, no `@DisplayName` ou na classe); afirma com `assert*` ou `verify`; sem `@Disabled` nem `@Ignore` | `teste-cobre-risco`; ast-grep `teste-sem-afirmacao.yml`, `afirmacao-trivial.yml`, `teste-desligado.yml`; mutação no diff com PIT ([validador.md](../validador.md)) |
 | P5 | Mock só no que não é nosso | ast-grep `dominio-sem-infra.yml` apontado para `src/test/java/**/dominio/**` com `org\.mockito` |
 | P8 | Um formatador; sem import com curinga; uma biblioteca de log e de datas | `mvn spotless:check`; Checkstyle `AvoidStarImport`; ArchUnit `GeneralCodingRules` |
 | O | Variante fechada é `sealed`, e o `switch` sobre ela não tem `default` | `javac` (exaustividade); Error Prone `MissingCasesInEnumSwitch`; nunca Checkstyle `MissingSwitchDefault` junto |

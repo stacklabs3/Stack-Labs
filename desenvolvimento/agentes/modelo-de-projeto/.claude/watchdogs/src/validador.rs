@@ -15,6 +15,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::LazyLock;
 
+use crate::riscos;
+
 // Expressões usadas por nome declarado ou por linha: compiladas uma vez só.
 static CAMEL_CASE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"([a-z0-9])([A-Z])").expect("regex válida"));
 static SEPARADORES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\s_\-]+").expect("regex válida"));
@@ -37,10 +39,13 @@ pub const PRINCIPIOS: [&str; 22] = [
     "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "S", "O", "L", "I", "D",
 ];
 pub const DECISOES: [&str; 4] = ["adotado", "adaptado", "afastado", "garantido pelo lint"];
-// Princípios que a constituição torna regra dura: o projeto adapta, nunca afasta (E1: regra 20).
-pub const OBRIGATORIOS: [&str; 1] = ["E1"];
-pub const TIPOS: [&str; 8] = [
+// Princípios que a constituição torna regra dura: o projeto adapta, nunca afasta (E1: regra 20; P5: regra 15).
+pub const OBRIGATORIOS: [&str; 2] = ["E1", "P5"];
+// Princípio que só conta como decidido se a coluna "Onde" cita uma regra com esta checagem.
+pub const CHECAGEM_EXIGIDA: [(&str, &str); 1] = [("P5", "teste-cobre-risco")];
+pub const TIPOS: [&str; 9] = [
     "termo-evitado",
+    "teste-cobre-risco",
     "teste-de-contrato-por-port",
     "lint-cobre",
     "todo-sem-issue",
@@ -278,6 +283,16 @@ pub fn checar_cobertura(texto_md: &str, regras: &[Regra]) -> Vec<Violacao> {
                 linha.decisao
             )));
         }
+        for (principio_exigente, checagem) in CHECAGEM_EXIGIDA.iter().filter(|(exigente, _)| *exigente == principio) {
+            let tem_a_checagem = regras
+                .iter()
+                .any(|regra| ids_na_linha.contains(&regra.id.as_str()) && regra.verificacao.get("tipo").and_then(Value::as_str) == Some(checagem));
+            if !tem_a_checagem {
+                violacoes.push(Violacao::so_mensagem(format!(
+                    "{principio_exigente} precisa citar uma regra com a checagem {checagem} (regra da constituição)"
+                )));
+            }
+        }
         citadas_nos_22.extend(ids_na_linha.into_iter().map(String::from));
     }
     for (pratica, linha) in tabela.iter().filter(|(nome, _)| eh_pratica(nome)) {
@@ -317,6 +332,8 @@ pub struct Contexto {
     pub avisos: Vec<String>,
     pub arquivos: Vec<String>,
     pub alterados: Option<Vec<String>>,
+    // Falso no hook vigia-teste, que confere só o arquivo editado: risco sem teste é do validador.
+    pub conferir_o_registro_inteiro: bool,
 }
 
 fn lista_de_texto(valor: &Value) -> Vec<String> {
@@ -923,6 +940,88 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
                 .collect()
         }
 
+        // P5: todo teste cita um risco do registro, todo risco citado existe e todo risco que não está
+        // pendente tem teste. O registro e os testes se leem inteiros: risco sem teste aparece mesmo
+        // quando a mudança é em outro lugar.
+        "teste-cobre-risco" => {
+            let caminho_do_registro = parametro_texto(parametros, "riscos").unwrap_or("docs/riscos.md");
+            if !raiz.join(caminho_do_registro).exists() {
+                return Ok(vec![Violacao::so_mensagem(format!(
+                    "registro de riscos {caminho_do_registro} não existe (docs/agents/riscos.md diz como nasce)"
+                ))]);
+            }
+            let declaracao_configurada = match parametro_texto(parametros, "declaracao") {
+                Some(padrao) => Some(
+                    Regex::new(padrao).map_err(|erro_regex| ErroDeConfiguracao(format!("teste-cobre-risco: regex de declaracao inválida: {erro_regex}")))?,
+                ),
+                None => None,
+            };
+            let mut padroes_de_teste = lista_de_texto(parametros.get("testes").unwrap_or(&Value::Null));
+            if padroes_de_teste.is_empty() {
+                padroes_de_teste = riscos::TESTES_PADRAO.iter().map(|padrao| padrao.to_string()).collect();
+            }
+            let mut padroes_ignorados = lista_de_texto(&contexto.projeto["ignorar"]);
+            padroes_ignorados.extend(lista_de_texto(parametros.get("ignorar").unwrap_or(&Value::Null)));
+            let (globs_de_teste, globs_ignorados) = (Globs::de(&padroes_de_teste), Globs::de(&padroes_ignorados));
+            let eh_teste = |caminho: &&String| globs_de_teste.casa(caminho) && !globs_ignorados.casa(caminho);
+
+            let (registro, problemas) = riscos::ler_registro(&ler_texto(&raiz, caminho_do_registro));
+            let mut violacoes: Vec<Violacao> = if contexto.conferir_o_registro_inteiro {
+                problemas
+                    .into_iter()
+                    .map(|problema| Violacao::em(caminho_do_registro, Some(problema.linha), problema.mensagem))
+                    .collect()
+            } else {
+                Vec::new()
+            };
+            let mut citados_em_algum_teste: HashSet<String> = HashSet::new();
+            let lidos: Vec<String> = if contexto.conferir_o_registro_inteiro {
+                contexto.arquivos.iter().filter(eh_teste).cloned().collect()
+            } else {
+                Vec::new()
+            };
+            let universo = contexto.alterados.as_ref().unwrap_or(&contexto.arquivos);
+            let conferidos: HashSet<&String> = universo.iter().filter(eh_teste).collect();
+            for caminho_relativo in lidos.iter().chain(conferidos.iter().copied().filter(|caminho| !lidos.contains(caminho))) {
+                let Some(declaracao) = declaracao_configurada.as_ref().or_else(|| riscos::declaracao_padrao(caminho_relativo)) else {
+                    continue;
+                };
+                for teste in riscos::testes_do_arquivo(&ler_texto(&raiz, caminho_relativo), declaracao) {
+                    citados_em_algum_teste.extend(teste.riscos.iter().cloned());
+                    if !conferidos.contains(caminho_relativo) {
+                        continue;
+                    }
+                    if teste.riscos.is_empty() {
+                        violacoes.push(Violacao::em(
+                            caminho_relativo,
+                            Some(teste.linha),
+                            format!("o teste não cita o risco que cobre (RK<n> de {caminho_do_registro}); sem risco, o teste não entra"),
+                        ));
+                    }
+                    for citado in teste.riscos.iter().filter(|citado| !registro.iter().any(|risco| &risco.id == *citado)) {
+                        violacoes.push(Violacao::em(
+                            caminho_relativo,
+                            Some(teste.linha),
+                            format!("o teste cita {citado}, que não está em {caminho_do_registro}"),
+                        ));
+                    }
+                }
+            }
+            if contexto.conferir_o_registro_inteiro {
+                for risco in registro.iter().filter(|risco| !risco.pendente && !citados_em_algum_teste.contains(&risco.id)) {
+                    violacoes.push(Violacao::em(
+                        caminho_do_registro,
+                        Some(risco.linha),
+                        format!(
+                            "{} não tem teste que o cite; escreva o teste ou marque pendente #<issue que vai cobri-lo>",
+                            risco.id
+                        ),
+                    ));
+                }
+            }
+            violacoes
+        }
+
         // "garantido pelo lint": a configuração do lint liga as regras que o projeto delegou a ele.
         // Falha fechado: regra desligada, comentada ou só parecida com outra não conta (veja cobertura_de_lint).
         "lint-cobre" => {
@@ -1202,6 +1301,7 @@ pub fn validar(raiz: &Path, config: &Value, texto_md: &str, opcoes: &Opcoes) -> 
             listar_arquivos_do_repositorio(raiz)?
         },
         alterados: None,
+        conferir_o_registro_inteiro: true,
     };
     if let (Some(base), false, false) = (opcoes.base, opcoes.completo, opcoes.so_cobertura) {
         contexto.alterados = arquivos_alterados_desde(raiz, base);
@@ -1240,6 +1340,36 @@ pub fn validar(raiz: &Path, config: &Value, texto_md: &str, opcoes: &Opcoes) -> 
         resultados,
         avisos: contexto.avisos,
     })
+}
+
+// Hook vigia-teste: as regras do P5 que leem código de teste (teste-cobre-risco e ast-grep) rodam só no
+// arquivo que o agente acabou de editar. Configuração inválida e ast-grep ausente ficam para o validador.
+pub fn conferir_arquivo_editado(raiz: &Path, config: &Value, caminho_relativo: &str) -> Vec<Violacao> {
+    let Ok(regras) = ler_regras(config) else {
+        return Vec::new();
+    };
+    let mut contexto = Contexto {
+        raiz: raiz.to_path_buf(),
+        projeto: config["projeto"].clone(),
+        base: None,
+        avisos: Vec::new(),
+        arquivos: Vec::new(),
+        alterados: Some(vec![caminho_relativo.to_string()]),
+        conferir_o_registro_inteiro: false,
+    };
+    let mut violacoes = Vec::new();
+    for regra in regras.iter().filter(|regra| regra.principio == "P5") {
+        let tipo = regra.verificacao.get("tipo").and_then(Value::as_str).unwrap_or("");
+        if tipo != "teste-cobre-risco" && tipo != "ast-grep" {
+            continue;
+        }
+        let mut parametros = regra.verificacao.clone();
+        parametros.remove("tipo");
+        if let Ok(achadas) = rodar_checagem(tipo, &parametros, &mut contexto) {
+            violacoes.extend(achadas.into_iter().filter(|violacao| violacao.arquivo.is_some()));
+        }
+    }
+    violacoes
 }
 
 pub fn relatorio_em_json(relatorio: &Relatorio) -> Value {

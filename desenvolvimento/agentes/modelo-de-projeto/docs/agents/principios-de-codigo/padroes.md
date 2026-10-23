@@ -75,22 +75,31 @@ manter, para humano e para agente, que precisa carregar tudo no contexto.
 
 **No validador:** `comando` com o dependency-cruiser em JS/TS e o ArchUnit em Java; em Rust, crate por conceito no workspace; o resto, `revisor`.
 
-### P5. Teste pela interface, com o comportamento como frase
+### P5. Teste cobre um risco, pela interface, com o comportamento como frase
 
-O teste exercita a interface pública do módulo e afirma o que é observável de fora. O nome do teste
-é uma frase do domínio (`"recusa cupom vencido"`). Mock só na seam com o que não é nosso (provedor
-externo, relógio, aleatório); o que é nosso roda de verdade ou com um substituto local (banco em
-memória, por exemplo).
+Todo teste nasce de um **risco** do registro `docs/riscos.md` e o cita (`RK<n>`): o que, se der
+errado, causa dano. Ele exercita a interface pública do módulo, afirma o que é observável de fora e
+falha quando o risco acontece. O esperado vem de um exemplo do risco ou da spec, nunca recalculado
+como o código calcula. O nome do teste é uma frase do domínio (`"recusa cupom vencido"`). Mock só na
+seam com o que não é nosso (provedor externo, relógio, aleatório); o que é nosso roda de verdade ou
+com um substituto local (banco em memória, por exemplo). É regra 15 da constituição: o projeto
+adapta, nunca afasta.
 
-**Por quê:** teste pela interface sobrevive a refatoração. Teste que quebra quando a implementação
-muda e o comportamento não, está testando além da interface e trava o código.
+**Por quê:** teste que não cobre risco é código para manter que não protege nada, e é o teste que um
+agente escreve com mais facilidade: o que passa por construção. Teste pela interface sobrevive a
+refatoração; teste que quebra quando a implementação muda e o comportamento não, trava o código.
+Cobertura de linha não mede isso: ela diz que a linha rodou, não que alguém afirmou algo sobre ela.
 
-**No grilling:** O que se testa com o banco de verdade ou um substituto local, e o que se mocka? Em que idioma e formato vai o nome do teste?
+O que é risco, o formato do registro e como citar: [riscos.md](../riscos.md).
 
-**No diff:** teste que acessa método privado ou estado interno; mock de módulo nosso; teste chamado
-`test1` ou `deve funcionar`.
+**No grilling:** Quais riscos do produto entram no registro agora? O que se testa com o banco de verdade ou um substituto local, e o que se mocka? Os módulos de risco alto ganham teste de mutação no diff? Em que idioma e formato vai o nome do teste?
 
-**No validador:** `ast-grep` com o modelo `dominio-sem-infra.yml` apontado para os testes e para os módulos nossos que não se mockam; o nome do teste fica com o revisor.
+**No diff:** teste sem `RK<n>`, ou que cita o risco e não o exercita; teste sem afirmação, que
+compara um valor com ele mesmo ou que recalcula o esperado como o código; teste desligado ou focado;
+teste de getter, de framework ou do que o compilador garante; teste que acessa método privado ou
+estado interno; mock de módulo nosso; teste chamado `test1` ou `deve funcionar`.
+
+**No validador:** `teste-cobre-risco` (obrigatório); `ast-grep` com os modelos `teste-sem-afirmacao.yml`, `afirmacao-trivial.yml` e `teste-desligado.yml` apontados para os testes, e `dominio-sem-infra.yml` apontado para os testes e para os módulos nossos que não se mockam; teste de mutação no diff pelo `comando`, quando o grilling o adota; o nome do teste e o risco que o teste diz cobrir sem exercitar ficam com o revisor.
 
 ### P6. Vermelho, verde, refatorar; e nunca os dois juntos
 
@@ -159,6 +168,10 @@ reverter uma coisa sem levar outra junto.
 - David Parnas, "On the Criteria To Be Used in Decomposing Systems into Modules", CACM, 1972:
   esconder o que pode mudar atrás de uma interface (P1, P4).
 - Michael Feathers, *Working Effectively with Legacy Code* (2004): seams (P2).
+- Titus Winters, Tom Manshreck e Hyrum Wright, *Software Engineering at Google* (2020), caps. 11 e
+  12: testar o que não pode quebrar, comportamento e estado em vez de método e interação, cobertura
+  como teto (P5). Pesquisa `desenvolvimento/research/2026-10-23-testes-com-valor.md` do Stack-Labs:
+  *test smells* do tsDetect, cobertura contra mutação e as ferramentas de mutação (P5).
 - Kent Beck, *Test-Driven Development: By Example* (2002): vermelho, verde, refatorar (P6).
 - Martin Fowler, *Refactoring*, 2ª ed. (2018), cap. 3: Middle Man, Shotgun Surgery, Speculative
   Generality.

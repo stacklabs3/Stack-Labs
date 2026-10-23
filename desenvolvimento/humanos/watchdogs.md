@@ -30,6 +30,7 @@ Três camadas barram; o `/auditar-metodo` confere depois.
 | "push direto para main" | Suba a branch e abra PR |
 | "a PR não fecha a issue da branch" | Acrescente `Closes #<n>` no corpo da PR |
 | "a PR altera os watchdogs" | Um sócio revisa e aplica a label `altera-watchdogs` |
+| "tem teste sem valor" (`vigia-teste`) | O agente escreveu teste sem risco do `docs/riscos.md`, sem afirmação ou desligado. Ele corrige; se faltar risco no registro, ele te pergunta, e quem aprova é você |
 | `VALIDADOR: REPROVADO` | O código quebra uma regra de código; a lista diz qual, onde e de que princípio ela nasceu |
 
 O **validador** de regras de código também barra: ele roda no CI do projeto e na revisão de cada

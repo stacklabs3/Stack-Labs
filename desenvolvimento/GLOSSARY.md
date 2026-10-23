@@ -29,8 +29,8 @@ _Evitar_: Style guide, padrões, boas práticas, coding standards
 **Princípios de código**:
 Os 22 princípios da casa para escrever código, iguais em todo projeto (escrita E1 a E8, padrões P1 a
 P9 e SOLID), em `docs/agents/principios-de-codigo.md`. Guiam o grilling do mapa de Regras de código,
-que adota, adapta ou afasta cada um; o E1 (todo nome diz o que é) é regra da constituição e nunca se
-afasta.
+que adota, adapta ou afasta cada um; o E1 (todo nome diz o que é) e o P5 (todo teste cobre um risco)
+são regras da constituição e nunca se afastam.
 _Evitar_: Boas práticas, clean code, style guide
 
 **Prática da linguagem**:
@@ -42,10 +42,24 @@ _Evitar_: Boa prática, style guide, princípio da linguagem
 
 **Validador**:
 O motor do método, no binário Rust de `.claude/watchdogs/`, que confere por máquina as regras de código decididas em
-`docs/regras-de-codigo.json` e a cobertura dos 22 princípios e das práticas da linguagem adotadas. O
+`docs/regras-de-codigo.json`, a cobertura dos 22 princípios e das práticas da linguagem adotadas e o
+registro de riscos contra os testes. O
 projeto refina a configuração; o
 motor é protegido como um watchdog.
 _Evitar_: Linter (quando é o validador), checker
+
+**Risco**:
+O que, se der errado no produto, causa dano concreto a quem usa ou a quem mantém (cobrar duas vezes,
+cupom vencido aceito, permissão vazada). Tem ID `RK<n>`, nasce aprovado pelo humano com a origem
+escrita e fica no **registro de riscos** (`docs/riscos.md`). Todo teste cobre um risco e o cita;
+teste sem risco não entra.
+_Evitar_: Caso de teste, cenário (quando é o risco), requisito
+
+**Registro de riscos**:
+O documento `docs/riscos.md` de cada projeto: a tabela dos riscos que os testes cobrem, cada um com o
+dano, onde mora, a origem e, enquanto não tem teste, `pendente #<issue>`. Nasce no mapa de Regras de
+código e cresce pela spec e pelo triage de bug.
+_Evitar_: Matriz de risco, plano de testes, test plan
 
 **Destino**:
 O que significa chegar ao fim de um mapa: uma spec, uma decisão travada ou uma mudança feita. É a

@@ -34,7 +34,8 @@ Nasce do modelo `.claude/watchdogs/modelos/regras-de-codigo.json` no ticket que 
 A tabela de cobertura do `.md` é a dona das decisões; o `.json` diz como cada regra se verifica. A
 checagem `cobertura` roda sempre e confere os dois juntos: os 22 princípios com decisão válida, cada
 princípio adotado ou adaptado citando um `R<n>` que existe no `.json` com o mesmo princípio, e nenhuma
-regra do `.json` sem linha na tabela. O E1 nunca é `afastado` (regra 20 da constituição). Regra que nasce de prática da linguagem leva o ID dela em
+regra do `.json` sem linha na tabela. O E1 e o P5 nunca são `afastado` (regras 20 e 15 da
+constituição), e a linha do P5 cita uma regra com a checagem `teste-cobre-risco`. Regra que nasce de prática da linguagem leva o ID dela em
 `principio` (`TS<n>`, `JV<n>`, `RS<n>`) e é citada na tabela *Práticas da linguagem* do `.md`, fora
 dos 22.
 
@@ -44,6 +45,7 @@ dos 22.
 |---|---|---|
 | `termo-evitado` | `glossario` (padrão `GLOSSARY.md`), `ignorarTermos` | Nome declarado ou nome de arquivo com um termo *Evitar* do glossário |
 | `todo-sem-issue` | `marcadores`, `issue` (regex) | `TODO`/`FIXME` sem a issue |
+| `teste-cobre-risco` | `riscos` (padrão `docs/riscos.md`), `testes` (globs), `declaracao` (regex), `ignorar` | Teste que não cita `RK<n>` ou cita um que não está no registro; no registro, risco sem origem, `pendente` sem issue e risco não pendente sem teste ([riscos.md](riscos.md)). Obrigatória no P5 |
 | `teste-de-contrato-por-port` | `ports` (glob), `contrato` (`{dir}`, `{dir_de_teste}`, `{nome}`), `ignorar` | Port sem o teste de contrato; `{dir_de_teste}` é o `{dir}` com `src/main/` trocado por `src/test/` (Maven e Gradle) |
 | `lint-cobre` | `config` (arquivo ou lista), `regras` | A configuração do lint tem as regras delegadas a ele |
 | `mensagem-de-commit` | `padrao` (regex), `base` | Título dos commits desde a base (padrão `origin/main`) |
@@ -82,6 +84,9 @@ regra reprovar tudo (pesquisas em `desenvolvimento/research/` do Stack-Labs):
 | Arquitetura em Java (P3, P4, D) | `mvn -B test -Dtest='*ArquiteturaTest'` (ArchUnit) |
 | Lint e formatador em Rust | `cargo clippy --all-targets --locked -- -D warnings` e `cargo fmt --all -- --check` |
 | Dependências em Rust (P7, P8, RS3) | `cargo machete` e `cargo deny check` |
+| Mutação no diff em TS/JS (P5) | `npx stryker run --mutate <fontes alterados, separados por vírgula> --incremental`, com `@stryker-mutator/core@10.0.0` e `thresholds.break` no `stryker.config.json` (não há flag para o limite) |
+| Mutação no diff em Rust (P5) | `git diff origin/main...HEAD > alteracoes.diff && cargo mutants --in-diff alteracoes.diff`, com `cargo-mutants@27.1.0`; sai com 2 se um mutante sobrevive |
+| Mutação no diff em Java (P5) | `mvn test-compile org.pitest:pitest-maven:1.30.0:mutationCoverage -DtargetClasses=<classes do diff> -DmutationThreshold=80 -DwithHistory` (o modo por git do PIT é pago; monte `targetClasses` do diff) |
 
 As regras de cada linguagem e o porquê estão no arquivo dela, em
 [principios-de-codigo.md](principios-de-codigo.md).
