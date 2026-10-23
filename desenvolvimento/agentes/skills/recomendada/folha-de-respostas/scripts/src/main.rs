@@ -32,8 +32,12 @@ fn escapar_html(texto: &str) -> String {
 /// O id começa com letra e tem só letras, números, `_` ou `-` (ASCII).
 fn id_valido(id: &str) -> bool {
     let mut caracteres = id.chars();
-    caracteres.next().is_some_and(|c| c.is_ascii_alphabetic())
-        && caracteres.all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+    caracteres
+        .next()
+        .is_some_and(|caractere| caractere.is_ascii_alphabetic())
+        && caracteres.all(|caractere| {
+            caractere.is_ascii_alphanumeric() || caractere == '_' || caractere == '-'
+        })
 }
 
 /// Os problemas que impedem a folha; vazio quando o JSON está bom.

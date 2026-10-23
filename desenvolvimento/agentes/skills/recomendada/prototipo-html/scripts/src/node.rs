@@ -3,7 +3,8 @@
 
 /// `Number(texto)`: espaços nas pontas não contam, texto vazio é 0 e o que não é número é NaN.
 pub fn numero_do_texto(texto: &str) -> f64 {
-    let limpo = texto.trim_matches(|c: char| c.is_whitespace() || c == '\u{FEFF}');
+    let limpo =
+        texto.trim_matches(|caractere: char| caractere.is_whitespace() || caractere == '\u{FEFF}');
     if limpo.is_empty() {
         return 0.0;
     }
@@ -16,11 +17,11 @@ pub fn numero_do_texto(texto: &str) -> f64 {
         ("0B", 2),
     ] {
         if let Some(digitos) = limpo.strip_prefix(prefixo) {
-            if digitos.is_empty() || !digitos.chars().all(|c| c.is_digit(base)) {
+            if digitos.is_empty() || !digitos.chars().all(|digito| digito.is_digit(base)) {
                 return f64::NAN;
             }
-            return digitos.chars().fold(0.0, |total, c| {
-                total * base as f64 + c.to_digit(base).unwrap() as f64
+            return digitos.chars().fold(0.0, |total, digito| {
+                total * base as f64 + digito.to_digit(base).unwrap() as f64
             });
         }
     }
@@ -45,7 +46,7 @@ fn decimal_valido(texto: &str) -> bool {
         None => (texto, None),
     };
     let (inteira, fracao) = base.split_once('.').unwrap_or((base, ""));
-    let so_digitos = |parte: &str| parte.chars().all(|c| c.is_ascii_digit());
+    let so_digitos = |parte: &str| parte.chars().all(|caractere| caractere.is_ascii_digit());
     if !so_digitos(inteira) || !so_digitos(fracao) || (inteira.is_empty() && fracao.is_empty()) {
         return false;
     }

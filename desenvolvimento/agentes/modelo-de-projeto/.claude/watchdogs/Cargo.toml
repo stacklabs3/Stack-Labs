@@ -22,3 +22,7 @@ toml = { version = "=1.1.8", default-features = false, features = ["std", "parse
 opt-level = 3
 lto = "thin"
 strip = true
+
+[lints.clippy]
+# E1, regra 20 da constituição: nenhum nome de uma letra; só `_` (lista vazia em clippy.toml).
+min_ident_chars = "deny"

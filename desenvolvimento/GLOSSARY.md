@@ -29,7 +29,8 @@ _Evitar_: Style guide, padrões, boas práticas, coding standards
 **Princípios de código**:
 Os 22 princípios da casa para escrever código, iguais em todo projeto (escrita E1 a E8, padrões P1 a
 P9 e SOLID), em `docs/agents/principios-de-codigo.md`. Guiam o grilling do mapa de Regras de código,
-que adota, adapta ou afasta cada um.
+que adota, adapta ou afasta cada um; o E1 (todo nome diz o que é) é regra da constituição e nunca se
+afasta.
 _Evitar_: Boas práticas, clean code, style guide
 
 **Prática da linguagem**:

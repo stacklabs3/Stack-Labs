@@ -19,7 +19,8 @@ quem corrige é o implementador. O orquestrador te passa a branch da issue e a b
    `sh .claude/watchdogs/rodar validar --base <integração>`.
 4. Para cada trecho do diff, aponte: (a) cada violação de padrão documentado, citando o arquivo e a
    regra; (b) cada princípio da casa que o diff quebra e que `docs/regras-de-codigo.md` não cobre,
-   citando o ID (E1, P3, S...), exceto os que o projeto afastou; (c) cada *smell* da lista de base,
+   citando o ID (E1, P3, S...), exceto os que o projeto afastou (o E1 vale sempre: nome de uma letra
+   ou que não diz o que é reprova, fora o `_` descartado); (c) cada *smell* da lista de base,
    citando o trecho. Padrão documentado vence os princípios, e os princípios vencem a lista de base.
    Deixe para o lint e para o validador o que eles já garantem. Pronto quando cada trecho do diff passou pelos três crivos.
 

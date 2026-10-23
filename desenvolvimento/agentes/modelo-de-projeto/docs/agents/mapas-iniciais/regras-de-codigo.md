@@ -2,7 +2,7 @@
 
 Parte dos [mapas iniciais](../mapas-iniciais.md). Label `mapa-inicial:regras-de-codigo`. O grilling
 roda em torno dos [princípios de código](../principios-de-codigo.md): um ticket por grupo, cada
-princípio sai **adotado**, **adaptado** ou **afastado**. **Ao conduzir qualquer ticket deste mapa**,
+princípio sai **adotado**, **adaptado** ou **afastado** (o E1 nunca, pela regra 20 da constituição). **Ao conduzir qualquer ticket deste mapa**,
 leia [principios-de-codigo/grilling.md](../principios-de-codigo/grilling.md): como cada rodada anda
 e o modelo de `docs/regras-de-codigo.md`.
 

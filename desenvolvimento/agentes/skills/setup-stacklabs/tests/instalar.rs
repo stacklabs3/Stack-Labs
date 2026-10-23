@@ -369,7 +369,7 @@ fn simulacao_nao_escreve_nem_compila() {
     assert!(!relatorio.contains("COMPILADO") && !relatorio.contains("FALHA"));
     let mut restante: Vec<_> = fs::read_dir(cenario.projeto.join(".claude"))
         .unwrap()
-        .map(|e| e.unwrap().file_name())
+        .map(|entrada| entrada.unwrap().file_name())
         .collect();
     restante.sort();
     assert_eq!(restante, ["hooks", "validador"]);

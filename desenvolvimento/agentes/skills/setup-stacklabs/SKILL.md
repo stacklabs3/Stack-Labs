@@ -73,7 +73,8 @@ arquivos de watchdog entregues ao humano.
 - toda pasta em `.claude/skills/` tem `SKILL.md`, e `ORIGEM.json` lista as skills do Matt e as da casa;
 - com `docs/regras-de-codigo.json`, `sh .claude/watchdogs/rodar validar` termina em
   `VALIDADOR: APROVADO`, ou cada violação virou ajuste no `.json` ou ticket. Depois da ADR 0012, o
-  `lint-cobre` reprova regra desligada, comentada ou ligada só por preset, que antes passava.
+  `lint-cobre` reprova regra desligada, comentada ou ligada só por preset, que antes passava; depois
+  da ADR 0013, a `cobertura` reprova o E1 afastado (vira ticket no mapa de Regras de código).
 
 Pronto quando os seis passam. Falha é defeito da instalação: corrija antes de seguir.
 
