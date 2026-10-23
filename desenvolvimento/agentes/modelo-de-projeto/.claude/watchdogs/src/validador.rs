@@ -37,6 +37,8 @@ pub const PRINCIPIOS: [&str; 22] = [
     "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "S", "O", "L", "I", "D",
 ];
 pub const DECISOES: [&str; 4] = ["adotado", "adaptado", "afastado", "garantido pelo lint"];
+// Princípios que a constituição torna regra dura: o projeto adapta, nunca afasta (E1: regra 20).
+pub const OBRIGATORIOS: [&str; 1] = ["E1"];
 pub const TIPOS: [&str; 8] = [
     "termo-evitado",
     "teste-de-contrato-por-port",
@@ -260,7 +262,11 @@ pub fn checar_cobertura(texto_md: &str, regras: &[Regra]) -> Vec<Violacao> {
             continue;
         }
         if linha.decisao == "afastado" {
-            if linha.onde_ou_porque.is_empty() {
+            if OBRIGATORIOS.contains(&principio) {
+                violacoes.push(Violacao::so_mensagem(format!(
+                    "{principio} é regra dura da constituição: adapte, mas não afaste"
+                )));
+            } else if linha.onde_ou_porque.is_empty() {
                 violacoes.push(Violacao::so_mensagem(format!("{principio} afastado sem o porquê")));
             }
             continue;

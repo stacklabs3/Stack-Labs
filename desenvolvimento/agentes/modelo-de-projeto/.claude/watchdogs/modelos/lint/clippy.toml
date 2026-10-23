@@ -1,6 +1,11 @@
 # clippy.toml de REFERÊNCIA (Clippy 0.1.97). Adoção por etapas: o projeto copia para a raiz só o que o
 # grilling de Regras de código decidiu. Os lints que usam estes limites estão em Cargo.lints.toml.
 
+# E1 (regra 20 da constituição, obrigatória): o min_ident_chars pega todo nome de uma letra. O padrão
+# libera i, j, x, y, z, w e n; a lista vazia não libera nenhum (o `_` nunca conta como nome).
+min-ident-chars-threshold = 1 # E1
+allowed-idents-below-min-chars = [] # E1
+
 too-many-arguments-threshold = 3 # E2: até 3 parâmetros
 excessive-nesting-threshold = 4 # E2: o corpo da função conta como o primeiro nível
 max-fn-params-bools = 1 # E3: dois bool no mesmo fn pedem um tipo

@@ -1,0 +1,33 @@
+# Princípio E1, regra 20 da constituição: todo nome diz o que é, também o parâmetro de tipo. Pega o
+# genérico de uma letra (<T>, <K, V>), que nenhum lint de TypeScript ou de Rust confere; em Java, o
+# Checkstyle (ClassTypeParameterName, MethodTypeParameterName) faz o mesmo. Copie para
+# docs/regras-de-codigo/ast-grep/; sem marcador a trocar. Um documento por linguagem; apague os que
+# o projeto não usa. Pega só o nome declarado: o bound (`Item: U`, `Item extends U`) não conta.
+id: parametro-de-tipo-sem-nome
+language: TypeScript
+message: "E1: parâmetro de tipo de uma letra. Dê o nome do que ele representa (<Item>, <Chave, Valor>)."
+severity: error
+rule:
+  kind: type_identifier
+  regex: "^[A-Za-z]$"
+  inside: { kind: type_parameter, field: name }
+
+---
+id: parametro-de-tipo-sem-nome-tsx
+language: Tsx
+message: "E1: parâmetro de tipo de uma letra. Dê o nome do que ele representa (<Item>, <Chave, Valor>)."
+severity: error
+rule:
+  kind: type_identifier
+  regex: "^[A-Za-z]$"
+  inside: { kind: type_parameter, field: name }
+
+---
+id: parametro-de-tipo-sem-nome-rust
+language: Rust
+message: "E1: parâmetro de tipo de uma letra. Dê o nome do que ele representa (<Item>, <Chave, Valor>)."
+severity: error
+rule:
+  kind: type_identifier
+  regex: "^[A-Za-z]$"
+  inside: { kind: type_parameter, field: name }

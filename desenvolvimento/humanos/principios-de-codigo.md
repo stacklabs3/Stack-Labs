@@ -10,7 +10,9 @@ O porquê de existirem está na [ADR 0008](../adr/0008-principios-de-codigo-da-c
 
 Os princípios guiam o grilling do [mapa de Regras de código](mapas-iniciais.md#4-regras-de-código).
 Cada um vira uma pergunta sobre o seu projeto, e você decide se ele é **adotado**, **adaptado** ou
-**deixado de fora**, sempre com o porquê.
+**deixado de fora**, sempre com o porquê. A exceção é o **E1**, nome que diz o que é
+(`produto = valor - custo`, nunca `x = y - z`): ele vale em todo projeto, e o grilling só decide
+como (português ou inglês, os termos do glossário).
 
 - **Restrições primeiro:** quem vai manter, o nível do time, quanto do código o agente escreve, o
   que já deu errado. Elas justificam adaptar ou deixar algo de fora.

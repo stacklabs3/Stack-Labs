@@ -32,6 +32,7 @@ exceção pontual é `#[expect(clippy::<lint>, reason = "...")]`, que avisa quan
 
 | Princípio | Em Rust | Confere |
 |---|---|---|
+| E1 (obrigatório) | Nenhum nome de uma letra, nem em laço ou closure; só `_` | `min_ident_chars` com `allowed-idents-below-min-chars = []` no `clippy.toml` (o padrão libera `i`, `j`, `x`, `y`, `z`, `w`, `n`); ast-grep `parametro-de-tipo-sem-nome.yml` para o genérico |
 | E1 | Caixa da RFC 430; `as_`, `to_`, `into_` dizem o custo; getter sem `get_` | `nonstandard_style`, `wrong_self_convention`; `termo-evitado` |
 | E2 | Função curta; poucos parâmetros; pouco aninhamento; saída cedo com `let ... else` | `too_many_lines`, `too_many_arguments`, `excessive_nesting` (só age com `excessive-nesting-threshold`), `manual_let_else`; limites no `clippy.toml` |
 | E3 | Newtype para conceito do domínio, com campos privados e construtor que valida; nada de `bool` solto nem `serde_json::Value` no domínio | `fn_params_excessive_bools`, `struct_excessive_bools`; `disallowed_types` com `#![deny]` no domínio; o newtype é do revisor |

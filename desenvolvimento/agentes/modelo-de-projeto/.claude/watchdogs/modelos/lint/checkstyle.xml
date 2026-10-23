@@ -28,12 +28,49 @@
     <module name="SuppressWarningsHolder"/>
 
     <!-- E1: caixa por tipo de identificador; sigla como palavra (XmlHttp). O vocabulário do
-         glossário fica com o termo-evitado do validador. -->
-    <module name="TypeName"/> <!-- E1 -->
-    <module name="MethodName"/> <!-- E1 -->
-    <module name="MemberName"/> <!-- E1 -->
-    <module name="LocalVariableName"/> <!-- E1 -->
-    <module name="ParameterName"/> <!-- E1 -->
+         glossário fica com o termo-evitado do validador. Regra 20 da constituição, obrigatória:
+         nenhum nome de uma letra, nem em laço, lambda, catch ou genérico; só `_` para valor
+         descartado. Os formatos padrão do Checkstyle aceitam uma letra; estes não. -->
+    <module name="TypeName"> <!-- E1 -->
+      <property name="format" value="^[A-Z][a-zA-Z0-9]+$"/>
+    </module>
+    <module name="MethodName"> <!-- E1 -->
+      <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+    </module>
+    <module name="MemberName"> <!-- E1 -->
+      <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+    </module>
+    <module name="LocalVariableName"> <!-- E1 -->
+      <property name="format" value="^([a-z][a-zA-Z0-9]+|_)$"/>
+      <property name="allowOneCharVarInForLoop" value="false"/>
+    </module>
+    <module name="ParameterName"> <!-- E1 -->
+      <property name="format" value="^([a-z][a-zA-Z0-9]+|_)$"/>
+    </module>
+    <module name="LambdaParameterName"> <!-- E1 -->
+      <property name="format" value="^([a-z][a-zA-Z0-9]+|_)$"/>
+    </module>
+    <module name="CatchParameterName"> <!-- E1 -->
+      <property name="format" value="^([a-z][a-zA-Z0-9]+|_)$"/>
+    </module>
+    <module name="PatternVariableName"> <!-- E1 -->
+      <property name="format" value="^([a-z][a-zA-Z0-9]+|_)$"/>
+    </module>
+    <module name="RecordComponentName"> <!-- E1 -->
+      <property name="format" value="^[a-z][a-zA-Z0-9]+$"/>
+    </module>
+    <module name="ClassTypeParameterName"> <!-- E1 -->
+      <property name="format" value="^[A-Z][a-zA-Z0-9]+$"/>
+    </module>
+    <module name="MethodTypeParameterName"> <!-- E1 -->
+      <property name="format" value="^[A-Z][a-zA-Z0-9]+$"/>
+    </module>
+    <module name="RecordTypeParameterName"> <!-- E1 -->
+      <property name="format" value="^[A-Z][a-zA-Z0-9]+$"/>
+    </module>
+    <module name="InterfaceTypeParameterName"> <!-- E1 -->
+      <property name="format" value="^[A-Z][a-zA-Z0-9]+$"/>
+    </module>
     <module name="ConstantName"/> <!-- E1 -->
     <module name="AbbreviationAsWordInName"> <!-- E1 -->
       <property name="allowedAbbreviationLength" value="0"/>

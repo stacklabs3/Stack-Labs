@@ -9,6 +9,7 @@ o **guia do grilling do mapa de Regras de código** e, depois, a régua de julga
 - **`docs/regras-de-codigo.md` vence.** Princípio **adotado** ou **adaptado** no mapa vira regra
   dura lá, com exemplo do projeto e o ID de onde nasceu (`Nasce de: E3`).
 - **Princípio afastado** fica fora da régua e do revisor: o projeto decidiu, com o porquê registrado.
+  O **E1** é a exceção: é regra 20 da constituição, e o projeto o adapta, mas não o afasta.
 - **Onde nenhuma regra alcança o trecho**, o princípio é julgamento, como os *smells* do
   `/code-review`: o revisor aponta pelo ID e só reprova com o dano concreto nesta issue.
 - O que o lint garante é da ferramenta.

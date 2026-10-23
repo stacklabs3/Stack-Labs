@@ -7,6 +7,10 @@
   "regras": [
     { "id": "R1", "principio": "E1", "texto": "Nomes declarados usam o vocabulário do GLOSSARY.md",
       "verificacao": { "tipo": "termo-evitado", "glossario": "GLOSSARY.md" } },
+    { "id": "R19", "principio": "E1", "texto": "Nenhum nome de uma letra; só `_` para valor descartado",
+      "verificacao": { "tipo": "lint-cobre", "config": "Cargo.toml", "regras": ["min_ident_chars"] } },
+    { "id": "R20", "principio": "E1", "texto": "Parâmetro de tipo tem nome (<Item>, nunca <T>)",
+      "verificacao": { "tipo": "ast-grep", "regras": "docs/regras-de-codigo/ast-grep/parametro-de-tipo-sem-nome.yml" } },
     { "id": "R2", "principio": "E2", "texto": "Até 3 parâmetros e aninhamento raso",
       "verificacao": { "tipo": "lint-cobre", "config": "Cargo.toml", "regras": ["too_many_arguments", "excessive_nesting"] } },
     { "id": "R3", "principio": "E4", "texto": "Nenhum ramo de Err vazio ou que só imprime",

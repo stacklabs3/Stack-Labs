@@ -31,6 +31,7 @@ decisão volta quando o `typescript-eslint` aceitar o TS 7.
 
 | Princípio | Em TypeScript | Confere |
 |---|---|---|
+| E1 (obrigatório) | Nenhum nome de uma letra, nem em laço, lambda, `catch` ou genérico; só `_` | `id-length` com `{ min: 2, exceptions: ["_"], properties: "always" }`; ast-grep `parametro-de-tipo-sem-nome.yml` (o `id-length` não vê o genérico) |
 | E1 | Caixa por tipo de identificador; booleano com prefixo do glossário (`esta`, `tem`, `pode`) | `@typescript-eslint/naming-convention` (fora dos presets); `termo-evitado` |
 | E2 | Até 3 níveis e 3 parâmetros; `switch` sem cair no próximo `case`; `else` depois de `return` some | `max-depth`, `max-params`, `complexity`, `no-else-return`, `no-nested-ternary`; `noFallthroughCasesInSwitch` |
 | E3 | `strict` e acesso por índice que pode faltar; nada de `any`, `x!` nem `{...} as T`; `x as unknown as T` só na conversão da borda | tsconfig `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`; `no-explicit-any`, `no-unsafe-*`, `no-non-null-assertion`, `consistent-type-assertions`; ast-grep `afirmacao-dupla.yml`; `tsc --noEmit` |
