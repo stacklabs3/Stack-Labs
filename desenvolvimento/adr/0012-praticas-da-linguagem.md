@@ -23,4 +23,7 @@ módulo, e toda ferramenta nas receitas tem versão fixa, porque a troca de flag
 antiga reprovar todo projeto sem ninguém notar. Modelos por linguagem entram em
 `.claude/watchdogs/modelos/` como referência; o projeto copia só o que decidiu. O modelo de TypeScript
 fixa o TS 6.0 enquanto o `typescript-eslint` não aceitar o TS 7, com o `oxlint` como alternativa
-documentada. Linguagem nova da casa ganha o seu arquivo e o seu prefixo por PR no Stack-Labs.
+documentada. O `lint-cobre` passou a ler a configuração de verdade e falha fechado: projeto que
+atualiza os watchdogs pode ver reprovada uma regra que antes passava por estar só escrita (desligada,
+comentada ou ligada por preset). Linguagem nova da casa ganha o seu arquivo e o seu prefixo por PR no
+Stack-Labs.

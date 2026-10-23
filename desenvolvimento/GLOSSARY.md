@@ -41,7 +41,8 @@ _Evitar_: Boa prática, style guide, princípio da linguagem
 
 **Validador**:
 O motor do método, no binário Rust de `.claude/watchdogs/`, que confere por máquina as regras de código decididas em
-`docs/regras-de-codigo.json` e a cobertura dos 22 princípios. O projeto refina a configuração; o
+`docs/regras-de-codigo.json` e a cobertura dos 22 princípios e das práticas da linguagem adotadas. O
+projeto refina a configuração; o
 motor é protegido como um watchdog.
 _Evitar_: Linter (quando é o validador), checker
 

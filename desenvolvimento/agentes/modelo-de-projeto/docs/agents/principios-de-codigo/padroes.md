@@ -59,7 +59,7 @@ function fecharConta(mesa: Mesa, cobranca: Cobranca): ContaFechada { /* ... */ }
 **No diff:** `new` de cliente externo dentro da regra; import de ORM ou de framework web num arquivo
 do domínio; leitura de `process.env` fora da montagem.
 
-**No validador:** `ast-grep` com os modelos `dominio-sem-infra.yml` e `ambiente-so-na-montagem.yml`.
+**No validador:** `ast-grep` com os modelos `dominio-sem-infra.yml` e `ambiente-so-na-montagem.yml`; relógio, acaso e rede chamados direto pelos modelos da linguagem (`efeito-global-no-dominio.yml`, `relogio-e-acaso-entram.yml`).
 
 ### P4. O que muda junto fica junto
 

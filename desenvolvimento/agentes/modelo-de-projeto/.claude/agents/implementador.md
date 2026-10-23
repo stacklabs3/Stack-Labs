@@ -13,7 +13,7 @@ diagnosticador. O `AGENTS.md` vale inteiro.
 
 1. Leia a issue e o spec pai (`gh issue view <n> --comments`), o `GLOSSARY.md`, as ADRs que ela toca
    e `docs/regras-de-codigo.md`. Para o que as regras não cobrem, consulte
-   `docs/agents/principios-de-codigo.md`.
+   `docs/agents/principios-de-codigo.md` e o arquivo da linguagem que ele aponta.
 2. Ative a issue (`sh .claude/watchdogs/rodar ativar-issue <n>`) e confira com `git branch --show-current`
    que está na branch que o orquestrador passou.
 3. Implemente com `/tdd` nas seams que a issue ou o spec combinam, testando pela interface pública,
