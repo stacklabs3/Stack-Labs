@@ -1,5 +1,5 @@
 // Testes do validador: cada checagem roda num repositório git de verdade, numa pasta temporária.
-// Rodar: node --test .claude/validador/   (o Opengrep entra se estiver no PATH ou em $OPENGREP)
+// Rodar: node --test .claude/validador/validar.test.mjs   (o ast-grep entra se estiver no PATH ou em $AST_GREP)
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -8,10 +8,10 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { validar, checarCobertura, termosEvitadosDoGlossario, globParaRegex, PRINCIPIOS, ErroDeConfiguracao } from "./validar.mjs";
+import { validar, checarCobertura, termosEvitadosDoGlossario, globParaRegex, arquivosAlteradosDesde, PRINCIPIOS, ErroDeConfiguracao } from "./validar.mjs";
 
 const pastaDoValidador = dirname(fileURLToPath(import.meta.url));
-const opengrepDisponivel = spawnSync(process.env.OPENGREP || "opengrep", ["--version"]).status === 0;
+const astGrepDisponivel = spawnSync(process.env.AST_GREP || "ast-grep", ["--version"]).status === 0;
 
 function criarRepositorio(arquivos) {
   const raiz = mkdtempSync(join(tmpdir(), "validador-"));
@@ -127,27 +127,60 @@ test("modelo de regras-de-codigo.json é válido para o motor", () => {
   assert.ok(relatorio.aprovado, JSON.stringify(relatorio.resultados[0].violacoes));
 });
 
-test("opengrep: os modelos acham import de infra no domínio, catch vazio e ambiente fora da montagem", { skip: !opengrepDisponivel && "opengrep não instalado" }, () => {
-  const preencher = (modelo, trocas) => Object.entries(trocas).reduce((texto, [marcador, valor]) => texto.replaceAll(marcador, valor), readFileSync(join(pastaDoValidador, "modelos", "opengrep", modelo), "utf8"));
+test("ast-grep: os modelos acham import de infra no domínio, catch vazio e ambiente fora da montagem", { skip: !astGrepDisponivel && "ast-grep não instalado" }, () => {
+  const preencher = (modelo, trocas) => Object.entries(trocas).reduce((texto, [marcador, valor]) => texto.replaceAll(marcador, valor), readFileSync(join(pastaDoValidador, "modelos", "ast-grep", modelo), "utf8"));
   const { raiz } = criarRepositorio({
     "regras/dominio.yml": preencher("dominio-sem-infra.yml", { "<PASTA_DO_DOMINIO>": "src/dominio", "<PACOTES_DE_INFRA>": "prisma|@prisma/|express" }),
     "regras/catch.yml": preencher("catch-vazio.yml", {}),
     "regras/ambiente.yml": preencher("ambiente-so-na-montagem.yml", { "<ARQUIVOS_DA_MONTAGEM>": "src/montagem/**" }),
-    "src/dominio/pedido.ts": 'import { PrismaClient } from "@prisma/client";\nimport { somar } from "./dinheiro";\nexport const x = 1;\n',
-    "src/infra/repo.ts": 'import { PrismaClient } from "@prisma/client";\nexport function salvar() { try { gravar(); } catch (erro) { } }\n',
+    "src/dominio/pedido.ts": 'import { PrismaClient } from "@prisma/client";\nimport { somar } from "./dinheiro";\nconst express = require("express");\n',
+    "src/infra/repo.js": 'export function a() { try { g(); } catch (erro) { } }\nexport function b() { try { g(); } catch (erro) { tratar(erro); } }\n',
     "src/montagem/index.ts": "export const chave = process.env.CHAVE;\n",
     "src/dominio/config.ts": "export const chave = process.env.CHAVE;\n",
+    "py/dominio/servico.py": "try:\n    x()\nexcept Exception:\n    pass\n",
   });
   const config = { versao: 1, regras: [
-    { id: "R1", principio: "D", verificacao: { tipo: "opengrep", regras: "regras/dominio.yml" } },
-    { id: "R2", principio: "E4", verificacao: { tipo: "opengrep", regras: "regras/catch.yml" } },
-    { id: "R3", principio: "P3", verificacao: { tipo: "opengrep", regras: "regras/ambiente.yml" } },
+    { id: "R1", principio: "D", verificacao: { tipo: "ast-grep", regras: "regras/dominio.yml" } },
+    { id: "R2", principio: "E4", verificacao: { tipo: "ast-grep", regras: "regras/catch.yml" } },
+    { id: "R3", principio: "P3", verificacao: { tipo: "ast-grep", regras: "regras/ambiente.yml" } },
   ] };
   const relatorio = validar({ raiz, config, textoMd: tabelaCom({ D: "adotado | R1", E4: "adotado | R2", P3: "adotado | R3" }) });
-  const achadosDe = (id) => relatorio.resultados.find((resultado) => resultado.id === id).violacoes.map((violacao) => `${violacao.arquivo}:${violacao.linha}`);
-  assert.deepEqual(achadosDe("R1"), ["src/dominio/pedido.ts:1"]);
-  assert.deepEqual(achadosDe("R2"), ["src/infra/repo.ts:2"]);
+  const achadosDe = (id) => relatorio.resultados.find((resultado) => resultado.id === id).violacoes.map((violacao) => `${violacao.arquivo}:${violacao.linha}`).sort();
+  assert.deepEqual(achadosDe("R1"), ["src/dominio/pedido.ts:1", "src/dominio/pedido.ts:3"]);
+  assert.deepEqual(achadosDe("R2"), ["py/dominio/servico.py:3", "src/infra/repo.js:1"]);
   assert.deepEqual(achadosDe("R3"), ["src/dominio/config.ts:1"]);
+});
+
+test("ast-grep: regra inválida é violação, não aprovação silenciosa", { skip: !astGrepDisponivel && "ast-grep não instalado" }, () => {
+  const violacoes = rodarUmaRegra({ "regras/ruim.yml": "id: x\nlanguage: NaoExiste\nrule: { pattern: a }\n", "src/a.ts": "a;\n" }, { tipo: "ast-grep", regras: "regras/ruim.yml" }, "D");
+  assert.equal(violacoes.length, 1);
+  assert.match(violacoes[0].mensagem, /ast-grep falhou/);
+});
+
+test("incremental: com --base, lê só os arquivos alterados desde a base", () => {
+  const { raiz, git } = criarRepositorio({ "src/antigo.ts": "// TODO sem issue, de antes\n" });
+  git("switch", "-q", "-c", "issue/2-x");
+  writeFileSync(join(raiz, "src/novo.ts"), "// TODO sem issue, novo\n"); git("add", "-A"); git("commit", "-qm", "feat: novo");
+  writeFileSync(join(raiz, "src/sem-commit.ts"), "// FIXME sem issue, ainda sem commit\n");
+  assert.deepEqual(arquivosAlteradosDesde(raiz, "main").sort(), ["src/novo.ts", "src/sem-commit.ts"]);
+  const config = { versao: 1, projeto: { codigo: ["src/**"] }, regras: [{ id: "R1", principio: "E6", verificacao: { tipo: "todo-sem-issue" } }] };
+  const textoMd = tabelaCom({ E6: "adotado | R1" });
+  const arquivosVistos = (relatorio) => relatorio.resultados[1].violacoes.map((violacao) => violacao.arquivo).sort();
+  const incremental = validar({ raiz, config, textoMd, base: "main" });
+  assert.deepEqual(arquivosVistos(incremental), ["src/novo.ts", "src/sem-commit.ts"]);
+  assert.match(incremental.escopo, /2 arquivo\(s\) alterado\(s\) desde main/);
+  assert.deepEqual(arquivosVistos(validar({ raiz, config, textoMd, base: "main", completo: true })), ["src/antigo.ts", "src/novo.ts", "src/sem-commit.ts"]);
+});
+
+test("comando: {arquivos} recebe só os arquivos lidos, e nada roda sem arquivo", () => {
+  const { raiz, git } = criarRepositorio({ "src/a.ts": "1\n" });
+  git("switch", "-q", "-c", "issue/3-x");
+  writeFileSync(join(raiz, "src/b c.ts"), "2\n"); git("add", "-A"); git("commit", "-qm", "feat: b");
+  const rodar = (base) => validar({ raiz, base, textoMd: tabelaCom({ E7: "adotado | R1" }), config: { versao: 1, projeto: { codigo: ["src/**"] }, regras: [{ id: "R1", principio: "E7", verificacao: { tipo: "comando", executar: "printf '%s|' {arquivos}; exit 1" } }] } }).resultados[1].violacoes;
+  assert.match(rodar("main")[0].mensagem, /src\/b c\.ts\|$/m);
+  assert.doesNotMatch(rodar("main")[0].mensagem, /src\/a\.ts/);
+  git("switch", "-q", "main");
+  assert.deepEqual(rodar("main"), []);
 });
 
 test("linha de comando: imprime o parecer e sai com 1 quando reprova", () => {

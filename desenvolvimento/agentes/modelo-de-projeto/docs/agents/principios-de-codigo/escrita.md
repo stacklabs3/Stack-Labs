@@ -106,7 +106,7 @@ if (cobranca.tipo === "recusada") return avisarClienteDaRecusa(pedido, cobranca.
 **No diff:** `catch` sem relançar nem tratar, `throw new Error("erro")`, erro de domínio como
 `string` comparada por texto.
 
-**No validador:** `opengrep` com o modelo `catch-vazio.yml`.
+**No validador:** `ast-grep` com o modelo `catch-vazio.yml`.
 
 ### E5. Comando ou consulta, e imutável por padrão
 

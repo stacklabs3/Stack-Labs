@@ -65,7 +65,7 @@ arquivos de watchdog entregues ao humano.
 
 - `node --check` passa em cada `.claude/hooks/**/*.mjs`;
 - `node --check .claude/githooks/pre-push` passa;
-- `node --test .claude/validador/validar.test.mjs` passa (o teste do Opengrep é pulado se ele não estiver instalado);
+- `node --test .claude/validador/validar.test.mjs` passa (os testes do ast-grep são pulados se ele não estiver instalado);
 - `git config core.hooksPath` responde `.claude/githooks`;
 - toda pasta em `.claude/skills/` tem `SKILL.md`, e `ORIGEM.json` lista as skills do Matt e as da casa.
 

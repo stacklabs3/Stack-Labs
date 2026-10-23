@@ -12,7 +12,8 @@ cobrança, escrevemos a nossa**.
 | eslint-plugin-boundaries 7.3.0 | imports entre camadas, dentro do ESLint (JS/TS) | MIT | Não | Usar, pelo lint do projeto |
 | jscpd 5.4.2 | duplicação de código, várias linguagens | MIT | Não | Usar, pelo tipo `comando` |
 | Semgrep CE (motor) | padrões de código, 30+ linguagens | LGPL-2.1 | O motor não; a empresa vende planos pagos e as regras prontas têm licença própria | Não usar |
-| Opengrep (fork do Semgrep) | o mesmo do Semgrep CE, com as mesmas regras | LGPL-2.1 | Não | **Usar**, pelo tipo `opengrep` |
+| Opengrep (fork do Semgrep) | o mesmo do Semgrep CE, com as mesmas regras | LGPL-2.1 | Não | Não usar: 25 vezes mais lento que o ast-grep (medição abaixo) |
+| ast-grep 0.51.0 (Rust) | padrões de código por árvore sintática, várias linguagens | MIT | Não | **Usar**, pelo tipo `ast-grep` |
 
 ## Detalhes e fontes
 
@@ -32,8 +33,30 @@ cobrança, escrevemos a nossa**.
   comercial; mantido por um consórcio (Aikido, Endor Labs, Orca Security e outros), compatível com as
   regras do Semgrep, binário autocontido com releases assinados (README e LICENSE de
   github.com/opengrep/opengrep, último commit em 2026-10-23). Sem plano pago.
+- **ast-grep**: campo `license` `MIT` em registry.npmjs.org/@ast-grep/cli/latest (0.51.0, consultado
+  em 2026-10-23), repositório github.com/ast-grep/ast-grep; escrito em Rust sobre o tree-sitter,
+  distribuído pelo npm com binário por plataforma. Sem plano pago. Não tem a análise de fluxo de dados
+  (taint) do Opengrep, que nenhuma regra do catálogo usa.
 - **LGPL-2.1 no nosso uso**: rodamos o Opengrep como programa no CI, sem embutir nem modificar o
   código dele; a LGPL não impõe obrigação a quem só executa.
+
+## Medição: tempo e memória
+
+Repositório sintético de 2.000 arquivos TypeScript (80 mil linhas, 8 MB) com 20 `catch` vazios; os
+dois acharam os 20. Pico de memória medido por `getrusage` do processo filho, no ambiente desta
+pesquisa (Linux x86_64).
+
+| O que roda | Tempo | Pico de memória |
+|---|---|---|
+| Opengrep 1.32.0, repositório inteiro | 8,37 s | 401 MB |
+| ast-grep 0.51.0, repositório inteiro | 0,33 s | 14 MB |
+| Opengrep, só 10 arquivos alterados | 2,97 s | 267 MB |
+| ast-grep, só 10 arquivos alterados | 0,01 s | 14 MB |
+| Motor do validador em Node (termo-evitado e todo-sem-issue), repositório inteiro | 0,32 s | 59 MB |
+
+O custo do Opengrep é quase todo de arranque: mesmo com 10 arquivos ele leva 3 s. Com o ast-grep e o
+modo incremental (ler só o que mudou desde a base), o validador de uma PR típica cabe em décimos de
+segundo.
 
 ## O que continua sendo nosso
 

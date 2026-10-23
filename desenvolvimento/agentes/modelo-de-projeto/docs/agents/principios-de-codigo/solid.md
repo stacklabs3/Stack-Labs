@@ -95,7 +95,7 @@ direto; container de injeção só se o projeto decidiu por ele.
 **No diff:** import de SDK, ORM ou framework dentro do domínio; interface definida no lado da
 infraestrutura e importada pelo domínio.
 
-**No validador:** `opengrep` com o modelo `dominio-sem-infra.yml`.
+**No validador:** `ast-grep` com o modelo `dominio-sem-infra.yml`.
 
 ### SOLID em uma tabela
 

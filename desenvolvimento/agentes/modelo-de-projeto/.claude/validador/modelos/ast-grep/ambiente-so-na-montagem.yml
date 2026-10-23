@@ -1,0 +1,39 @@
+# Princípio P3: configuração por ambiente se lê num ponto só, a montagem. Copie para
+# docs/regras-de-codigo/ast-grep/ e troque <ARQUIVOS_DA_MONTAGEM> (ex.: src/montagem/**). Um
+# documento por linguagem; apague os que o projeto não usa.
+id: ambiente-so-na-montagem
+language: TypeScript
+message: "P3: leitura de ambiente fora da montagem. Receba o valor por parâmetro."
+severity: error
+ignores: ["<ARQUIVOS_DA_MONTAGEM>"]
+rule:
+  pattern: process.env
+
+---
+id: ambiente-so-na-montagem-tsx
+language: Tsx
+message: "P3: leitura de ambiente fora da montagem. Receba o valor por parâmetro."
+severity: error
+ignores: ["<ARQUIVOS_DA_MONTAGEM>"]
+rule:
+  pattern: process.env
+
+---
+id: ambiente-so-na-montagem-js
+language: JavaScript
+message: "P3: leitura de ambiente fora da montagem. Receba o valor por parâmetro."
+severity: error
+ignores: ["<ARQUIVOS_DA_MONTAGEM>"]
+rule:
+  pattern: process.env
+
+---
+id: ambiente-so-na-montagem-python
+language: Python
+message: "P3: leitura de ambiente fora da montagem. Receba o valor por parâmetro."
+severity: error
+ignores: ["<ARQUIVOS_DA_MONTAGEM>"]
+rule:
+  any:
+    - pattern: os.environ
+    - pattern: os.getenv($$$)

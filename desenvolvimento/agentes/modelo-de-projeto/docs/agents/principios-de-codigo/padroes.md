@@ -59,7 +59,7 @@ function fecharConta(mesa: Mesa, cobranca: Cobranca): ContaFechada { /* ... */ }
 **No diff:** `new` de cliente externo dentro da regra; import de ORM ou de framework web num arquivo
 do domínio; leitura de `process.env` fora da montagem.
 
-**No validador:** `opengrep` com os modelos `dominio-sem-infra.yml` e `ambiente-so-na-montagem.yml`.
+**No validador:** `ast-grep` com os modelos `dominio-sem-infra.yml` e `ambiente-so-na-montagem.yml`.
 
 ### P4. O que muda junto fica junto
 
@@ -90,7 +90,7 @@ muda e o comportamento não, está testando além da interface e trava o código
 **No diff:** teste que acessa método privado ou estado interno; mock de módulo nosso; teste chamado
 `test1` ou `deve funcionar`.
 
-**No validador:** `opengrep` com o modelo `dominio-sem-infra.yml` apontado para os testes e para os módulos nossos que não se mockam; o nome do teste fica com o revisor.
+**No validador:** `ast-grep` com o modelo `dominio-sem-infra.yml` apontado para os testes e para os módulos nossos que não se mockam; o nome do teste fica com o revisor.
 
 ### P6. Vermelho, verde, refatorar; e nunca os dois juntos
 
@@ -137,7 +137,7 @@ mantida com disciplina vence a arquitetura "perfeita" abandonada no meio (`/huma
 **No diff:** segundo cliente HTTP, segundo jeito de tratar erro ou segunda biblioteca de datas sem
 ticket que o decidiu.
 
-**No validador:** `opengrep` com o modelo `dominio-sem-infra.yml` apontado para o código todo e as bibliotecas que o padrão fixo exclui.
+**No validador:** `ast-grep` com o modelo `dominio-sem-infra.yml` apontado para o código todo e as bibliotecas que o padrão fixo exclui.
 
 ### P9. Commit conta uma mudança, e a mensagem diz o porquê
 

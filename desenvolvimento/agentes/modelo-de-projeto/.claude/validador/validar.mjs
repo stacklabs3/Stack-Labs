@@ -3,7 +3,9 @@
 // verificação de cada regra e confere a cobertura dos 22 princípios em docs/regras-de-codigo.md.
 // O motor é do método e fica protegido; o projeto refina só o JSON e os arquivos que ele aponta.
 //
-// Uso: node .claude/validador/validar.mjs [--config <json>] [--md <md>] [--base <ref>] [--so-cobertura] [--json]
+// Uso: node .claude/validador/validar.mjs [--config <json>] [--md <md>] [--base <ref>] [--completo] [--so-cobertura] [--json]
+// Com --base, lê só os arquivos alterados desde a base (CI e revisão); sem ela, ou com --completo, o
+// repositório inteiro (auditoria).
 // Saída: 0 aprovado, 1 violação, 2 configuração inválida. A última linha é "VALIDADOR: APROVADO" ou
 // "VALIDADOR: REPROVADO".
 
@@ -50,6 +52,18 @@ function listarArquivosDoRepositorio(raiz) {
   const resultado = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], { cwd: raiz, encoding: "utf8" });
   if (resultado.status !== 0) throw new ErroDeConfiguracao("o validador roda dentro de um repositório git (git ls-files falhou)");
   return resultado.stdout.split("\n").filter(Boolean).filter((caminhoRelativo) => existsSync(join(raiz, caminhoRelativo)));
+}
+
+// Arquivos criados ou mudados desde a base, commitados ou não. null quando a base não existe.
+export function arquivosAlteradosDesde(raiz, base) {
+  const git = (...argumentos) => spawnSync("git", argumentos, { cwd: raiz, encoding: "utf8" });
+  if (git("rev-parse", "--verify", "--quiet", base).status !== 0) return null;
+  const listas = [
+    git("diff", "--name-only", "--diff-filter=ACMR", `${base}...HEAD`).stdout,
+    git("diff", "--name-only", "--diff-filter=ACMR", "HEAD").stdout,
+    git("ls-files", "--others", "--exclude-standard").stdout,
+  ];
+  return [...new Set(listas.join("\n").split("\n").filter(Boolean))].filter((caminhoRelativo) => existsSync(join(raiz, caminhoRelativo)));
 }
 
 function lerTexto(raiz, caminhoRelativo) {
@@ -108,10 +122,11 @@ function exigir(parametros, nomes, tipo) {
   }
 }
 
+// Os arquivos de código que a checagem lê: todos, ou só os alterados no modo incremental.
 function arquivosDeCodigo(contexto, parametros) {
   const padroesDeCodigo = parametros.arquivos || contexto.projeto.codigo || ["**"];
   const padroesIgnorados = [...(contexto.projeto.ignorar || []), ...(parametros.ignorar || [])];
-  return contexto.arquivos.filter((caminhoRelativo) => casaAlgum(caminhoRelativo, padroesDeCodigo) && !casaAlgum(caminhoRelativo, padroesIgnorados));
+  return (contexto.alterados || contexto.arquivos).filter((caminhoRelativo) => casaAlgum(caminhoRelativo, padroesDeCodigo) && !casaAlgum(caminhoRelativo, padroesIgnorados));
 }
 
 function semAcento(texto) {
@@ -168,7 +183,7 @@ export const CHECAGENS = {
   "teste-de-contrato-por-port"(parametros, contexto) {
     exigir(parametros, ["ports", "contrato"], "teste-de-contrato-por-port");
     const naoSaoPorts = parametros.ignorar || ["**/*.test.*", "**/*.spec.*"];
-    const ports = contexto.arquivos.filter((caminhoRelativo) => casaAlgum(caminhoRelativo, parametros.ports) && !casaAlgum(caminhoRelativo, naoSaoPorts));
+    const ports = (contexto.alterados || contexto.arquivos).filter((caminhoRelativo) => casaAlgum(caminhoRelativo, parametros.ports) && !casaAlgum(caminhoRelativo, naoSaoPorts));
     return ports.flatMap((caminhoDaPort) => {
       const nomeDaPort = basename(caminhoDaPort, extname(caminhoDaPort));
       const caminhoDoContrato = parametros.contrato.replaceAll("{dir}", dirname(caminhoDaPort)).replaceAll("{nome}", nomeDaPort);
@@ -217,29 +232,37 @@ export const CHECAGENS = {
   },
 
   // Qualquer ferramenta (lint, dependency-cruiser, jscpd, typecheck): saída diferente de 0 é violação.
+  // "{arquivos}" no comando vira a lista dos arquivos de código que a checagem lê.
   comando(parametros, contexto) {
     exigir(parametros, ["executar"], "comando");
-    const resultado = spawnSync(parametros.executar, { cwd: contexto.raiz, shell: true, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+    let linhaDeComando = parametros.executar;
+    if (linhaDeComando.includes("{arquivos}")) {
+      const arquivos = arquivosDeCodigo(contexto, parametros);
+      if (!arquivos.length) return [];
+      linhaDeComando = linhaDeComando.replaceAll("{arquivos}", arquivos.map((caminhoRelativo) => `'${caminhoRelativo.replaceAll("'", "'\\''")}'`).join(" "));
+    }
+    const resultado = spawnSync(linhaDeComando, { cwd: contexto.raiz, shell: true, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
     if (resultado.status === 0) return [];
     if (resultado.status === 127) return [{ mensagem: `ferramenta não encontrada: ${parametros.executar}` }];
     const finalDaSaida = `${resultado.stdout || ""}${resultado.stderr || ""}`.trim().split("\n").slice(-15).join("\n");
     return [{ mensagem: `"${parametros.executar}" saiu com ${resultado.status}:\n${finalDaSaida}` }];
   },
 
-  // Padrões de código em 30+ linguagens, com regras que o projeto escreve a partir dos modelos.
-  opengrep(parametros, contexto) {
-    exigir(parametros, ["regras"], "opengrep");
-    const binario = parametros.binario || process.env.OPENGREP || "opengrep";
-    const argumentos = ["scan", "--json", "--quiet", ...[].concat(parametros.regras).flatMap((regra) => ["--config", regra]), ...[].concat(parametros.alvos || ".")];
-    const resultado = spawnSync(binario, argumentos, { cwd: contexto.raiz, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-    if (resultado.error?.code === "ENOENT") return [{ mensagem: `opengrep não encontrado (${binario}); instale-o no CI (github.com/opengrep/opengrep)` }];
-    let saida;
-    try { saida = JSON.parse(resultado.stdout); } catch { return [{ mensagem: `opengrep falhou: ${(resultado.stderr || "").trim().split("\n").slice(-5).join(" ")}` }]; }
-    const erros = (saida.errors || []).filter((erro) => erro.level !== "warn");
-    return [
-      ...erros.map((erro) => ({ mensagem: `opengrep: ${erro.message || erro.type}` })),
-      ...(saida.results || []).map((achado) => ({ arquivo: achado.path, linha: achado.start?.line, mensagem: (achado.extra?.message || achado.check_id).trim() })),
-    ];
+  // Padrões de código (TypeScript, JavaScript, Python, Go, Java, Rust e outras), com regras que o
+  // projeto escreve a partir dos modelos. O ast-grep usa o .gitignore e o "files"/"ignores" da regra.
+  "ast-grep"(parametros, contexto) {
+    exigir(parametros, ["regras"], "ast-grep");
+    const binario = parametros.binario || process.env.AST_GREP || "ast-grep";
+    const alvos = contexto.alterados ? arquivosDeCodigo(contexto, parametros) : [].concat(parametros.alvos || ".");
+    if (!alvos.length) return [];
+    return [].concat(parametros.regras).flatMap((arquivoDeRegras) => {
+      const resultado = spawnSync(binario, ["scan", "--rule", arquivoDeRegras, "--json=stream", ...alvos], { cwd: contexto.raiz, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+      if (resultado.error?.code === "ENOENT") return [{ mensagem: `ast-grep não encontrado (${binario}); instale-o no CI: npm i -g @ast-grep/cli` }];
+      const achados = resultado.stdout.split("\n").filter(Boolean).map((linha) => JSON.parse(linha));
+      const falhou = resultado.status !== 0 && !achados.length;
+      if (falhou) return [{ mensagem: `ast-grep falhou com ${arquivoDeRegras}: ${(resultado.stderr || "").trim().split("\n").slice(0, 6).join(" ")}` }];
+      return achados.map((achado) => ({ arquivo: achado.file, linha: achado.range.start.line + 1, mensagem: (achado.message || achado.ruleId).trim() }));
+    });
   },
 
   // Princípios de julgamento: o validador só os lista; quem decide é o revisor da orquestração.
@@ -250,7 +273,7 @@ export const CHECAGENS = {
 
 // ---------- execução ----------
 
-export function validar({ raiz, config, textoMd, base, soCobertura = false }) {
+export function validar({ raiz, config, textoMd, base, completo = false, soCobertura = false }) {
   if (config.versao !== 1) throw new ErroDeConfiguracao(`versão ${config.versao} não suportada (esperado 1)`);
   if (!Array.isArray(config.regras)) throw new ErroDeConfiguracao(`"regras" precisa ser uma lista`);
   for (const regra of config.regras) {
@@ -258,7 +281,11 @@ export function validar({ raiz, config, textoMd, base, soCobertura = false }) {
     if (!PRINCIPIOS.includes(regra.principio)) throw new ErroDeConfiguracao(`${regra.id}: princípio "${regra.principio}" não existe`);
     if (!CHECAGENS[regra.verificacao?.tipo]) throw new ErroDeConfiguracao(`${regra.id}: tipo de verificação "${regra.verificacao?.tipo}" não existe no catálogo (${Object.keys(CHECAGENS).join(", ")})`);
   }
-  const contexto = { raiz, projeto: config.projeto || {}, base, avisos: [], arquivos: soCobertura ? [] : listarArquivosDoRepositorio(raiz) };
+  const contexto = { raiz, projeto: config.projeto || {}, base, avisos: [], arquivos: soCobertura ? [] : listarArquivosDoRepositorio(raiz), alterados: null };
+  if (base && !completo && !soCobertura) {
+    contexto.alterados = arquivosAlteradosDesde(raiz, base);
+    if (!contexto.alterados) contexto.avisos.push(`a base ${base} não existe; o repositório inteiro foi lido`);
+  }
   const resultados = [{ id: "cobertura", principio: "todos", tipo: "cobertura", violacoes: checarCobertura({ textoMd, regras: config.regras }) }];
   if (!soCobertura) {
     for (const regra of config.regras) {
@@ -267,11 +294,12 @@ export function validar({ raiz, config, textoMd, base, soCobertura = false }) {
     }
   }
   const aprovado = resultados.every((resultado) => resultado.violacoes.length === 0);
-  return { aprovado, resultados, avisos: contexto.avisos };
+  const escopo = contexto.alterados ? `${contexto.alterados.length} arquivo(s) alterado(s) desde ${base}` : "repositório inteiro";
+  return { aprovado, escopo, resultados, avisos: contexto.avisos };
 }
 
-function formatar({ aprovado, resultados, avisos }) {
-  const linhas = [];
+function formatar({ aprovado, escopo, resultados, avisos }) {
+  const linhas = [`Validador de regras de código: ${escopo}`];
   for (const { id, principio, tipo, violacoes } of resultados) {
     const rotulo = `${id} (${principio}) ${tipo}`;
     if (tipo === "revisor") { linhas.push(`👁  ${rotulo}: fica com o revisor`); continue; }
@@ -287,12 +315,13 @@ function formatar({ aprovado, resultados, avisos }) {
 }
 
 function lerArgumentos(argv) {
-  const opcoes = { config: "docs/regras-de-codigo.json", md: "docs/regras-de-codigo.md", base: undefined, soCobertura: false, json: false };
+  const opcoes = { config: "docs/regras-de-codigo.json", md: "docs/regras-de-codigo.md", base: undefined, completo: false, soCobertura: false, json: false };
   for (let indice = 0; indice < argv.length; indice += 1) {
     const argumento = argv[indice];
     if (argumento === "--config") opcoes.config = argv[++indice];
     else if (argumento === "--md") opcoes.md = argv[++indice];
     else if (argumento === "--base") opcoes.base = argv[++indice];
+    else if (argumento === "--completo") opcoes.completo = true;
     else if (argumento === "--so-cobertura") opcoes.soCobertura = true;
     else if (argumento === "--json") opcoes.json = true;
     else throw new ErroDeConfiguracao(`argumento desconhecido: ${argumento}`);
@@ -309,7 +338,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     }
     let config;
     try { config = JSON.parse(lerTexto(raiz, opcoes.config)); } catch (erro) { throw new ErroDeConfiguracao(`${opcoes.config} não é JSON válido: ${erro.message}`); }
-    const relatorio = validar({ raiz, config, textoMd: lerTexto(raiz, opcoes.md), base: opcoes.base, soCobertura: opcoes.soCobertura });
+    const relatorio = validar({ raiz, config, textoMd: lerTexto(raiz, opcoes.md), base: opcoes.base, completo: opcoes.completo, soCobertura: opcoes.soCobertura });
     console.log(opcoes.json ? JSON.stringify(relatorio, null, 2) : formatar(relatorio));
     process.exit(relatorio.aprovado ? 0 : 1);
   } catch (erro) {
