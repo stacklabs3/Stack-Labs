@@ -1,0 +1,41 @@
+# Watchdogs: o que barra e por quê
+
+Os watchdogs garantem que o método é seguido, por agentes e por pessoas. Um bloqueio não é erro: é o
+método dizendo qual é o próximo passo. A lista técnica completa fica em
+[docs/agents/watchdogs.md](../agentes/modelo-de-projeto/docs/agents/watchdogs.md).
+
+## As três camadas
+
+| Camada | Vigia | Onde |
+|---|---|---|
+| Hooks do Claude Code | O agente, durante a sessão | `.claude/hooks/` |
+| `pre-push` do git | Você e o agente, na sua máquina | `.claude/githooks/` |
+| `vigia-do-metodo` | Toda PR, de qualquer pessoa | `.github/workflows/` |
+| `/auditar-metodo` | O histórico do projeto inteiro, quando você pedir | skill |
+
+## O que cada bloqueio quer dizer
+
+| Mensagem | O que fazer |
+|---|---|
+| "faltam mapas iniciais" | Abra os mapas que faltam com `/wayfinder` |
+| "mapas iniciais ... ainda estão abertos" | Termine Arquitetura e Fases antes de implementar |
+| "exige uma issue ativa" | Ative uma issue `ready-for-*` com `ativar-issue.sh`, ou passe por `/to-tickets` |
+| "seria fechado sem ## Fontes" | A decisão precisa citar a pesquisa ou a fonte primária |
+| "não foi reivindicado" | O ticket precisa de responsável antes do trabalho |
+| "esta sessão já resolveu" | Um ticket de decisão por sessão: abra outra |
+| "contexto ... acima da smart zone" | `/handoff` e sessão nova |
+| "push direto para main" | Suba a branch e abra PR |
+| "a PR não fecha a issue da branch" | Acrescente `Closes #<n>` no corpo da PR |
+| "a PR altera os watchdogs" | Um sócio revisa e aplica a label `altera-watchdogs` |
+
+## Escapes (só humanos, só em emergência)
+
+- Desligar os hooks numa sessão: `STACKLABS_WATCHDOGS=desligado claude`.
+- Push direto na `main`: `STACKLABS_PERMITIR_PUSH_MAIN=1 git push origin main`.
+
+Usou um escape? Avise os sócios e registre o motivo na issue ou na PR. O `/auditar-metodo` vai achar.
+
+## Mudar um watchdog
+
+Por PR no Stack-Labs (`desenvolvimento/agentes/modelo-de-projeto/`), depois propague para os
+projetos. Mudança só num projeto é exceção dele e fica escrita no `AGENTS.md` desse projeto.

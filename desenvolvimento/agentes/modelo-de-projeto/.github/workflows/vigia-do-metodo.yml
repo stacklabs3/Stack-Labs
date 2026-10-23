@@ -1,0 +1,69 @@
+# Watchdog de CI do método StackLabs: vale para humanos e agentes, em toda PR.
+# Regras: AGENTS.md · Detalhes: docs/agents/watchdogs.md
+# Torne este check obrigatório na proteção da main quando o plano do GitHub permitir.
+name: vigia-do-metodo
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  vigiar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const nomeBranch = pr.head.ref;
+            const problemas = [];
+
+            // 1. Branch do método.
+            const prefixosValidos = ["issue/", "prototype/", "chore/"];
+            if (nomeBranch.startsWith("research/")) {
+              problemas.push("branch research/* nunca entra na main: a pesquisa fica na branch, apontada pelo ticket.");
+            } else if (!prefixosValidos.some((prefixo) => nomeBranch.startsWith(prefixo))) {
+              problemas.push(`a branch "${nomeBranch}" não segue o método: use issue/<n>-<slug>, prototype/<nome> ou chore/<nome>.`);
+            }
+
+            // 2. PR de implementação nasce de uma fatia vertical.
+            const numeroDaBranch = nomeBranch.match(/^issue\/(\d+)-/);
+            if (numeroDaBranch) {
+              const numeroIssue = Number(numeroDaBranch[1]);
+              const corpoPr = pr.body || "";
+              if (!new RegExp(`\\b(closes|fixes|resolves)\\s+#${numeroIssue}\\b`, "i").test(corpoPr)) {
+                problemas.push(`o corpo da PR não fecha a issue da branch: acrescente "Closes #${numeroIssue}".`);
+              }
+              try {
+                const { data: issue } = await github.rest.issues.get({ ...context.repo, issue_number: numeroIssue });
+                const labels = issue.labels.map((label) => (typeof label === "string" ? label : label.name));
+                if (labels.some((label) => label.startsWith("wayfinder:"))) {
+                  problemas.push(`#${numeroIssue} é ticket do wayfinder: decide, não implementa.`);
+                }
+                if (!labels.some((label) => ["ready-for-agent", "ready-for-human"].includes(label))) {
+                  problemas.push(`#${numeroIssue} não tem ready-for-agent nem ready-for-human: passe por /to-tickets ou /triage.`);
+                }
+              } catch {
+                problemas.push(`a issue #${numeroIssue} da branch não existe neste repositório.`);
+              }
+            }
+
+            // 3. Watchdogs só mudam com aval humano explícito (label aplicada por uma pessoa).
+            const arquivosAlterados = await github.paginate(github.rest.pulls.listFiles, { ...context.repo, pull_number: pr.number });
+            const caminhosDosWatchdogs = /^(\.claude\/(hooks|githooks)\/|\.claude\/settings\.json$|\.github\/workflows\/vigia-do-metodo\.yml$)/;
+            const alteraWatchdogs = arquivosAlterados.some((arquivo) => caminhosDosWatchdogs.test(arquivo.filename));
+            const temAvalHumano = pr.labels.some((label) => label.name === "altera-watchdogs");
+            if (alteraWatchdogs && !temAvalHumano) {
+              problemas.push("a PR altera os watchdogs. Um humano revisa e aplica a label altera-watchdogs.");
+            }
+
+            if (problemas.length) {
+              core.setFailed(`Método StackLabs:\n- ${problemas.join("\n- ")}`);
+            } else {
+              core.info("PR segue o método.");
+            }
