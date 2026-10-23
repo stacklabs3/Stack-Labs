@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto.
+# Ativação (uma vez por clone): git config core.hooksPath .claude/githooks
+# Escape humano para emergências: STACKLABS_PERMITIR_PUSH_MAIN=1 git push ...
+set -euo pipefail
+
+branches_protegidas_regex='^refs/heads/(main|master)$'
+nome_remoto="${1:-origin}"
+
+if [[ "${STACKLABS_PERMITIR_PUSH_MAIN:-}" == "1" ]]; then
+  echo "[pre-push] STACKLABS_PERMITIR_PUSH_MAIN=1: push para a main liberado por um humano." >&2
+  exit 0
+fi
+
+# Cada linha do stdin: <ref local> <sha local> <ref remota> <sha remoto>
+while read -r ref_local sha_local ref_remota sha_remoto; do
+  if [[ "$ref_remota" =~ $branches_protegidas_regex ]]; then
+    branch_destino="${ref_remota#refs/heads/}"
+    {
+      echo "[pre-push] BLOQUEADO — push direto para \"$branch_destino\" em \"$nome_remoto\"."
+      echo "A $branch_destino só recebe merge de PR. Envie a branch da issue e abra o PR:"
+      echo "  git push -u $nome_remoto <sua-branch> && gh pr create"
+      echo "(Regra 16 do AGENTS.md · docs/agents/watchdogs.md)"
+    } >&2
+    exit 1
+  fi
+done
+
+exit 0

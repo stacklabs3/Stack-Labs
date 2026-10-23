@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+
+<style>
+:root {
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Brand — TEMPLATE: ajuste para a identidade do projeto */
+  --primary:        #0F172A;
+  --primary-deep:   #020617;
+  --primary-soft:   #E2E8F0;
+  --accent:         #4F46E5;
+  --accent-soft:    #E0E7FF;
+
+  /* Light theme tokens */
+  --bg:             #F8FAFC;
+  --fg:             #0F172A;
+  --surface:        #FFFFFF;
+  --surface-2:      #F1F5F9;
+  --input-bg:       #F1F5F9;
+  --border:         rgba(15, 23, 42, 0.08);
+  --border-strong:  rgba(15, 23, 42, 0.18);
+  --muted:          #64748B;
+  --tabbar-bg:      rgba(248, 250, 252, 0.92);
+  --header-blur-bg: rgba(255, 255, 255, 0.78);
+
+  /* Status */
+  --ok:             #16A34A;
+  --ok-soft:        #DCFCE7;
+  --warn:           #F59E0B;
+  --warn-soft:      #FEF3C7;
+  --danger:         #DC2626;
+  --danger-soft:    #FEE2E2;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.14);
+  --shadow-device: 0 32px 64px rgba(15, 23, 42, 0.28);
+
+  /* Toast */
+  --toast-bg:       #0F172A;
+  --toast-fg:       #F8FAFC;
+}
+
+[data-theme="dark"] {
+  --primary:        #F8FAFC;
+  --primary-deep:   #FFFFFF;
+  --primary-soft:   #1E293B;
+  --accent:         #A5B4FC;
+  --accent-soft:    #312E81;
+
+  --bg:             #020617;
+  --fg:             #F1F5F9;
+  --surface:        #0F172A;
+  --surface-2:      #1E293B;
+  --input-bg:       #1E293B;
+  --border:         rgba(248, 250, 252, 0.08);
+  --border-strong:  rgba(248, 250, 252, 0.18);
+  --muted:          #94A3B8;
+  --tabbar-bg:      rgba(2, 6, 23, 0.92);
+  --header-blur-bg: rgba(15, 23, 42, 0.78);
+
+  --ok:             #4ADE80;
+  --ok-soft:        #14532D;
+  --warn:           #FBBF24;
+  --warn-soft:      #451A03;
+  --danger:         #F87171;
+  --danger-soft:    #450A0A;
+
+  --toast-bg:       #F1F5F9;
+  --toast-fg:       #0F172A;
+
+  --shadow-device: 0 32px 64px rgba(0, 0, 0, 0.55);
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  min-height: 100%;
+  font-family: var(--font-display);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  overflow-x: hidden;
+}
+
+#root { width: 100%; min-height: 100vh; display: flex; flex-direction: column; }
+
+input, textarea, button, select { font-family: inherit; }
+button { cursor: pointer; }
+
+/* Showcase chrome */
+.showcase-shell {
+  display: flex; flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Header enxuto: marca, abas e modo. Todo controle mora no painel flutuante, e as
+   abas rolam na horizontal: o header nunca disputa espaco com o numero de telas. */
+.showcase-header {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  background: var(--header-blur-bg);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid var(--border);
+  z-index: 50;
+}
+.showcase-brand {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-weight: 800; font-size: 18px; letter-spacing: -0.4px;
+  color: var(--primary-deep);
+  flex-shrink: 0;
+}
+[data-theme="dark"] .showcase-brand { color: var(--primary); }
+.showcase-brand .accent { color: var(--accent); }
+
+/* Abas: uma por visao (superficie ou papel), declaradas em visoes.jsx. */
+.showcase-abas {
+  flex: 1; min-width: 0;
+  display: flex; gap: var(--space-1);
+  overflow-x: auto;
+}
+.showcase-abas button {
+  border: 0; background: transparent;
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px; font-weight: 700;
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+.showcase-abas button:hover { color: var(--fg); }
+.showcase-abas button.active {
+  color: var(--fg);
+  background: var(--surface-2);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.showcase-abas button:focus-visible,
+.showcase-modo button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.showcase-modo {
+  margin-left: auto;
+  display: flex; gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+.showcase-modo button {
+  border: 0; background: transparent;
+  padding: var(--space-2) var(--space-4);
+  font-size: 13px; font-weight: 700;
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+.showcase-modo button.active {
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--shadow-sm);
+}
+
+.showcase-body {
+  flex: 1;
+  display: flex;
+  align-items: center; justify-content: center;
+  padding: var(--space-5);
+  min-height: 0;
+  overflow: auto;
+  background: var(--surface-2);
+}
+
+/* Alinhamento ao topo no modo grade. Com o `align-items: center` acima, uma grade mais alta
+   que a viewport transborda para os dois lados e as primeiras telas ficam inalcancaveis: o
+   scroll ja esta em zero e nao ha como subir. So aparece com muitas telas, entao some em
+   prototipo pequeno e volta a morder no grande. */
+.showcase-body--grade { align-items: flex-start; }
+
+/* Modo print: so a tela na moldura, sem header nem painel. */
+.showcase-body--print { height: 100vh; padding: 0; }
+
+/* Modo Showcase: as rotinas da aba, cada uma com as telas em ordem */
+.showcase-grade {
+  display: flex; flex-direction: column; gap: var(--space-6);
+  width: 100%; padding: var(--space-2);
+}
+.grade-rotina { display: flex; flex-direction: column; gap: var(--space-3); }
+.grade-rotina-titulo { font-size: 14px; font-weight: 800; color: var(--fg); }
+.grade-rotina-telas {
+  display: flex; gap: var(--space-3);
+  align-items: flex-start;
+  overflow-x: auto; padding-bottom: var(--space-2);
+}
+.grade-tile {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  flex-shrink: 0;
+}
+.grade-tile-label {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--muted);
+}
+.grade-tile-viewport {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: auto;
+}
+
+/* ---------- Painel de controle flutuante ---------- */
+.painel {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 100;
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: var(--space-2);
+}
+
+.painel-toggle {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--toast-bg);
+  color: var(--toast-fg);
+  border: 0;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  font-size: 12.5px; font-weight: 700;
+  transition: transform 0.14s ease;
+}
+.painel-toggle:hover { transform: translateY(-1px); }
+.painel-toggle:active { transform: translateY(0); }
+.painel-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.painel-resumo {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.painel-chevron {
+  font-size: 11px; opacity: 0.7;
+  transition: transform 0.16s ease;
+}
+.painel-chevron.aberto { transform: rotate(180deg); }
+
+.painel-corpo {
+  display: flex; flex-direction: column; gap: var(--space-4);
+  padding: var(--space-4);
+  width: 280px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.painel-grupo { display: flex; flex-direction: column; gap: var(--space-2); }
+.painel-grupo-label {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--muted);
+}
+.painel-opcoes { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.painel-opcoes button {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  padding: 6px 11px;
+  font-size: 12px; font-weight: 700;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.painel-opcoes button:hover { color: var(--fg); }
+.painel-opcoes button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.painel-opcoes button.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--surface);
+}
+
+.painel-contagem {
+  font-size: 12px; font-weight: 700;
+  color: var(--fg);
+  padding: var(--space-2);
+  background: var(--ok-soft);
+  border-radius: var(--radius-sm);
+}
+.painel-contagem.acima { background: var(--warn-soft); }
+
+.painel-reset {
+  padding: var(--space-2);
+  background: transparent;
+  color: var(--muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.painel-reset:hover { color: var(--danger); border-color: var(--danger); }
+.painel-reset:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .painel { left: var(--space-4); right: var(--space-4); align-items: stretch; }
+  .painel-corpo { width: auto; }
+  .painel-toggle { justify-content: center; }
+}
+
+::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+  <!-- Ordem obrigatoria: sao scripts globais, cada camada so enxerga as anteriores.
+       Tela nova entra depois de painel.jsx e antes de app.jsx. -->
+  <script type="text/babel" src="components/i18n.jsx?v=1"></script>
+  <script type="text/babel" src="components/data.jsx?v=1"></script>
+  <script type="text/babel" src="components/icons.jsx?v=1"></script>
+  <script type="text/babel" src="components/ui.jsx?v=1"></script>
+  <script type="text/babel" src="components/device.jsx?v=1"></script>
+  <script type="text/babel" src="components/router.jsx?v=1"></script>
+  <script type="text/babel" src="components/visoes.jsx?v=1"></script>
+  <script type="text/babel" src="components/painel.jsx?v=1"></script>
+  <script type="text/babel" src="components/telas.jsx?v=1"></script>
+  <script type="text/babel" src="components/app.jsx?v=1"></script>
+
+  <script type="text/babel">
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<Showcase/>);
+  </script>
+</body>
+</html>

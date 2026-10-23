@@ -1,0 +1,48 @@
+{
+  "skill_name": "nova-sessao",
+  "evals": [
+    {
+      "id": 1,
+      "name": "kickoff-feature-jwt-spring",
+      "prompt": "Sessão de planejamento (código): auth JWT em projeto Spring Boot, com decisão revisada no meio (sessões Redis -> JWT stateless), lacuna plantada (rate limiting citado e esquecido do plano), plano em docs/plans/plan-auth-jwt.md. Usuário envia o prompt recorrente de validação final + mensagem para nova sessão.",
+      "expected_output": "Resposta com 3 passos visíveis: (1) validação final que captura a lacuna do rate limiting, (2) análise da tarefa + seleção de skills apenas dentre as disponíveis (tdd, code-review), (3) mensagem de kickoff autossuficiente em bloco de código único como último elemento, mandando executar sem re-planejar, com decisões finais + racional (JWT stateless, não Redis) e critérios de aceite.",
+      "assertions": [
+        "A validação final detecta o rate limiting como item fora do plano e o incorpora à mensagem",
+        "A mensagem usa a decisão FINAL (JWT stateless) e não menciona a alternativa descartada como aberta",
+        "Skills selecionadas são subconjunto da lista de disponíveis fornecida; nenhum nome inventado",
+        "A resposta termina em um único bloco de código copiável, sem texto depois",
+        "A primeira linha da mensagem invoca as skills via /nome e proíbe re-planejamento",
+        "A mensagem é autossuficiente: paths, decisões com porquê, escopo e critérios de aceite verificáveis"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "kickoff-relatorio-concorrentes",
+      "prompt": "Sessão de planejamento (não-código): relatório competitivo em docx sobre 3 concorrentes (escopo revisado de 5 para 3), fontes dos últimos 12 meses, outline em analisys-paperclip/concorrentes-outline.md, lacuna plantada (análise de pricing citada e esquecida do outline). Usuário envia o prompt recorrente.",
+      "expected_output": "Mesma estrutura de 3 passos; lacuna do pricing detectada; skills selecionadas dentre as disponíveis (deep-research, competitive-intel, docx) sem incluir tdd/diagnose; mensagem final em bloco único, escopo com 3 concorrentes (versão final), critérios de aceite.",
+      "assertions": [
+        "A validação final detecta a análise de pricing ausente do outline",
+        "O escopo usa a versão final (3 concorrentes), não a descartada (5)",
+        "Skills selecionadas pertencem à lista fornecida e as irrelevantes (tdd, diagnose) ficam de fora",
+        "A resposta termina em um único bloco de código copiável, sem texto depois",
+        "A mensagem referencia o arquivo de outline em 'Leia primeiro' em vez de duplicá-lo"
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "kickoff-premissa-de-tracker-com-pre-voo",
+      "prompt": "Sessão de planejamento com tracker no GitHub: o próximo passo é resolver o ticket #467 (último aberto do mapa #463) e depois seguir /handoff → /to-prd → /to-issues. O usuário pede a mensagem para iniciar a tarefa em uma nova sessão. A mensagem pode ser colada horas depois, quando outra sessão já fechou a #467, fechou o mapa e criou PRD e issues.",
+      "expected_output": "Mensagem de kickoff que abre com a seção Pré-voo: data/hora de geração, premissas ('#467 aberta e sem resolução', 'mapa #463 aberto', 'nenhum PRD cita o mapa') cada uma com o comando gh que a confere, uma checagem de itens criados depois da data, e a instrução de parar sem escrever se alguma falhar. O claim da #467 vem depois do pré-voo, nunca antes.",
+      "assertions": [
+        "A mensagem tem uma seção Pré-voo antes de Contexto, com data e hora de geração",
+        "Cada premissa vem com um comando que a confere (ex.: gh issue view 467 --json state)",
+        "Há checagem de trabalho posterior (issues/PRD criados depois da data de geração)",
+        "A mensagem manda parar sem escrever e relatar se alguma premissa falhar",
+        "Nenhuma escrita obrigatória (claim, branch, commit) aparece antes do pré-voo",
+        "A sessão geradora conferiu as premissas ao gerar a mensagem"
+      ]
+    }
+  ]
+}
