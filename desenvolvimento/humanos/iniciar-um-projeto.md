@@ -1,6 +1,7 @@
 # Checklist: começar um projeto
 
-Marque na ordem. Cada passo diz quem faz.
+Marque na ordem. Cada passo diz quem faz. Projeto que já está rodando não começa por aqui: veja
+[adotar-em-projeto-existente.md](adotar-em-projeto-existente.md).
 
 ## Dia 0: o repositório
 

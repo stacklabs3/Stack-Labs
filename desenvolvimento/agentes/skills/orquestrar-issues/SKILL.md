@@ -36,7 +36,10 @@ de issues devolvidas em sequência. É por ele que uma janela nova retoma a roda
 - Com `--retomar <arquivo>`: leia o estado, confira que as branches existem e vá para o passo 3,
   continuando da issue `em-andamento` (do começo do ciclo dela).
 - Sem ele: working tree limpo, `gh auth status` passa, e os quatro papéis existem em
-  `.claude/agents/` (senão, o projeto precisa do `/setup-stacklabs`).
+  `.claude/agents/` (senão, o projeto precisa do `/setup-stacklabs`, ou do
+  `/adotar-metodo-stack-labs` se já existia antes do método).
+- Projeto em adoção na etapa `observacao` (`.claude/metodo.json`): **pare**. As issues antigas ainda
+  não passaram pelo triage; a orquestração começa na etapa `planejamento`.
 
 Pronto quando tudo passa, ou o humano sabe o que falta.
 

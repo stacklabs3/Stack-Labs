@@ -35,6 +35,8 @@ ideia grande ──► /wayfinder ──► /to-spec ──► /to-tickets ─�
 - **Ideia clara, várias sessões:** `/grill-with-docs` → `/to-spec` → `/to-tickets`.
 - **Ideia clara, uma sessão:** `/grill-with-docs` → `/to-tickets` com uma tarefa só.
 - **Bug ou pedido de cliente:** `/triage`.
+- **Projeto que já está rodando:** entra no método por etapas, com `/adotar-metodo-stack-labs`
+  ([adotar-em-projeto-existente.md](adotar-em-projeto-existente.md)).
 - **Como uma tarefa fica pronta para o agente:** veja [caminho-ate-ready-for-agent.md](caminho-ate-ready-for-agent.md).
 - **Não sabe por onde ir:** `/ask-matt`.
 

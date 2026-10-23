@@ -2,7 +2,9 @@
 
 Todo projeto abre quatro mapas do `/wayfinder` antes de qualquer código de produção
 (ADR 0002 do método). Cada mapa é uma issue com `wayfinder:map` **e** `mapa-inicial:<tipo>`, que é
-como os watchdogs encontram o mapa.
+como os watchdogs encontram o mapa. Num projeto que já existia antes do método, os mapas são
+**retroativos**: registram as decisões já tomadas e fecham na hora quando nada está em aberto
+(`/adotar-metodo-stack-labs`).
 
 | Mapa | Label | Destino | Precisa estar fechado para ativar issue? |
 |---|---|---|---|
