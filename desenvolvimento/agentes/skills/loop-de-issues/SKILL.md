@@ -7,7 +7,7 @@ argument-hint: "N issues, ou 'resultado' para ler a última rodada"
 
 Conduz o **loop de issues** do projeto: o padrão Ralph do Matt Pocock, com uma sessão nova do Claude
 Code por issue, em sequência. Como ele funciona está em `docs/agents/loop-de-issues.md`; leia antes.
-O motor é `.claude/loop/loop-de-issues.sh`, e quem o roda é o **humano**, num terminal: você prepara
+O motor é `.claude/loop/loop-de-issues.mjs`, e quem o roda é o **humano**, num terminal: você prepara
 e lê, nunca dispara.
 
 Dois caminhos: com o argumento `resultado`, vá direto para **Resultado**; senão, **Preparar**.
@@ -18,11 +18,11 @@ Dois caminhos: com o argumento `resultado`, vá direto para **Resultado**; senã
    - working tree limpo e na `main`;
    - `gh auth status` passa;
    - `claude --version` é 2.1.259 ou mais (o script usa `--permission-prompts`);
-   - `.claude/loop/loop-de-issues.sh` existe (senão, o projeto precisa do `/setup-stacklabs`).
+   - `.claude/loop/loop-de-issues.mjs` existe (senão, o projeto precisa do `/setup-stacklabs`).
 
    Pronto quando os quatro passam.
 
-2. **Fila.** Rode `.claude/loop/loop-de-issues.sh <N> --simular` e mostre as issues que a rodada
+2. **Fila.** Rode `node .claude/loop/loop-de-issues.mjs <N> --simular` e mostre as issues que a rodada
    pegaria, **pelo nome**, na ordem. Aponte as que parecem grandes para uma sessão (o loop as devolve
    depois de 4 handoffs) e as sem critério de pronto claro (o loop as devolve como bloqueadas).
 
@@ -33,7 +33,7 @@ Dois caminhos: com o argumento `resultado`, vá direto para **Resultado**; senã
 4. **Entregue o comando** para o humano rodar num terminal, fora desta sessão:
 
    ```
-   .claude/loop/loop-de-issues.sh <N> --orcamento <USD>
+   node .claude/loop/loop-de-issues.mjs <N> --orcamento <USD>
    ```
 
    Diga que ele pode fechar esta sessão: o loop roda sozinho, uma issue por vez, e para nas travas

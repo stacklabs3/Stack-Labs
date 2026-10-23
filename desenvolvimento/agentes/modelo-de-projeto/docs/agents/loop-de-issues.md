@@ -1,8 +1,8 @@
 # Loop de issues
 
 O jeito da casa de implementar várias issues `ready-for-agent` sem ninguém olhando. É o padrão
-"Ralph" do Matt Pocock: um laço em shell que abre uma **sessão nova** do Claude Code (`claude -p`) para
-cada issue, **uma de cada vez** (ADR 0004 do método). O motor é `.claude/loop/loop-de-issues.sh`; a
+"Ralph" do Matt Pocock: um laço que abre uma **sessão nova** do Claude Code (`claude -p`) para
+cada issue, **uma de cada vez** (ADR 0004 do método). O motor é `.claude/loop/loop-de-issues.mjs`; a
 skill `/loop-de-issues` prepara a rodada e lê o resultado.
 
 ## Como uma rodada anda

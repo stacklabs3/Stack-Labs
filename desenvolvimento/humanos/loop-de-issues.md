@@ -10,7 +10,7 @@ revisar PRs. É o padrão "Ralph" do Matt Pocock
 1. Numa sessão do Claude Code no projeto: **`/loop-de-issues 5`**. O agente confere os
    pré-requisitos, mostra quais issues entrariam na rodada e aponta as que parecem arriscadas.
 2. Ele te entrega um comando. Rode **você mesmo, num terminal**:
-   `.claude/loop/loop-de-issues.sh 5 --orcamento 5`
+   `node .claude/loop/loop-de-issues.mjs 5 --orcamento 5`
 3. Volte depois e peça **`/loop-de-issues resultado`**: as PRs para revisar e as issues devolvidas,
    com o motivo de cada uma.
 
