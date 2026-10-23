@@ -1,9 +1,8 @@
 # Roteiro de protótipo (família `*-prototipo`)
 
-Como a casa prototipa aparência. As skills da família ficam no `~/.claude/skills/` de quem trabalha
-(cópia oficial em `desenvolvimento/agentes/skills/recomendada/` do repositório Stack-Labs); este
-roteiro diz quando usar cada uma. Comportamento e lógica
-não passam por aqui: usam `/prototype`.
+Como a casa prototipa aparência: quando usar cada skill da família. Comportamento e lógica usam o
+`/prototype`. Convenções, checklist de qualidade, modelo e script de prints das skills ficam na base
+compartilhada `prototipo-html`, instalada junto com elas.
 
 ## As skills
 
@@ -16,20 +15,18 @@ não passam por aqui: usam `/prototype`.
 | `/ajustar-detalhe-prototipo` | Ajuste fino visual que não converge por descrição: o humano escolhe o valor com sliders e guias | Quando "sobe um pouco… demais" não converge |
 | `/auditar-prototipo` | Antes de levar um lote à aprovação | Uma por rodada |
 | `/sincronizar-prototipo` | Ao fechar uma tela aprovada: reflete na vitrine e sobe a versão de todos os scripts | Uma por fechamento |
-| `/portar-prototipo` | Levar a rotina aprovada para a stack real, com o plano de implementação | Só com aprovação explícita |
-
-As convenções, o checklist de qualidade, o modelo e o script de prints que essas skills usam ficam na
-base compartilhada `prototipo-html` (em `~/.claude/skills/prototipo-html/`), que se instala junto.
+| `/portar-prototipo` | Levar a rotina aprovada para a stack real, com o plano de implementação | Só com aprovação explícita (regra 11) |
 
 ## Como um lote anda
 
-Um subagente por vez, nunca dois ao mesmo tempo.
+Um subagente por vez, em sequência.
 
 1. **Construção** da rotina com `/integrar-ao-prototipo`: um subagente, um commit.
 2. **Acabamento** da rotina por outro subagente, só sobre o diff da construção.
-3. Repete 1 e 2 para cada rotina do lote, na ordem dos tickets.
+3. Repete 1 e 2 para cada rotina do lote, na ordem dos tickets. Pronto quando cada rotina cumpre
+   *Rotina pronta*.
 4. **Auditoria** com `/auditar-prototipo`; correções com `/melhorar-prototipo`. A partir da segunda
-   rodada, audite só o que a anterior corrigiu.
+   rodada, audite só o que a anterior corrigiu. Pronto quando a auditoria não acha defeito.
 5. Os prints, a tabela de telas e os **pontos para aprovação** vão ao humano no ticket.
 6. O humano escreve a **aprovação explícita** no comentário de resolução. Só então os tickets do lote
    fecham e o `/portar-prototipo` fica liberado.
@@ -47,7 +44,7 @@ Um subagente por vez, nunca dois ao mesmo tempo.
 
 Em `.scratch/<lote>/pontos-para-aprovacao.md`: uma seção por rotina, os pontos numerados, em
 palavras simples, com o cenário do cliente e o que foi escolhido em cada um. Dúvida real de aparência
-vira A/B no protótipo, não pergunta solta.
+vira A/B no protótipo.
 
-O projeto pode ter o próprio roteiro de lote, mais detalhado (o `appetito_v2` tem
-`docs/agents/roteiro-de-lote-de-prototipo.md`). Ele complementa este, nunca o contradiz.
+Roteiro de lote próprio do projeto, em `docs/agents/` (ex.: `roteiro-de-lote-de-prototipo.md`),
+complementa este, nunca o contradiz.

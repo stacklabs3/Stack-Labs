@@ -8,12 +8,13 @@ Sem esse arquivo, o projeto nasceu no método e vale tudo.
 |---|---|---|
 | `observacao` | Mexer nos watchdogs, `--no-verify`, `core.hooksPath`, push forçado, push na `main`, contexto acima de 550k | Ativação de issue, regras do wayfinder e das fontes, commit na `main`, código sem issue ativa; no CI, as regras de branch e de issue |
 | `planejamento` | Tudo de `observacao`, mais ativação de issue (com mapas iniciais), wayfinder (claim, fontes, um ticket por sessão, ponteiro no mapa), commit na `main` e as regras de branch e de issue no CI | Código sem issue ativa |
-| `completo` | Tudo | — |
+| `completo` | Tudo | Nada |
 
 ## Numa sessão de um projeto em adoção
 
-- O `sessao-inicio` mostra a etapa. **O que ainda não bloqueia também vale:** a constituição é a
-  mesma em toda etapa; a etapa só decide o que a máquina barra.
+- O `sessao-inicio` mostra a etapa. Siga também o que ainda não bloqueia: a constituição vale inteira
+  em toda etapa (regra 22).
 - PRs abertas antes da data de adoção terminam fora das regras de branch e de issue do CI.
-- `.claude/metodo.json` é protegido. Mudar de etapa é uma PR do humano, com a label `altera-watchdogs`,
-  depois que o `/adotar-metodo-stack-labs` mostrou que as condições da etapa seguinte estão cumpridas.
+- Mudar de etapa é uma PR do humano com a label `altera-watchdogs`, depois que o
+  `/adotar-metodo-stack-labs` mostrou que as condições da etapa seguinte estão cumpridas
+  (`.claude/metodo.json` é protegido pela regra 21).
