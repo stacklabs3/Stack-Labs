@@ -26,7 +26,7 @@ export const MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR = ["prototipo", "arquitetu
 export const TIPOS_QUE_EXIGEM_FONTES = ["grilling", "task", "research"];
 
 // Caminhos que nenhum agente edita: são os próprios watchdogs e o estado deles.
-export const CAMINHOS_PROTEGIDOS = [".claude/hooks/", ".claude/githooks/", ".claude/agents/", ".claude/settings.json", ".claude/state/", ".github/workflows/vigia-do-metodo.yml"];
+export const CAMINHOS_PROTEGIDOS = [".claude/hooks/", ".claude/githooks/", ".claude/agents/", ".claude/metodo.json", ".claude/settings.json", ".claude/state/", ".github/workflows/vigia-do-metodo.yml"];
 
 // Onde o git procura os hooks deste repo (pre-push que protege a main).
 export const CAMINHO_GITHOOKS = ".claude/githooks";
@@ -46,6 +46,25 @@ export const CAMINHOS_LIVRES_SEM_ISSUE = [
   "prototipos/",
   ".claude/",
 ];
+
+// Etapa de adoção do método (projeto que já existia antes dele; docs/agents/adocao.md), gravada em
+// .claude/metodo.json. Sem o arquivo, o projeto nasceu no método: etapa "completo".
+//   observacao   — só protegem a si mesmos e a main; o resto apenas avisa
+//   planejamento — valem as regras do wayfinder, das fontes e da ativação de issue
+//   completo     — tudo, inclusive código só com issue ativa
+export const ETAPAS_DE_ADOCAO = ["observacao", "planejamento", "completo"];
+
+export function lerMetodoDoProjeto(diretorioProjeto) {
+  const caminhoMetodo = join(diretorioProjeto, ".claude", "metodo.json");
+  if (!existsSync(caminhoMetodo)) return { etapaDeAdocao: "completo", adotadoEm: null };
+  const metodoDoProjeto = JSON.parse(readFileSync(caminhoMetodo, "utf8"));
+  const etapaValida = ETAPAS_DE_ADOCAO.includes(metodoDoProjeto.etapaDeAdocao) ? metodoDoProjeto.etapaDeAdocao : "completo";
+  return { etapaDeAdocao: etapaValida, adotadoEm: metodoDoProjeto.adotadoEm || null };
+}
+
+export function etapaDeAdocao(diretorioProjeto) {
+  return lerMetodoDoProjeto(diretorioProjeto).etapaDeAdocao;
+}
 
 export function watchdogsDesligados() {
   return process.env.STACKLABS_WATCHDOGS === "desligado";

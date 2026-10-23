@@ -2,11 +2,12 @@
 // Instala ou atualiza o método StackLabs num projeto: modelo-de-projeto, skills da casa e as skills
 // publicadas do Matt Pocock (sempre da versão mais nova do repositório dele).
 //
-// Uso: node instalar.mjs [--destino <pasta>] [--simular] [--sem-labels] [--atualizar-watchdogs]
+// Uso: node instalar.mjs [--destino <pasta>] [--simular] [--sem-labels] [--atualizar-watchdogs] [--adocao]
 //   --destino              raiz do projeto (padrão: a raiz do git da pasta atual)
 //   --simular              mostra o que faria, sem escrever nada
 //   --sem-labels           não cria as labels do método no GitHub
 //   --atualizar-watchdogs  sobrescreve watchdogs que já existem. SÓ HUMANO (o guarda-bash barra o agente)
+//   --adocao               projeto que já existia: cria .claude/metodo.json na etapa de observação (/adotar-metodo-stack-labs)
 // Fontes (opcional, para usar um clone local em vez de baixar):
 //   STACKLABS_ORIGEM=<clone do Stack-Labs>   MATT_ORIGEM=<clone de mattpocock/skills>
 
@@ -28,13 +29,14 @@ const LABELS_DO_METODO = [
 // ---------- utilitários ----------
 
 function lerArgumentos(argumentosDaLinha) {
-  const opcoes = { destino: null, simular: false, criarLabels: true, atualizarWatchdogs: false };
+  const opcoes = { destino: null, simular: false, criarLabels: true, atualizarWatchdogs: false, adocao: false };
   for (let indice = 0; indice < argumentosDaLinha.length; indice++) {
     const argumento = argumentosDaLinha[indice];
     if (argumento === "--destino") opcoes.destino = argumentosDaLinha[++indice];
     else if (argumento === "--simular") opcoes.simular = true;
     else if (argumento === "--sem-labels") opcoes.criarLabels = false;
     else if (argumento === "--atualizar-watchdogs") opcoes.atualizarWatchdogs = true;
+    else if (argumento === "--adocao") opcoes.adocao = true;
     else throw new Error(`opção desconhecida: ${argumento}`);
   }
   return opcoes;
@@ -98,6 +100,16 @@ function instalar(opcoes) {
     const pastaDasSkillsDaCasa = join(origemStacklabs, "desenvolvimento", "agentes", "skills");
     const pastaDasSkillsDoProjeto = join(destino, ".claude", "skills");
     const fazer = (acao) => { if (!opcoes.simular) acao(); };
+
+    // ---------- 0. adoção: a etapa vem antes dos watchdogs, para eles já nascerem nela ----------
+    const arquivoDoMetodo = join(destino, ".claude", "metodo.json");
+    if (opcoes.adocao && !existsSync(arquivoDoMetodo)) {
+      fazer(() => {
+        mkdirSync(dirname(arquivoDoMetodo), { recursive: true });
+        writeFileSync(arquivoDoMetodo, JSON.stringify({ etapaDeAdocao: "observacao", adotadoEm: new Date().toISOString() }, null, 2) + "\n");
+      });
+      relatorio.push("ADOÇÃO    .claude/metodo.json criado na etapa observacao");
+    }
 
     // ---------- 1. modelo-de-projeto ----------
     const jaTemWatchdogs = existsSync(join(destino, ".claude", "hooks"));

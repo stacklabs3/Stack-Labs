@@ -8,7 +8,7 @@ import { resolve } from "node:path";
 import {
   lerEntradaDoHook, diretorioDoProjeto, bloquearFerramenta, watchdogsDesligados,
   lerEstadoSessao, gravarEstadoSessao, buscarIssue, tipoWayfinder, chaveDoAgente,
-  branchAtual, branchEhPrincipal, repositorioTemCommits, LABELS_IMPLEMENTAVEIS,
+  branchAtual, branchEhPrincipal, repositorioTemCommits, LABELS_IMPLEMENTAVEIS, etapaDeAdocao,
   buscarMapasIniciais, buscarCorposDosComentarios, textoTemFontes,
   MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR, TIPOS_QUE_EXIGEM_FONTES,
 } from "./lib/comum.mjs";
@@ -47,13 +47,13 @@ function comandoReivindicaNoMesmoPasso(numeroTicket) {
 
 // ---------- W1: os watchdogs não se desligam por Bash ----------
 const comandoSemRedirecionamentoInofensivo = comando.replace(/\d*>&\d+/g, "").replace(/\d*>\s*\/dev\/null/g, "");
-const padraoCaminhoProtegido = /\.claude\/(hooks|githooks|agents|settings\.json|state)|\.github\/workflows\/vigia-do-metodo\.yml/;
+const padraoCaminhoProtegido = /\.claude\/(hooks|githooks|agents|metodo\.json|settings\.json|state)|\.github\/workflows\/vigia-do-metodo\.yml/;
 const verboMutante = /(>|\brm\b|\bmv\b|\bcp\b|sed\s+-i|perl\s+-[a-z]*i|\btee\b|\bchmod\b|\btruncate\b|\bln\b|\bunlink\b|git\s+(checkout|restore|rm|stash)\b)/;
 const trechoMutaCaminhoProtegido = comandoSemRedirecionamentoInofensivo
   .split(/&&|\|\||;|\n/)
   .some((trechoComando) => padraoCaminhoProtegido.test(trechoComando) && verboMutante.test(trechoComando));
 if (trechoMutaCaminhoProtegido) {
-  bloquearFerramenta(NOME_WATCHDOG, "o comando altera .claude/hooks, .claude/githooks, .claude/agents, .claude/settings.json, .claude/state ou o vigia-do-metodo do CI. Só um humano altera a infraestrutura dos watchdogs.");
+  bloquearFerramenta(NOME_WATCHDOG, "o comando altera .claude/hooks, .claude/githooks, .claude/agents, .claude/metodo.json, .claude/settings.json, .claude/state ou o vigia-do-metodo do CI. Só um humano altera a infraestrutura dos watchdogs.");
 }
 
 // ---------- W8: o pre-push que protege a main não se desliga ----------
@@ -69,6 +69,13 @@ if (/--atualizar-watchdogs\b/.test(comando)) {
 if (/STACKLABS_PERMITIR_PUSH_MAIN/.test(comando)) {
   bloquearFerramenta(NOME_WATCHDOG, "STACKLABS_PERMITIR_PUSH_MAIN é o escape humano do pre-push. O agente não usa.");
 }
+
+if (/\bgit\s+push\b[^;&|\n]*(--force\b|--force-with-lease\b|\s-f\b)/.test(comando)) {
+  bloquearFerramenta(NOME_WATCHDOG, "push forçado é proibido para o agente. Peça ao usuário.");
+}
+
+// Em observação (adoção do método num projeto existente), daqui para baixo só se avisa: nada bloqueia.
+if (etapaDeAdocao(diretorioProjeto) === "observacao") process.exit(0);
 
 // ---------- W4: ativação de issue (uma issue por sessão) ----------
 const numerosAtivados = [...new Set([...comando.matchAll(/ativar-issue(?:\.mjs)?\s+#?(\d+)/g)].map((correspondencia) => Number(correspondencia[1])))];
@@ -202,9 +209,6 @@ if (/\bgit\s+(?:-C\s+\S+\s+)?commit\b/.test(comando)) {
   if (branchEhPrincipal(nomeBranch) && repositorioTemCommits(pastaDoCommit)) {
     bloquearFerramenta(NOME_WATCHDOG, `commit direto na "${nomeBranch}" é proibido. Use a branch da issue (issue/<n>-<slug>), prototype/<nome> ou research/<nome>.`);
   }
-}
-if (/\bgit\s+push\b[^;&|\n]*(--force\b|--force-with-lease\b|\s-f\b)/.test(comando)) {
-  bloquearFerramenta(NOME_WATCHDOG, "push forçado é proibido para o agente. Peça ao usuário.");
 }
 
 process.exit(0);

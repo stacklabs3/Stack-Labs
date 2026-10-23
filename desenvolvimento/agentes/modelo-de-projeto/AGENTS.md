@@ -102,9 +102,11 @@ ideia grande demais para uma sessão
 
 ### 8. Os watchdogs
 20. **[W]** Você **não edita, move, apaga nem contorna** `.claude/hooks/`, `.claude/githooks/`,
-    `.claude/agents/`, `.claude/settings.json`, `.claude/state/`, `.github/workflows/vigia-do-metodo.yml` nem o
+    `.claude/agents/`, `.claude/metodo.json`, `.claude/settings.json`, `.claude/state/`, `.github/workflows/vigia-do-metodo.yml` nem o
     `core.hooksPath`. Se um watchdog estiver errado, explique ao usuário e peça que ele altere.
-21. Um bloqueio é uma informação, não um obstáculo. Leia o motivo e siga a rota que ele indica.
+21. Em projeto que está adotando o método, a etapa de `.claude/metodo.json` decide só o que a máquina
+    bloqueia; as regras desta constituição valem inteiras desde o primeiro dia
+    ([docs/agents/adocao.md](docs/agents/adocao.md)). Um bloqueio é uma informação, não um obstáculo. Leia o motivo e siga a rota que ele indica.
 
 ## Agent skills
 

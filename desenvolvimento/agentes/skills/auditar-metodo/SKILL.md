@@ -13,6 +13,10 @@ Você só **lê**: não corrige, não fecha, não comenta. O resultado é um rel
 Rode cada verificação abaixo com `gh` e `git` no clone do projeto, num subagente se o histórico for
 grande. Cada item termina com ✅, ⚠️ ou ❌ e a evidência (nome do ticket com link, hash, caminho).
 
+**Etapa de adoção**
+- Se `.claude/metodo.json` existe, informe a etapa e a data. Meça todos os critérios mesmo assim, e
+  marque como ⚠️ (esperado nesta etapa) o que a etapa ainda não cobra (`docs/agents/adocao.md`).
+
 **Setup**
 - `AGENTS.md`, `CLAUDE.md`, `docs/agents/*.md`, `.claude/settings.json`, `.claude/hooks/`,
   `.claude/agents/`, `.github/workflows/vigia-do-metodo.yml` existem e batem com o `modelo-de-projeto` do repositório

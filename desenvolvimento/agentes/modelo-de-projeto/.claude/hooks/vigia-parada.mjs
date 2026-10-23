@@ -4,13 +4,14 @@
 
 import {
   lerEntradaDoHook, diretorioDoProjeto, watchdogsDesligados,
-  lerEstadoSessao, gravarEstadoSessao, buscarIssue, numeroDoMapa,
+  lerEstadoSessao, gravarEstadoSessao, buscarIssue, numeroDoMapa, etapaDeAdocao,
 } from "./lib/comum.mjs";
 
 const entradaHook = lerEntradaDoHook();
 if (watchdogsDesligados() || entradaHook.stop_hook_active) process.exit(0);
 
 const diretorioProjeto = diretorioDoProjeto(entradaHook);
+if (etapaDeAdocao(diretorioProjeto) === "observacao") process.exit(0);
 const estadoSessao = lerEstadoSessao(diretorioProjeto, entradaHook.session_id);
 const ticketsPendentes = estadoSessao.ticketsWayfinderResolvidos.filter((ticketResolvido) => !ticketResolvido.ponteiroNoMapaVerificado);
 if (ticketsPendentes.length === 0) process.exit(0);

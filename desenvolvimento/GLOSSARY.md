@@ -168,6 +168,19 @@ Um hook do Claude Code, um hook do git ou um check de CI que transforma uma regr
 bloqueio. Um bloqueio de watchdog é uma informação, não um obstáculo a contornar.
 _Evitar_: Guard-rail, lint (quando é do método)
 
+**Adoção**:
+A entrada no método de um projeto que já existia antes dele, pela `/adotar-metodo-stack-labs`. Anda
+em etapas e não refaz o trabalho que estava em andamento.
+_Evitar_: Migração, implantação
+
+**Etapa de adoção**:
+`observacao`, `planejamento` ou `completo`, gravada em `.claude/metodo.json`. Decide só o que os
+watchdogs bloqueiam; as regras do método valem inteiras desde o primeiro dia.
+
+**Mapa retroativo**:
+Mapa inicial de um projeto em adoção, que registra decisões já tomadas, aponta as ADRs que o humano
+confirmou e fecha na hora quando nada está em aberto.
+
 **Constituição**:
 O `AGENTS.md` de cada projeto: as regras duras que todo agente segue em toda sessão.
 _Evitar_: Prompt, instruções

@@ -1,10 +1,10 @@
 ---
 name: setup-stacklabs
-description: Instala ou atualiza o método StackLabs num projeto — modelo de projeto, watchdogs, skills da casa e as skills mais novas do Matt Pocock.
+description: Instala o método StackLabs num projeto novo, ou atualiza um projeto que já o segue.
 disable-model-invocation: true
 ---
 
-Leva um repositório ao **método StackLabs**: o `modelo-de-projeto` (constituição, `docs/agents/`,
+Leva um repositório **novo** ao **método StackLabs**, ou atualiza um que já o segue: o `modelo-de-projeto` (constituição, `docs/agents/`,
 watchdogs), as skills da casa e as skills publicadas do Matt Pocock, todas em `.claude/skills/` do
 projeto, para que cada pessoa e cada sessão na nuvem tenham as mesmas. Quem copia é o
 [`instalar.mjs`](instalar.mjs) desta pasta; você conduz, confere e mescla.
@@ -22,9 +22,11 @@ Confira, na raiz do projeto:
 - é um repositório git com `origin` no GitHub;
 - `gh auth status` passa (o script cria as labels do método);
 - `node --version` é 18 ou mais (os watchdogs rodam em node);
-- qual é o **caso**: **instalação** (não há `.claude/skills/ORIGEM.json` nem `AGENTS.md`),
-  **projeto existente** (há `AGENTS.md`, `CLAUDE.md` ou `.claude/settings.json` próprios) ou
-  **atualização** (há `ORIGEM.json`).
+- qual é o **caso**: **instalação** (repositório sem código nem histórico além do inicial) ou
+  **atualização** (há `.claude/skills/ORIGEM.json`).
+
+Projeto que já tem código em andamento e não segue o método **não é instalação**: pare e indique o
+`/adotar-metodo-stack-labs`, que instala por etapas sem travar o time.
 
 Pronto quando os quatro itens estão respondidos para o humano. Item que falha bloqueia: diga o que
 falta e pare.
@@ -48,7 +50,10 @@ Pronto quando o script terminou sem erro e imprimiu o relatório.
 
 Trate cada linha do relatório que não seja `COPIADO`, `SKILL` ou `REMOVIDA`:
 
-- **`MESCLAR`**: siga [MESCLAR.md](MESCLAR.md).
+- **`MESCLAR`**: o modelo novo está em `<arquivo>.stacklabs-novo`; junte e apague o `.stacklabs-novo`.
+  No `.gitignore`, acrescente as linhas que faltam. No `AGENTS.md` e no `CLAUDE.md`, o modelo novo é
+  a base, e a seção `## Regras deste projeto` do arquivo antigo volta inteira no fim. No
+  `.claude/settings.json`, que é protegido, entregue o JSON junto ao humano.
 - **`PULADO`** (watchdog ausente ou desatualizado) e **`PRE-PUSH inativo`**: entregue ao humano o
   comando exato para ele rodar, e espere:
   `node <pasta desta skill>/instalar.mjs --atualizar-watchdogs`.

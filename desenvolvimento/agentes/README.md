@@ -16,12 +16,14 @@ agentes/
 │   │   ├── watchdogs.md
 │   │   ├── caminho-ate-ready-for-agent.md   rotas e definição de pronto
 │   │   ├── orquestracao.md            a orquestração de issues
+│   │   ├── adocao.md                  as etapas de adoção num projeto que já existia
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
 │   ├── .claude/                hooks do Claude Code (watchdogs) e os papéis da orquestração (agents/)
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
 │   └── .gitignore
 └── skills/
-    ├── setup-stacklabs/        instala e atualiza o método num projeto
+    ├── setup-stacklabs/        instala o método num projeto novo, ou atualiza
+    ├── adotar-metodo-stack-labs/  adota o método por etapas num projeto que já existe
     ├── orquestrar-issues/      orquestra a fila de issues ready-for-agent
     ├── auditar-metodo/         auditoria do projeto inteiro, sob demanda
     └── recomendada/            cópia das skills recomendadas (matheus3006/my-claude-skills): a família
@@ -32,17 +34,21 @@ agentes/
 
 ## Instalar num projeto novo
 
-Uma vez por máquina, instale a skill de setup:
+Uma vez por máquina, instale as skills de entrada:
 
 ```bash
 git clone https://github.com/stacklabs1/Stack-Labs
-cp -R Stack-Labs/desenvolvimento/agentes/skills/setup-stacklabs ~/.claude/skills/
+cp -R Stack-Labs/desenvolvimento/agentes/skills/{setup-stacklabs,adotar-metodo-stack-labs,auditar-metodo} ~/.claude/skills/
 ```
 
-Depois, no projeto (novo ou existente), numa sessão do Claude Code: **`/setup-stacklabs`**. Ela
-instala o `modelo-de-projeto`, as labels, o pre-push e, em `.claude/skills/` do projeto, as skills da
-casa e as skills publicadas mais novas do Matt Pocock. Num projeto existente, mescla o `AGENTS.md`,
-o `CLAUDE.md` e o `settings.json` em vez de sobrescrever. Termina numa PR `chore/setup-metodo`.
+Depois, numa sessão do Claude Code dentro do projeto:
+
+- **Projeto novo:** **`/setup-stacklabs`**. Ela instala o `modelo-de-projeto`, as labels, o pre-push
+  e, em `.claude/skills/` do projeto, as skills da casa e as skills publicadas mais novas do Matt
+  Pocock. Termina numa PR `chore/setup-metodo`.
+- **Projeto que já está em execução** e não segue o método, ou segue em partes:
+  **`/adotar-metodo-stack-labs`**. Ela diagnostica, instala com os watchdogs em observação e leva o
+  projeto às etapas seguintes ([docs/agents/adocao.md](modelo-de-projeto/docs/agents/adocao.md)).
 
 **Atualizar** um projeto é rodar `/setup-stacklabs` de novo. Watchdog desatualizado num projeto que
 já tem watchdogs só um humano atualiza:

@@ -103,4 +103,5 @@ watchdog (por PR, com a label `altera-watchdogs`), não a regra na conversa. Vej
 
 ## Começar um projeto
 
-Siga o [checklist](iniciar-um-projeto.md).
+Siga o [checklist](iniciar-um-projeto.md). Projeto que já está rodando entra por etapas: veja
+[adotar-em-projeto-existente.md](adotar-em-projeto-existente.md).

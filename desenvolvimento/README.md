@@ -3,10 +3,10 @@
 Como a StackLabs constrói software com agentes de IA, em todo projeto. O método é o do Matt Pocock,
 com o `/wayfinder` como porta de entrada, mais as regras da casa.
 
-> **Para usar num projeto:** instale a skill
-> [`setup-stacklabs`](agentes/skills/setup-stacklabs/SKILL.md) uma vez na sua máquina
-> (`cp -R desenvolvimento/agentes/skills/setup-stacklabs ~/.claude/skills/`) e rode
-> **`/setup-stacklabs`** dentro do projeto. Ela instala tudo o que está aqui.
+> **Para usar num projeto:** instale as skills uma vez na sua máquina
+> ([instruções](agentes/README.md#instalar-num-projeto-novo)). Projeto novo: rode
+> **`/setup-stacklabs`**. Projeto que já está em execução:
+> **[`/adotar-metodo-stack-labs`](humanos/adotar-em-projeto-existente.md)**, que adota por etapas.
 
 | Pasta | Para quem | O que é |
 |---|---|---|

@@ -16,6 +16,12 @@ máquina) e o `vigia-do-metodo` do GitHub Actions (todos, na PR). O estado de ca
 | `pre-push` | `git push` | Recusa push direto para `main`/`master` | **Bloqueia o push** |
 | `vigia-do-metodo` | GitHub Actions, em toda PR | Branch do método; PR de `issue/<n>-*` com `Closes #<n>` e issue `ready-for-*`; `research/*` nunca entra na `main`; mudança nos watchdogs só com a label `altera-watchdogs` | **Reprova a PR** |
 
+## Projeto em adoção
+
+Num projeto que existia antes do método, `.claude/metodo.json` traz a etapa de adoção
+(`observacao`, `planejamento` ou `completo`) e a data. Ela decide quais destes bloqueios valem; a
+tabela de cada etapa está em [adocao.md](adocao.md). Sem o arquivo, vale tudo.
+
 ## Ativar uma issue
 
 ```bash
