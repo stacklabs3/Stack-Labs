@@ -48,7 +48,7 @@ fazer() { # executa, ou só descreve no modo --simular
 # Arquivos que o projeto pode ter com conteúdo próprio: nunca sobrescreve, deixa o novo ao lado.
 arquivos_para_mesclar=("AGENTS.md" "CLAUDE.md" ".gitignore" ".claude/settings.json")
 # Infraestrutura dos watchdogs: só se sobrescreve com --atualizar-watchdogs.
-caminhos_dos_watchdogs=(".claude/hooks" ".claude/githooks" ".claude/settings.json" ".github/workflows/vigia-do-metodo.yml")
+caminhos_dos_watchdogs=(".claude/hooks" ".claude/githooks" ".claude/loop" ".claude/settings.json" ".github/workflows/vigia-do-metodo.yml")
 
 ja_tem_watchdogs=0
 [[ -d "$destino/.claude/hooks" ]] && ja_tem_watchdogs=1
@@ -85,10 +85,11 @@ while IFS= read -r caminho_skill; do skills_do_matt+=("$caminho_skill"); done < 
 nomes_do_matt=()
 for caminho_skill in "${skills_do_matt[@]}"; do nomes_do_matt+=("$(basename "$caminho_skill")"); done
 
-# Da casa: as recomendadas que não são do Matt, mais auditar-metodo e esta própria skill.
+# Da casa: as recomendadas que não são do Matt e as skills próprias do método (as demais pastas de skills/).
 skills_da_casa=()
-for pasta_skill in "$skills_stacklabs"/recomendada/*/ "$skills_stacklabs"/auditar-metodo/ "$skills_stacklabs"/setup-stacklabs/; do
+for pasta_skill in "$skills_stacklabs"/recomendada/*/ "$skills_stacklabs"/*/; do
   nome_skill="$(basename "$pasta_skill")"
+  [[ "$nome_skill" == "recomendada" ]] && continue
   [[ " ${nomes_do_matt[*]} " == *" $nome_skill "* ]] && continue
   skills_da_casa+=("$pasta_skill")
 done

@@ -15,11 +15,12 @@ agentes/
 │   │   ├── roteiro-de-prototipo.md    família *-prototipo
 │   │   ├── watchdogs.md
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
-│   ├── .claude/                hooks do Claude Code (watchdogs)
+│   ├── .claude/                hooks do Claude Code (watchdogs) e o loop de issues
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
 │   └── .gitignore
 └── skills/
     ├── setup-stacklabs/        instala e atualiza o método num projeto
+    ├── loop-de-issues/         prepara e lê rodadas do loop de issues (.claude/loop/)
     ├── auditar-metodo/         auditoria do projeto inteiro, sob demanda
     └── recomendada/            cópia das skills recomendadas (matheus3006/my-claude-skills): a família
                                 *-prototipo, human-architect-mindset e outras; as do Matt foram atualizadas

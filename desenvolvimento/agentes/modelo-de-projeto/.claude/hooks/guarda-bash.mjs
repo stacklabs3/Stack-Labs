@@ -47,13 +47,13 @@ function comandoReivindicaNoMesmoPasso(numeroTicket) {
 
 // ---------- W1: os watchdogs não se desligam por Bash ----------
 const comandoSemRedirecionamentoInofensivo = comando.replace(/\d*>&\d+/g, "").replace(/\d*>\s*\/dev\/null/g, "");
-const padraoCaminhoProtegido = /\.claude\/(hooks|githooks|settings\.json|state)|\.github\/workflows\/vigia-do-metodo\.yml/;
+const padraoCaminhoProtegido = /\.claude\/(hooks|githooks|loop|settings\.json|state)|\.github\/workflows\/vigia-do-metodo\.yml/;
 const verboMutante = /(>|\brm\b|\bmv\b|\bcp\b|sed\s+-i|perl\s+-[a-z]*i|\btee\b|\bchmod\b|\btruncate\b|\bln\b|\bunlink\b|git\s+(checkout|restore|rm|stash)\b)/;
 const trechoMutaCaminhoProtegido = comandoSemRedirecionamentoInofensivo
   .split(/&&|\|\||;|\n/)
   .some((trechoComando) => padraoCaminhoProtegido.test(trechoComando) && verboMutante.test(trechoComando));
 if (trechoMutaCaminhoProtegido) {
-  bloquearFerramenta(NOME_WATCHDOG, "o comando altera .claude/hooks, .claude/githooks, .claude/settings.json, .claude/state ou o vigia-do-metodo do CI. Só um humano altera a infraestrutura dos watchdogs.");
+  bloquearFerramenta(NOME_WATCHDOG, "o comando altera .claude/hooks, .claude/githooks, .claude/loop, .claude/settings.json, .claude/state ou o vigia-do-metodo do CI. Só um humano altera a infraestrutura dos watchdogs.");
 }
 
 // ---------- W8: o pre-push que protege a main não se desliga ----------
