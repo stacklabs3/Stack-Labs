@@ -43,7 +43,7 @@ const estadoSessao = lerEstadoSessao(diretorioProjeto, entradaHook.session_id);
 if (!estadoSessao.issueAtiva) {
   bloquearFerramenta(NOME_WATCHDOG, [
     `editar "${caminhoRelativo}" é código de produção e exige uma issue ativa nesta sessão.`,
-    `Ative com: .claude/hooks/ativar-issue.sh <número>  (issue aberta com label ready-for-agent ou ready-for-human).`,
+    `Ative com: node .claude/hooks/ativar-issue.mjs <número>  (issue aberta com label ready-for-agent ou ready-for-human).`,
     `Ainda não há issue? O caminho é /wayfinder → /to-spec → /to-tickets (ou /triage para pedidos externos).`,
   ].join("\n"));
 }

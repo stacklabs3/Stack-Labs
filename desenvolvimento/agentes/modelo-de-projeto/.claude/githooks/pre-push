@@ -1,29 +1,32 @@
-#!/usr/bin/env bash
-# Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto.
-# Ativação (uma vez por clone): git config core.hooksPath .claude/githooks
-# Escape humano para emergências: STACKLABS_PERMITIR_PUSH_MAIN=1 git push ...
-set -euo pipefail
+#!/usr/bin/env node
+// Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto.
+// Ativação (uma vez por clone): git config core.hooksPath .claude/githooks
+// Escape humano para emergências: STACKLABS_PERMITIR_PUSH_MAIN=1 git push ...
 
-branches_protegidas_regex='^refs/heads/(main|master)$'
-nome_remoto="${1:-origin}"
+// Sem extensão, o node lê este arquivo como CommonJS: por isso require, e não import.
+const { readFileSync } = require("node:fs");
 
-if [[ "${STACKLABS_PERMITIR_PUSH_MAIN:-}" == "1" ]]; then
-  echo "[pre-push] STACKLABS_PERMITIR_PUSH_MAIN=1: push para a main liberado por um humano." >&2
-  exit 0
-fi
+const BRANCHES_PROTEGIDAS = /^refs\/heads\/(main|master)$/;
+const nomeDoRemoto = process.argv[2] || "origin";
 
-# Cada linha do stdin: <ref local> <sha local> <ref remota> <sha remoto>
-while read -r ref_local sha_local ref_remota sha_remoto; do
-  if [[ "$ref_remota" =~ $branches_protegidas_regex ]]; then
-    branch_destino="${ref_remota#refs/heads/}"
-    {
-      echo "[pre-push] BLOQUEADO — push direto para \"$branch_destino\" em \"$nome_remoto\"."
-      echo "A $branch_destino só recebe merge de PR. Envie a branch da issue e abra o PR:"
-      echo "  git push -u $nome_remoto <sua-branch> && gh pr create"
-      echo "(Regra 16 do AGENTS.md · docs/agents/watchdogs.md)"
-    } >&2
-    exit 1
-  fi
-done
+if (process.env.STACKLABS_PERMITIR_PUSH_MAIN === "1") {
+  console.error("[pre-push] STACKLABS_PERMITIR_PUSH_MAIN=1: push para a main liberado por um humano.");
+  process.exit(0);
+}
 
-exit 0
+// Cada linha do stdin: <ref local> <sha local> <ref remota> <sha remoto>
+const linhasDoPush = readFileSync(0, "utf8").split("\n").filter(Boolean);
+for (const linhaDoPush of linhasDoPush) {
+  const refRemota = linhaDoPush.split(" ")[2] || "";
+  if (BRANCHES_PROTEGIDAS.test(refRemota)) {
+    const branchDestino = refRemota.replace("refs/heads/", "");
+    console.error([
+      `[pre-push] BLOQUEADO — push direto para "${branchDestino}" em "${nomeDoRemoto}".`,
+      `A ${branchDestino} só recebe merge de PR. Envie a branch da issue e abra o PR:`,
+      `  git push -u ${nomeDoRemoto} <sua-branch> && gh pr create`,
+      "(Regra 17 do AGENTS.md · docs/agents/watchdogs.md)",
+    ].join("\n"));
+    process.exit(1);
+  }
+}
+process.exit(0);

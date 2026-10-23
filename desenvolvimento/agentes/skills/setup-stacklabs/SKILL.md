@@ -7,7 +7,7 @@ disable-model-invocation: true
 Leva um repositório ao **método StackLabs**: o `modelo-de-projeto` (constituição, `docs/agents/`,
 watchdogs), as skills da casa e as skills publicadas do Matt Pocock, todas em `.claude/skills/` do
 projeto, para que cada pessoa e cada sessão na nuvem tenham as mesmas. Quem copia é o
-[`instalar.sh`](instalar.sh) desta pasta; você conduz, confere e mescla.
+[`instalar.mjs`](instalar.mjs) desta pasta; você conduz, confere e mescla.
 
 O script é idempotente: rodar de novo num projeto em dia não muda nada, e rodar depois de o Matt ou
 o Stack-Labs mudarem é a **atualização**. As skills do Matt vêm sempre do `plugin.json` mais novo de
@@ -31,7 +31,7 @@ falta e pare.
 
 ### 2. Simulação
 
-Rode `<pasta desta skill>/instalar.sh --simular` e mostre o relatório ao humano, agrupado por tipo
+Rode `node <pasta desta skill>/instalar.mjs --simular` e mostre o relatório ao humano, agrupado por tipo
 de linha. Se o clone do Stack-Labs falhar, peça o caminho de um clone local e rode com
 `STACKLABS_ORIGEM=<caminho>`.
 
@@ -39,7 +39,7 @@ Pronto quando o humano disse **sim** à lista. Ela inclui criar labels no GitHub
 
 ### 3. Instalação
 
-Rode `<pasta desta skill>/instalar.sh` sem `--simular`. Nunca passe `--atualizar-watchdogs`: essa
+Rode `node <pasta desta skill>/instalar.mjs` sem `--simular`. Nunca passe `--atualizar-watchdogs`: essa
 opção é do humano, e o `guarda-bash` barra.
 
 Pronto quando o script terminou sem erro e imprimiu o relatório.
@@ -51,7 +51,7 @@ Trate cada linha do relatório que não seja `COPIADO`, `SKILL` ou `REMOVIDA`:
 - **`MESCLAR`**: siga [MESCLAR.md](MESCLAR.md).
 - **`PULADO`** (watchdog ausente ou desatualizado) e **`PRE-PUSH inativo`**: entregue ao humano o
   comando exato para ele rodar, e espere:
-  `<pasta desta skill>/instalar.sh --atualizar-watchdogs`.
+  `node <pasta desta skill>/instalar.mjs --atualizar-watchdogs`.
 
 Pronto quando `find . -name '*.stacklabs-novo' -not -path './.git/*'` não lista nada, ou lista só
 arquivos de watchdog entregues ao humano.
@@ -59,7 +59,7 @@ arquivos de watchdog entregues ao humano.
 ### 5. Verificação
 
 - `node --check` passa em cada `.claude/hooks/**/*.mjs`;
-- `bash -n .claude/githooks/pre-push` passa;
+- `node --check .claude/githooks/pre-push` passa;
 - `git config core.hooksPath` responde `.claude/githooks`;
 - toda pasta em `.claude/skills/` tem `SKILL.md`, e `ORIGEM.json` lista as skills do Matt e as da casa.
 

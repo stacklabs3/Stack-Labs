@@ -24,6 +24,8 @@ ideia grande demais para uma sessão
 - **Ideia clara, mas com várias sessões:** `/grill-with-docs` → `/to-spec` → `/to-tickets`.
 - **Ideia clara que cabe numa sessão:** `/grill-with-docs` → `/implement`, com uma issue ativa.
 - **Bug ou pedido de fora:** `/triage` → `/implement`.
+- **Várias issues `ready-for-agent` sem ninguém olhando:** `/loop-de-issues`, uma sessão nova por
+  issue, em sequência ([docs/agents/loop-de-issues.md](docs/agents/loop-de-issues.md)).
 - **Pergunta que só se responde vendo:** ticket de protótipo. Aparência vai para a família
   `*-prototipo` ([docs/agents/roteiro-de-prototipo.md](docs/agents/roteiro-de-prototipo.md));
   comportamento vai para `/prototype`.
@@ -47,7 +49,7 @@ ideia grande demais para uma sessão
 
 ### 3. Planejar antes de construir
 3. **[W]** Código de produção só se edita com uma **issue ativa** na sessão:
-   `.claude/hooks/ativar-issue.sh <n>`. A issue está aberta, tem `ready-for-agent` ou
+   `node .claude/hooks/ativar-issue.mjs <n>`. A issue está aberta, tem `ready-for-agent` ou
    `ready-for-human` e não é ticket do wayfinder. Ficam livres: `AGENTS.md`, `CLAUDE.md`,
    `GLOSSARY*.md`, `README.md`, `docs/`, `.scratch/`, `prototipos/`, `.claude/` (exceto os
    watchdogs) e as branches `prototype/*` e `research/*`.
@@ -89,7 +91,7 @@ ideia grande demais para uma sessão
 
 ### 8. Os watchdogs
 20. **[W]** Você **não edita, move, apaga nem contorna** `.claude/hooks/`, `.claude/githooks/`,
-    `.claude/settings.json`, `.claude/state/`, `.github/workflows/vigia-do-metodo.yml` nem o
+    `.claude/loop/`, `.claude/settings.json`, `.claude/state/`, `.github/workflows/vigia-do-metodo.yml` nem o
     `core.hooksPath`. Se um watchdog estiver errado, explique ao usuário e peça que ele altere.
 21. Um bloqueio é uma informação, não um obstáculo. Leia o motivo e siga a rota que ele indica.
 

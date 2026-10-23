@@ -74,6 +74,11 @@ liberam o protótipo para virar código. Veja o [roteiro de protótipo](../agent
 - A `main` só muda por PR. A PR cita a issue (`Closes #42`) e passa no `vigia-do-metodo`.
 - "Pronto" é teste passando, não o agente dizendo que terminou.
 
+## Várias issues sem você olhando
+
+Com várias issues `ready-for-agent` prontas, o **loop de issues** implementa até N delas em sequência,
+cada uma numa sessão nova, e entrega PRs para você revisar. Veja [loop-de-issues.md](loop-de-issues.md).
+
 ## Hábitos de sessão
 
 - **Uma janela do grilling até o `/to-tickets`.** Nada de `/compact` ou `/clear` no meio.

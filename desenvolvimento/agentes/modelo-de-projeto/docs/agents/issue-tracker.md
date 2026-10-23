@@ -52,7 +52,7 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
 - **Resolução com fontes:** o comentário de resolução de ticket de grilling, tarefa ou pesquisa
   termina com `## Fontes` e ao menos um link. Veja `docs/agents/pesquisa-antes-de-recomendar.md`.
 - **Fora de escopo:** `gh issue close <n> --reason "not planned"`. Não conta no limite de um ticket por sessão.
-- **Ativar uma issue para implementar:** `.claude/hooks/ativar-issue.sh <n>`.
+- **Ativar uma issue para implementar:** `node .claude/hooks/ativar-issue.mjs <n>`.
 - **Branches:** `issue/<n>-<slug>`, `prototype/<nome>`, `research/<nome>`, `chore/<nome>`. A `main`
   só recebe merge de PR, e a PR de `issue/*` cita a issue com `Closes #<n>`.
 

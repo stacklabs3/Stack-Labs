@@ -13,8 +13,13 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+if (Number(process.versions.node.split('.')[0]) < 22) {
+  console.error('Os prints precisam do Node 22 ou mais novo (WebSocket nativo).');
+  process.exit(1);
+}
+
 const [enderecoDoPrototipo, idDaRotina, pastaDeSaida, idiomaTexto, paraleloTexto] = process.argv.slice(2);
-if (!enderecoDoPrototipo || !idDaRotina || !pastaDeSaida) {
+if (!enderecoDoPrototipo || !idDaRotina || !pastaDeSaida || process.argv.length > 7) {
   console.error('Uso: node tirar-prints.mjs <endereco> <id-da-rotina|todas> <pasta-de-saida> [idioma] [paralelo]');
   process.exit(2);
 }

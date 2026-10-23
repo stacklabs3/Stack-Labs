@@ -25,7 +25,7 @@ export const MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR = ["prototipo", "arquitetu
 export const TIPOS_QUE_EXIGEM_FONTES = ["grilling", "task", "research"];
 
 // Caminhos que nenhum agente edita: são os próprios watchdogs e o estado deles.
-export const CAMINHOS_PROTEGIDOS = [".claude/hooks/", ".claude/githooks/", ".claude/settings.json", ".claude/state/", ".github/workflows/vigia-do-metodo.yml"];
+export const CAMINHOS_PROTEGIDOS = [".claude/hooks/", ".claude/githooks/", ".claude/loop/", ".claude/settings.json", ".claude/state/", ".github/workflows/vigia-do-metodo.yml"];
 
 // Onde o git procura os hooks deste repo (pre-push que protege a main).
 export const CAMINHO_GITHOOKS = ".claude/githooks";

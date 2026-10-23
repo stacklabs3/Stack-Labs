@@ -47,13 +47,13 @@ function comandoReivindicaNoMesmoPasso(numeroTicket) {
 
 // ---------- W1: os watchdogs não se desligam por Bash ----------
 const comandoSemRedirecionamentoInofensivo = comando.replace(/\d*>&\d+/g, "").replace(/\d*>\s*\/dev\/null/g, "");
-const padraoCaminhoProtegido = /\.claude\/(hooks|githooks|settings\.json|state)|\.github\/workflows\/vigia-do-metodo\.yml/;
+const padraoCaminhoProtegido = /\.claude\/(hooks|githooks|loop|settings\.json|state)|\.github\/workflows\/vigia-do-metodo\.yml/;
 const verboMutante = /(>|\brm\b|\bmv\b|\bcp\b|sed\s+-i|perl\s+-[a-z]*i|\btee\b|\bchmod\b|\btruncate\b|\bln\b|\bunlink\b|git\s+(checkout|restore|rm|stash)\b)/;
 const trechoMutaCaminhoProtegido = comandoSemRedirecionamentoInofensivo
   .split(/&&|\|\||;|\n/)
   .some((trechoComando) => padraoCaminhoProtegido.test(trechoComando) && verboMutante.test(trechoComando));
 if (trechoMutaCaminhoProtegido) {
-  bloquearFerramenta(NOME_WATCHDOG, "o comando altera .claude/hooks, .claude/githooks, .claude/settings.json, .claude/state ou o vigia-do-metodo do CI. Só um humano altera a infraestrutura dos watchdogs.");
+  bloquearFerramenta(NOME_WATCHDOG, "o comando altera .claude/hooks, .claude/githooks, .claude/loop, .claude/settings.json, .claude/state ou o vigia-do-metodo do CI. Só um humano altera a infraestrutura dos watchdogs.");
 }
 
 // ---------- W8: o pre-push que protege a main não se desliga ----------
@@ -71,9 +71,12 @@ if (/STACKLABS_PERMITIR_PUSH_MAIN/.test(comando)) {
 }
 
 // ---------- W4: ativação de issue (uma issue por sessão) ----------
-const ativacaoIssue = comando.match(/ativar-issue(?:\.sh)?\s+#?(\d+)/);
-if (ativacaoIssue) {
-  const numeroIssue = Number(ativacaoIssue[1]);
+const numerosAtivados = [...new Set([...comando.matchAll(/ativar-issue(?:\.mjs)?\s+#?(\d+)/g)].map((correspondencia) => Number(correspondencia[1])))];
+if (numerosAtivados.length > 1) {
+  bloquearFerramenta(NOME_WATCHDOG, `o comando ativa mais de uma issue (${numerosAtivados.map((numero) => `#${numero}`).join(", ")}). Uma sessão trabalha uma issue só.`);
+}
+if (numerosAtivados.length === 1) {
+  const numeroIssue = numerosAtivados[0];
   const estadoSessao = lerEstadoSessao(diretorioProjeto, idSessao);
   if (estadoSessao.issueAtiva && estadoSessao.issueAtiva.numero !== numeroIssue) {
     bloquearFerramenta(NOME_WATCHDOG, `esta sessão já trabalha na issue #${estadoSessao.issueAtiva.numero}. Contexto limpo por issue: termine, rode /handoff se preciso, e abra uma sessão nova para a #${numeroIssue}.`);

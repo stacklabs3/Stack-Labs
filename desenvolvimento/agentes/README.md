@@ -15,11 +15,12 @@ agentes/
 │   │   ├── roteiro-de-prototipo.md    família *-prototipo
 │   │   ├── watchdogs.md
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
-│   ├── .claude/                hooks do Claude Code (watchdogs)
+│   ├── .claude/                hooks do Claude Code (watchdogs) e o loop de issues
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
 │   └── .gitignore
 └── skills/
     ├── setup-stacklabs/        instala e atualiza o método num projeto
+    ├── loop-de-issues/         prepara e lê rodadas do loop de issues (.claude/loop/)
     ├── auditar-metodo/         auditoria do projeto inteiro, sob demanda
     └── recomendada/            cópia das skills recomendadas (matheus3006/my-claude-skills): a família
                                 *-prototipo, human-architect-mindset e outras; as do Matt foram atualizadas
@@ -42,7 +43,7 @@ o `CLAUDE.md` e o `settings.json` em vez de sobrescrever. Termina numa PR `chore
 
 **Atualizar** um projeto é rodar `/setup-stacklabs` de novo. Watchdog desatualizado num projeto que
 já tem watchdogs só um humano atualiza:
-`~/.claude/skills/setup-stacklabs/instalar.sh --atualizar-watchdogs`.
+`node ~/.claude/skills/setup-stacklabs/instalar.mjs --atualizar-watchdogs`.
 
 Não instale também o plugin `mattpocock-skills`: as skills dele já ficam no projeto e apareceriam
 duplicadas.

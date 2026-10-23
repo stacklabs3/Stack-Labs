@@ -288,7 +288,7 @@ Ao fim de cada rotina, antes da aprovação, a rotina é conferida por prints:
 O script tira todos de uma vez, a partir de `visoes.jsx`:
 
 ```bash
-~/.claude/skills/prototipo-html/scripts/tirar-prints.sh http://localhost:8765 <id-da-rotina> <protótipo>/prints
+node ~/.claude/skills/prototipo-html/scripts/tirar-prints.mjs http://localhost:8765 <id-da-rotina> <protótipo>/prints
 ```
 
 O script precisa do Node 22 ou mais novo e de um Chrome ou Chromium (`CHROME=<caminho>`
