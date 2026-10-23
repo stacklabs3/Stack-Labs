@@ -19,7 +19,9 @@ agentes/
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
 │   └── .gitignore
 └── skills/
-    └── auditar-metodo/         auditoria do projeto inteiro, sob demanda
+    ├── auditar-metodo/         auditoria do projeto inteiro, sob demanda
+    └── recomendada/            cópia fiel das skills recomendadas (matheus3006/my-claude-skills):
+                                as do Matt Pocock, a família *-prototipo, human-architect-mindset e outras
 ```
 
 ## Instalar num projeto novo
@@ -35,9 +37,10 @@ git config core.hooksPath .claude/githooks
 # 3. as labels do método
 #    (comando em docs/agents/issue-tracker.md, seção "Labels a criar no repositório novo")
 
-# 4. as skills: as do Matt Pocock, a família *-prototipo e a auditoria
-claude plugin install mattpocock-skills@claude-plugins-official
-cp -r ../Stack-Labs/desenvolvimento/agentes/skills/auditar-metodo ~/.claude/skills/
+# 4. as skills: as recomendadas (Matt Pocock, família *-prototipo e outras) e a auditoria
+#    Não instale também o plugin mattpocock-skills: as skills dele já estão na cópia e ficariam duplicadas.
+cp -R ../Stack-Labs/desenvolvimento/agentes/skills/recomendada/* ~/.claude/skills/
+cp -R ../Stack-Labs/desenvolvimento/agentes/skills/auditar-metodo ~/.claude/skills/
 ```
 
 Depois, numa sessão nova do Claude Code, o `sessao-inicio` mostra o que falta. O primeiro trabalho
