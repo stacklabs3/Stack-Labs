@@ -5,6 +5,12 @@ camadas: hooks do Claude Code (o agente, na sessão), o `pre-push` do git (human
 máquina) e o `vigia-do-metodo` do GitHub Actions (todos, na PR). O estado de cada sessão fica em
 `.claude/state/sessoes/<session_id>.json`, fora do git.
 
+Todos os watchdogs e o validador são subcomandos de um binário Rust, com o fonte em
+`.claude/watchdogs/` (ADR 0011 do método). O lançador `.claude/watchdogs/rodar` compila com o `cargo`
+na primeira vez e sempre que o fonte muda, e o binário fica em `.claude/watchdogs/target/`, fora do
+git. Sem o `cargo` na máquina, o lançador sai com 2 e os watchdogs **falham fechados**: o humano
+instala o Rust (https://rustup.rs). Testes: `cargo test --release --manifest-path .claude/watchdogs/Cargo.toml`.
+
 | Watchdog | Onde | O que garante | Ação |
 |---|---|---|---|
 | `sessao-inicio` | SessionStart | Confere o setup e o pre-push, mostra a branch, a etapa de adoção, a issue ativa, a situação dos **mapas iniciais** e os mapas abertos, e reancora a constituição | Injeta contexto |
@@ -14,6 +20,7 @@ máquina) e o `vigia-do-metodo` do GitHub Actions (todos, na PR). O estado de ca
 | `guarda-bash` | PreToolUse `Bash` | Protege os watchdogs; ativa issue (uma por sessão ou por subagente, e uma por comando) só com os **cinco mapas iniciais** criados e Protótipo, Arquitetura, Fases e Regras de código fechados, e nunca um `spec`; exige claim antes de comentar ou fechar ticket; exige comentário de resolução **com `## Fontes`** em grilling, tarefa e pesquisa; um ticket de decisão por sessão; barra commit na `main`, push forçado, `--no-verify`, mudança no `core.hooksPath`, `STACKLABS_PERMITIR_PUSH_MAIN` e `--atualizar-watchdogs` | **Bloqueia** |
 | `vigia-parada` | Stop | O turno só termina com o ponteiro do ticket resolvido em *Decisions so far* | **Bloqueia o fim do turno** |
 | `orquestrar-issues` | Sessão do orquestrador, com os papéis de `.claude/agents/` | Ciclo e limites da [orquestração](orquestracao.md); nunca faz merge na base | **Devolve a issue / para a rodada** |
+| `validador` | CI do projeto, implementador e revisor | As regras de `docs/regras-de-codigo.json` e a cobertura dos 22 princípios ([validador.md](validador.md)); o motor é o mesmo binário dos watchdogs, protegido como eles | **Reprova a fatia / o CI** |
 | `pre-push` | `git push` | Recusa push direto para `main`/`master` | **Bloqueia o push** |
 | `vigia-do-metodo` | GitHub Actions, em toda PR | Branch do método; PR de `issue/<n>-*` com `Closes #<n>` e issue `ready-for-*`; `research/*` nunca entra na `main`; mudança nos watchdogs só com a label `altera-watchdogs` | **Reprova a PR** |
 
@@ -22,7 +29,7 @@ Num projeto em adoção, a etapa de `.claude/metodo.json` decide quais destes bl
 
 ## Ativar uma issue
 
-`node .claude/hooks/ativar-issue.mjs <n>`. O `guarda-bash` intercepta o comando antes de ele rodar e
+`sh .claude/watchdogs/rodar ativar-issue <n>`. O `guarda-bash` intercepta o comando antes de ele rodar e
 confere a issue (regra 3) e os mapas iniciais (regra 1). Uma sessão aceita uma única issue.
 
 ## Quando o GitHub não responde
@@ -40,7 +47,7 @@ Ao dar com um destes, entregue o comando ao usuário:
 - **Desligar os watchdogs:** `STACKLABS_WATCHDOGS=desligado claude`. A variável vem do ambiente do
   processo do Claude Code; um comando Bash do agente não a define.
 - **Instalar ou atualizar:** `/setup-stacklabs`. Constantes (mapas iniciais, tipos que exigem fontes,
-  skills de grilling, limites da smart zone, caminhos livres) ficam em `.claude/hooks/lib/comum.mjs`.
+  skills de grilling, limites da smart zone, caminhos livres) ficam em `.claude/watchdogs/src/comum.rs`.
   Mudança que vale para todos os projetos vai primeiro para o `modelo-de-projeto` do repositório Stack-Labs.
 
 ## Limites conhecidos

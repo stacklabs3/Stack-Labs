@@ -5,6 +5,8 @@ Marque na ordem. Cada passo diz quem faz. Projeto que já está rodando começa 
 
 ## Dia 0: o repositório
 
+- [ ] **Você:** tenha o Rust na máquina (`cargo --version`; sem ele, instale por https://rustup.rs).
+      Os watchdogs são compilados nela na primeira vez que rodam ([ADR 0011](../adr/0011-watchdogs-em-rust.md)).
 - [ ] **Você:** crie o repositório no GitHub da StackLabs e clone ao lado do Stack-Labs.
 - [ ] **Você:** instale a skill `/setup-stacklabs` na sua máquina
       ([instruções](../agentes/README.md#instalar-num-projeto-novo)).

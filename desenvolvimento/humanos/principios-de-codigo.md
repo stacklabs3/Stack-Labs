@@ -24,8 +24,9 @@ Cada um vira uma pergunta sobre o seu projeto, e você decide se ele é **adotad
 
 ## O que vale depois
 
-O que você adotou ou adaptou vira regra do projeto, e o revisor reprova quem a quebra. O que ficou
-de fora não é cobrado. Onde nenhuma regra alcança um trecho, o princípio vale como bom senso: o
+O que você adotou ou adaptou vira regra do projeto. O que dá para conferir por máquina (imports,
+`catch` vazio, formato do commit, termos do glossário) o **validador** confere no CI; o resto o
+revisor confere, e reprova quem quebra uma regra. O que ficou de fora não é cobrado. Onde nenhuma regra alcança um trecho, o princípio vale como bom senso: o
 revisor aponta, e só reprova mostrando o estrago concreto.
 
 ## Mudar a base

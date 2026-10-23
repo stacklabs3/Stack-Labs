@@ -13,7 +13,8 @@ e o modelo de `docs/regras-de-codigo.md`.
 
 docs/regras-de-codigo.md escrito e aprovado: os 22 princípios de código da casa (E1 a E8, P1 a P9,
 S, O, L, I, D) decididos na tabela de cobertura, as regras que saíram deles com exemplo do próprio
-projeto e o que o lint e o formatador garantem sozinhos. É a régua do implementador e do revisor.
+projeto e o que o lint e o formatador garantem sozinhos. docs/regras-de-codigo.json diz como o
+validador confere cada regra. É a régua do implementador e do revisor.
 
 ## Notes
 
@@ -21,8 +22,8 @@ projeto e o que o lint e o formatador garantem sozinhos. É a régua do implemen
   linha de decisão por princípio no comentário de resolução.
 - Depende do mapa de Arquitetura: tickets que dependem de uma escolha de stack ficam `blocked_by` o
   ticket dela. As restrições vêm antes e bloqueiam os tickets de grupo.
-- Lint, formatador e typecheck passam por pesquisa como toda escolha técnica. Configurá-los é a
-  primeira fatia da primeira fase.
+- Lint, formatador e typecheck passam por pesquisa como toda escolha técnica. Configurá-los, e pôr o
+  validador (`sh .claude/watchdogs/rodar validar`) no CI, é a primeira fatia da primeira fase.
 - Regra que o revisor não consegue apontar num diff não entra.
 
 ## Decisions so far
@@ -45,4 +46,4 @@ Os de grupo são obrigatórios; um grupo que não cabe numa sessão vira mais de
 | *Desenho de módulos e SOLID* | grilling | P1 a P4 ([padrões](../principios-de-codigo/padroes.md)), S, O, L, I, D ([SOLID](../principios-de-codigo/solid.md)) | `/codebase-design` |
 | *Testes e fluxo de trabalho* | grilling | P5 a P9 ([padrões](../principios-de-codigo/padroes.md)) | `/tdd` |
 | *Opções de lint, formatador e typecheck* → *Lint e formatador* | pesquisa → grilling | os que a ferramenta garante sozinha | `/research` |
-| *Escrever docs/regras-de-codigo.md*: junta as decisões no modelo; fecha o mapa | tarefa | os 22 na cobertura | |
+| *Escrever docs/regras-de-codigo.md e .json*: junta as decisões nos modelos; fecha o mapa com `--so-cobertura` aprovado | tarefa | os 22 na cobertura | |

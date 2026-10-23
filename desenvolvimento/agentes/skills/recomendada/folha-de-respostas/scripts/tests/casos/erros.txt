@@ -1,0 +1,43 @@
+A folha não foi gerada:
+- falta o campo "titulo"
+- falta o campo "chave"
+- falta o campo "cabecalhoDaCopia"
+- pergunta na posição 0: falta "id"
+- pergunta na posição 0: o id precisa começar com letra e ter só letras, números, _ ou -
+- pergunta na posição 0: "opcoes" precisa ter de 2 a 5 itens
+- pergunta na posição 1: falta "id"
+- pergunta na posição 1: id repetido
+- pergunta na posição 1: o id precisa começar com letra e ter só letras, números, _ ou -
+- pergunta na posição 1: "opcoes" precisa ter de 2 a 5 itens
+- 1x: o id precisa começar com letra e ter só letras, números, _ ou -
+- 1x: "rec" aponta para uma opção que não existe
+- Q: falta "titulo"
+- Q: "opcoes" precisa ter de 2 a 5 itens
+- Q: "rec" aponta para uma opção que não existe
+- Q: id repetido
+- 5: o id precisa começar com letra e ter só letras, números, _ ou -
+- [object Object]: o id precisa começar com letra e ter só letras, números, _ ou -
+- [object Object]: falta "titulo"
+- [object Object]: "opcoes" precisa ter de 2 a 5 itens
+- 1: o id precisa começar com letra e ter só letras, números, _ ou -
+- 1: o id precisa começar com letra e ter só letras, números, _ ou -
+- pergunta na posição 11: falta "id"
+- pergunta na posição 11: id repetido
+- pergunta na posição 11: o id precisa começar com letra e ter só letras, números, _ ou -
+- pergunta na posição 11: falta "titulo"
+- pergunta na posição 11: "opcoes" precisa ter de 2 a 5 itens
+- pergunta na posição 12: falta "id"
+- pergunta na posição 12: id repetido
+- pergunta na posição 12: o id precisa começar com letra e ter só letras, números, _ ou -
+- pergunta na posição 12: falta "titulo"
+- pergunta na posição 12: "opcoes" precisa ter de 2 a 5 itens
+- pergunta na posição 13: falta "id"
+- pergunta na posição 13: id repetido
+- pergunta na posição 13: o id precisa começar com letra e ter só letras, números, _ ou -
+- pergunta na posição 13: falta "titulo"
+- pergunta na posição 13: "opcoes" precisa ter de 2 a 5 itens
+- pergunta na posição 14: falta "id"
+- pergunta na posição 14: id repetido
+- pergunta na posição 14: o id precisa começar com letra e ter só letras, números, _ ou -
+- pergunta na posição 14: falta "titulo"
+- pergunta na posição 14: "opcoes" precisa ter de 2 a 5 itens

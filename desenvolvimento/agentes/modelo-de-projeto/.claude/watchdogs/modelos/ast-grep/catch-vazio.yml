@@ -1,0 +1,42 @@
+# Princípio E4: erro nunca é engolido. Copie para docs/regras-de-codigo/ast-grep/. Pega o catch vazio
+# e o catch que só loga e segue. Um documento por linguagem; apague os que o projeto não usa.
+id: catch-vazio
+language: TypeScript
+message: "E4: o erro é engolido. Trate o caso esperado ou deixe o erro subir até a borda."
+severity: error
+rule:
+  any:
+    - pattern: try { $$$ } catch ($E) { }
+    - pattern: try { $$$ } catch { }
+    - pattern: try { $$$ } catch ($E) { console.$LOG($$$) }
+
+---
+id: catch-vazio-tsx
+language: Tsx
+message: "E4: o erro é engolido. Trate o caso esperado ou deixe o erro subir até a borda."
+severity: error
+rule:
+  any:
+    - pattern: try { $$$ } catch ($E) { }
+    - pattern: try { $$$ } catch { }
+    - pattern: try { $$$ } catch ($E) { console.$LOG($$$) }
+
+---
+id: catch-vazio-js
+language: JavaScript
+message: "E4: o erro é engolido. Trate o caso esperado ou deixe o erro subir até a borda."
+severity: error
+rule:
+  any:
+    - pattern: try { $$$ } catch ($E) { }
+    - pattern: try { $$$ } catch { }
+    - pattern: try { $$$ } catch ($E) { console.$LOG($$$) }
+
+---
+id: catch-vazio-python
+language: Python
+message: "E4: o erro é engolido. Trate o caso esperado ou deixe o erro subir até a borda."
+severity: error
+rule:
+  kind: except_clause
+  has: { kind: block, has: { kind: pass_statement }, stopBy: end }

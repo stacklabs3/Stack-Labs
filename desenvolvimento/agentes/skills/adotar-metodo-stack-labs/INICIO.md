@@ -25,11 +25,11 @@ perguntas têm resposta do humano escrita no plano.
 
 ## 3. Instalação em observação
 
-1. `node <pasta da skill setup-stacklabs>/instalar.mjs --adocao --simular` e mostre o relatório.
+1. `sh <pasta da skill setup-stacklabs>/rodar --adocao --simular` e mostre o relatório.
 2. Com o sim do humano, rode sem `--simular`. O `--adocao` grava `.claude/metodo.json` em
    `observacao`, com a data de hoje, antes de copiar os watchdogs.
-3. Linhas `PULADO` (o projeto já tinha `.claude/hooks/`): entregue ao humano o comando
-   `node <pasta da skill setup-stacklabs>/instalar.mjs --adocao --atualizar-watchdogs` e espere que
+3. Linhas `PULADO` (o projeto já tinha `.claude/hooks/` ou `.claude/watchdogs/`): entregue ao humano
+   o comando `sh <pasta da skill setup-stacklabs>/rodar --adocao --atualizar-watchdogs` e espere que
    ele rode.
 4. Linhas `MESCLAR`: siga [MESCLAR.md](MESCLAR.md).
 5. Branch `chore/adotar-metodo`, um commit, PR.

@@ -1,0 +1,4 @@
+{"titulo":"<b>A & B</b> \"x\" 'y'","chave":"k</script><script>alert(1)</script>","cabecalhoDaCopia":"linha\ncom\ttab \u0001   é 😀 \\ fim",
+ "intro":["<p>um</p>", 42, null, true, [1,[2,3]], {"a":1}],
+ "perguntas":[{"bloco":"</b>"},{"id":"a-1_B","titulo":"T","opcoes":["x","y","z","w","v"],"rec":4,"extra":{"2":"b","1":"a","z":1,"10":3,"-1":0,"01":5},"n":[1.0,1e2,1.5e300,0.000001,1e-7,123456789012345678901234,-0,0.1,2.5e-5,1e21,1e20]},
+ {"id":"Q2","titulo":"sem rec","opcoes":["a","b"]}]}

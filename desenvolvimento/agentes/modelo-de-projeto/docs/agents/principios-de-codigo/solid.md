@@ -23,6 +23,8 @@ do total vira risco. Separe o cupom fiscal.
 
 **No diff:** um arquivo editado por motivos sem relação (*Divergent Change*).
 
+**No validador:** `revisor`.
+
 ### O. Aberto para extensão, fechado para modificação, nas seams reais
 
 Onde uma variação já existe e vai crescer (formas de pagamento, canais de notificação), a variante
@@ -37,6 +39,8 @@ um `if` é mais simples e honesto.
 **No grilling:** Quais variações já existem ou estão na spec (formas de pagamento, canais) e merecem uma seam com adapters?
 
 **No diff:** o mesmo `switch` sobre o mesmo tipo em dois ou mais lugares.
+
+**No validador:** `revisor`.
 
 ### L. Substituição de Liskov: todo adapter cumpre a interface inteira
 
@@ -55,6 +59,8 @@ daquela interface: prefira composição a herança (*Refused Bequest*).
 **No diff:** subclasse que lança "não suportado" num método herdado; `if (x instanceof Y)` em quem
 chama; fake de teste que aceita o que a produção recusa.
 
+**No validador:** `teste-de-contrato-por-port`.
+
 ### I. Segregação de interface: quem chama conhece só o que usa
 
 A interface é desenhada do ponto de vista de quem chama, e pequena. Quem só lê o cardápio não
@@ -71,6 +77,8 @@ juntar de novo. Interface pequena e implementação grande é o mesmo objetivo d
 **No diff:** chamador recebendo um objeto com vinte métodos para usar um; implementação forçada a
 escrever métodos vazios.
 
+**No validador:** `revisor`.
+
 ### D. Inversão de dependência: a regra define a abstração, a infraestrutura obedece
 
 O módulo de regra de negócio depende de uma interface que **ele mesmo define** (a port), e o detalhe
@@ -86,6 +94,8 @@ direto; container de injeção só se o projeto decidiu por ele.
 
 **No diff:** import de SDK, ORM ou framework dentro do domínio; interface definida no lado da
 infraestrutura e importada pelo domínio.
+
+**No validador:** `ast-grep` com o modelo `dominio-sem-infra.yml`.
 
 ### SOLID em uma tabela
 

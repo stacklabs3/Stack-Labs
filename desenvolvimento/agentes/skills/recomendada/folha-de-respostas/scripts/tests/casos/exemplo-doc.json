@@ -1,0 +1,14 @@
+{
+  "titulo": "Minha Loja: rodada 2 de regras",
+  "tituloDaAba": "Respostas 2 · Minha Loja",
+  "intro": ["Cenário: o Caldo da Vila Centro, da Ana (dona). Esta rodada sai das suas observações na rodada 1."],
+  "chave": "respostas-minha-loja-2",
+  "cabecalhoDaCopia": "Respostas da rodada 2 de regras (Minha Loja, onda 1)",
+  "perguntas": [
+    { "bloco": "O menu" },
+    { "id": "Q55", "titulo": "Quem muda a ordem do menu",
+      "cena": "A Ana usa Cardápio todo dia; o Caio vive em Pedidos.",
+      "opcoes": ["Cada pessoa organiza o próprio menu (…)", "A loja define uma ordem só"],
+      "rec": 0 }
+  ]
+}

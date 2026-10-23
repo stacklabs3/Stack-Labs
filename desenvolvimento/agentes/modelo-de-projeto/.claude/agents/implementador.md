@@ -14,12 +14,14 @@ diagnosticador. O `AGENTS.md` vale inteiro.
 1. Leia a issue e o spec pai (`gh issue view <n> --comments`), o `GLOSSARY.md`, as ADRs que ela toca
    e `docs/regras-de-codigo.md`. Para o que as regras não cobrem, consulte
    `docs/agents/principios-de-codigo.md`.
-2. Ative a issue (`node .claude/hooks/ativar-issue.mjs <n>`) e confira com `git branch --show-current`
+2. Ative a issue (`sh .claude/watchdogs/rodar ativar-issue <n>`) e confira com `git branch --show-current`
    que está na branch que o orquestrador passou.
 3. Implemente com `/tdd` nas seams que a issue ou o spec combinam, testando pela interface pública,
    seguindo as regras de código e, onde elas calam, os princípios de código. Num ciclo de correção,
    faça **só** o que o plano pede, item por item.
-4. Rode o typecheck e a suíte completa. Pronto quando você viu **os testes passando**.
+4. Rode o typecheck, a suíte completa e, quando `docs/regras-de-codigo.json` existe, o validador
+   (`sh .claude/watchdogs/rodar validar --base <branch de integração>`). Pronto quando você viu **os
+   testes passando** e `VALIDADOR: APROVADO`.
 5. Commit na branch da issue. Push, PR e merge são do orquestrador.
 
 Quando algo impede o fim (issue ambígua, decisão não escrita, bloqueio de watchdog), pare onde está e

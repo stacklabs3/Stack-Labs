@@ -1,32 +1,5 @@
-#!/usr/bin/env node
-// Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto.
-// Ativação (uma vez por clone): git config core.hooksPath .claude/githooks
-// Escape humano para emergências: STACKLABS_PERMITIR_PUSH_MAIN=1 git push ...
-
-// Sem extensão, o node lê este arquivo como CommonJS: por isso require, e não import.
-const { readFileSync } = require("node:fs");
-
-const BRANCHES_PROTEGIDAS = /^refs\/heads\/(main|master)$/;
-const nomeDoRemoto = process.argv[2] || "origin";
-
-if (process.env.STACKLABS_PERMITIR_PUSH_MAIN === "1") {
-  console.error("[pre-push] STACKLABS_PERMITIR_PUSH_MAIN=1: push para a main liberado por um humano.");
-  process.exit(0);
-}
-
-// Cada linha do stdin: <ref local> <sha local> <ref remota> <sha remoto>
-const linhasDoPush = readFileSync(0, "utf8").split("\n").filter(Boolean);
-for (const linhaDoPush of linhasDoPush) {
-  const refRemota = linhaDoPush.split(" ")[2] || "";
-  if (BRANCHES_PROTEGIDAS.test(refRemota)) {
-    const branchDestino = refRemota.replace("refs/heads/", "");
-    console.error([
-      `[pre-push] BLOQUEADO — push direto para "${branchDestino}" em "${nomeDoRemoto}".`,
-      `A ${branchDestino} só recebe merge de PR. Envie a branch da issue e abra o PR:`,
-      `  git push -u ${nomeDoRemoto} <sua-branch> && gh pr create`,
-      "(Regra 17 do AGENTS.md · docs/agents/watchdogs.md)",
-    ].join("\n"));
-    process.exit(1);
-  }
-}
-process.exit(0);
+#!/bin/sh
+# Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto. A regra mora nos
+# watchdogs (.claude/watchdogs/src/pre_push.rs); este arquivo só a chama, repassando o stdin.
+# Ativação (uma vez por clone): git config core.hooksPath .claude/githooks
+exec "$(git rev-parse --show-toplevel)/.claude/watchdogs/rodar" pre-push "$@"
