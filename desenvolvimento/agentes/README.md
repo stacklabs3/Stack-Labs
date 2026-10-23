@@ -10,7 +10,7 @@ agentes/
 │   ├── AGENTS.md               constituição: as regras duras
 │   ├── CLAUDE.md               @AGENTS.md
 │   ├── docs/agents/            o que a constituição aponta
-│   │   ├── mapas-iniciais.md          os 4 mapas e o corpo de cada um
+│   │   ├── mapas-iniciais.md          os 5 mapas e o corpo de cada um
 │   │   ├── pesquisa-antes-de-recomendar.md
 │   │   ├── roteiro-de-prototipo.md    família *-prototipo
 │   │   ├── watchdogs.md

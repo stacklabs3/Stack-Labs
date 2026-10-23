@@ -17,10 +17,10 @@ export const LABELS_IMPLEMENTAVEIS = ["ready-for-agent", "ready-for-human"];
 export const PREFIXOS_BRANCH_DESCARTAVEL = ["prototype/", "research/"];
 
 // Mapas iniciais da casa (docs/agents/mapas-iniciais.md): label mapa-inicial:<tipo> + wayfinder:map.
-export const MAPAS_INICIAIS = ["prototipo", "arquitetura", "fases", "infra"];
+export const MAPAS_INICIAIS = ["prototipo", "arquitetura", "fases", "regras-de-codigo", "infra"];
 
 // Mapas iniciais que precisam estar fechados para uma issue de implementação ser ativada.
-export const MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR = ["prototipo", "arquitetura", "fases"];
+export const MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR = ["prototipo", "arquitetura", "fases", "regras-de-codigo"];
 
 // Tipos de ticket do wayfinder cuja resolução exige a seção "## Fontes" (pesquisa antes de recomendar).
 export const TIPOS_QUE_EXIGEM_FONTES = ["grilling", "task", "research"];

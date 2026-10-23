@@ -48,7 +48,8 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
 
 - **Repositório:** o do `origin` deste clone.
 - **Mapas iniciais:** além de `wayfinder:map`, cada um leva `mapa-inicial:prototipo`,
-  `mapa-inicial:arquitetura`, `mapa-inicial:fases` ou `mapa-inicial:infra`. Veja `docs/agents/mapas-iniciais.md`.
+  `mapa-inicial:arquitetura`, `mapa-inicial:fases`, `mapa-inicial:regras-de-codigo` ou
+  `mapa-inicial:infra`. Veja `docs/agents/mapas-iniciais.md`.
 - **Resolução com fontes:** o comentário de resolução de ticket de grilling, tarefa ou pesquisa
   termina com `## Fontes` e ao menos um link. Veja `docs/agents/pesquisa-antes-de-recomendar.md`.
 - **Spec:** o `/to-spec` publica o spec com `ready-for-agent`; troque pela label `spec`. As fatias do
@@ -63,7 +64,8 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
 
 ```bash
 for label in wayfinder:map wayfinder:research wayfinder:prototype wayfinder:grilling wayfinder:task \
-  mapa-inicial:prototipo mapa-inicial:arquitetura mapa-inicial:fases mapa-inicial:infra \
+  mapa-inicial:prototipo mapa-inicial:arquitetura mapa-inicial:fases mapa-inicial:regras-de-codigo \
+  mapa-inicial:infra \
   needs-triage needs-info ready-for-agent ready-for-human wontfix spec altera-watchdogs; do
   gh label create "$label" --force
 done

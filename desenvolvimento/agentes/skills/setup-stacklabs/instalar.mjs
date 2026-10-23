@@ -22,7 +22,7 @@ const ARQUIVOS_PARA_MESCLAR = ["AGENTS.md", "CLAUDE.md", ".gitignore", ".claude/
 const CAMINHOS_DOS_WATCHDOGS = [".claude/hooks", ".claude/githooks", ".claude/agents", ".claude/settings.json", ".github/workflows/vigia-do-metodo.yml"];
 const LABELS_DO_METODO = [
   "wayfinder:map", "wayfinder:research", "wayfinder:prototype", "wayfinder:grilling", "wayfinder:task",
-  "mapa-inicial:prototipo", "mapa-inicial:arquitetura", "mapa-inicial:fases", "mapa-inicial:infra",
+  "mapa-inicial:prototipo", "mapa-inicial:arquitetura", "mapa-inicial:fases", "mapa-inicial:regras-de-codigo", "mapa-inicial:infra",
   "needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix", "spec", "altera-watchdogs",
 ];
 

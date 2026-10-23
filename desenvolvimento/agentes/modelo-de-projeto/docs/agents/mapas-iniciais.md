@@ -1,7 +1,7 @@
 # Mapas iniciais
 
-Todo projeto abre quatro mapas do `/wayfinder` antes de qualquer código de produção
-(ADR 0002 do método). Cada mapa é uma issue com `wayfinder:map` **e** `mapa-inicial:<tipo>`, que é
+Todo projeto abre cinco mapas do `/wayfinder` antes de qualquer código de produção
+(ADRs 0002 e 0007 do método). Cada mapa é uma issue com `wayfinder:map` **e** `mapa-inicial:<tipo>`, que é
 como os watchdogs encontram o mapa. Num projeto que já existia antes do método, os mapas são
 **retroativos**: registram as decisões já tomadas e fecham na hora quando nada está em aberto
 (`/adotar-metodo-stack-labs`).
@@ -11,22 +11,24 @@ como os watchdogs encontram o mapa. Num projeto que já existia antes do método
 | Protótipo | `mapa-inicial:prototipo` | O desenho inicial do produto prototipado e aprovado | **Sim** |
 | Arquitetura | `mapa-inicial:arquitetura` | Linguagem, stack e módulos decididos, em ADRs | **Sim** |
 | Fases | `mapa-inicial:fases` | A divisão em fases que o desenvolvedor escolheu, com o que entra e o critério de pronto de cada uma | **Sim** |
+| Regras de código | `mapa-inicial:regras-de-codigo` | As regras que todo código do projeto segue, escritas em `docs/regras-de-codigo.md`, e o lint que as garante escolhido | **Sim** |
 | Infra | `mapa-inicial:infra` | Retrato da infra que vamos usar: custos, tecnologias e o que construir em volta | Não (informativo) |
 
 ## Como abrir
 
 1. Uma sessão por mapa, com `/wayfinder` em modo *Chart the map*. Comece pelo Protótipo e pela
-   Arquitetura; Fases e Infra dependem deles. Infra é o menor dos quatro: poucos tickets, quase todos de pesquisa.
+   Arquitetura; Fases, Regras de código e Infra dependem deles. Infra é o menor dos cinco: poucos
+   tickets, quase todos de pesquisa.
 2. Crie o mapa com as duas labels e o corpo do modelo abaixo. Ajuste o destino ao projeto no grilling.
 3. Os tickets sugeridos são ponto de partida, não lista fechada. O grilling breadth-first decide
    quais existem; o que não tiver pergunta precisa vai para *Not yet specified*.
-4. Ligue os bloqueios entre mapas com dependências nativas: os tickets de Fases e de Infra que
-   dependem de uma escolha de Arquitetura ficam `blocked_by` o ticket dela.
+4. Ligue os bloqueios entre mapas com dependências nativas: os tickets de Fases, de Regras de código e
+   de Infra que dependem de uma escolha de Arquitetura ficam `blocked_by` o ticket dela.
 5. Dispare os subagentes `/research` dos tickets de pesquisa no fim da sessão de mapear.
 6. Feche a sessão com o `/nova-sessao`: o kickoff abre a próxima janela, que pega o próximo ticket
    da fronteira (um ticket de decisão por sessão).
 
-## Regras que valem nos quatro
+## Regras que valem nos cinco
 
 - **Grilling em todo ticket de decisão** (`/grilling` + `/domain-modeling`), em rodadas, com o
   humano respondendo.
@@ -132,6 +134,57 @@ Tickets que costumam nascer:
 - *Seams entre as partes* (grilling): onde ficam as interfaces que deixam uma fase avançar sem a outra.
 - *Critério de pronto de cada fase* (grilling).
 - *Estratégia de testes por fase* (grilling + `/tdd`).
+
+## Mapa de Regras de código
+
+```markdown
+## Destination
+
+As regras que todo código deste projeto segue, escritas em docs/regras-de-codigo.md: nomes, desenho
+de módulos e seams, erros, testes, dependências e o que o lint e o formatador garantem sozinhos.
+Cada regra tem o porquê e um exemplo do próprio projeto. É a régua do implementador e do revisor
+da orquestração.
+
+## Notes
+
+- Depende do mapa de Arquitetura: as regras são da linguagem e da stack decididas lá. Os tickets que
+  dependem de uma escolha de stack ficam `blocked_by` o ticket dela.
+- Ferramentas do mapa: `/human-architect-mindset` para as restrições (quem mantém, nível do time,
+  o que o agente erra), `/domain-modeling` para nomes que vêm do GLOSSARY.md, `/codebase-design`
+  para o desenho de módulos (módulo, interface, profundidade, seam, adapter, deletion test).
+  Projeto com código existente: comece por `/improve-codebase-architecture` e transforme o atrito
+  que ele achar em regra ou em ticket.
+- Regra de lint, formatador e checagem de tipo é pesquisada como qualquer escolha técnica: versão
+  atual, manutenção e o que cada regra pega, com fonte. O que a ferramenta garante sozinha entra no
+  documento como "garantido pelo lint", sem repetir a regra.
+- Configurar o lint e o CI é implementação: entra como a primeira fatia da primeira fase, não como
+  ticket deste mapa.
+- O documento é curto e verificável. Regra que o revisor não consegue apontar num diff não é regra.
+- Ponto de partida: as regras da constituição (nome de variável diz o que guarda, teste pela
+  interface pública, vocabulário do GLOSSARY.md) e a lista de smells do `/code-review`.
+
+## Decisions so far
+
+## Not yet specified
+
+## Out of scope
+```
+
+Tickets que costumam nascer:
+
+- *Restrições para as regras* (grilling + `/human-architect-mindset`): quem mantém, nível do time,
+  quanto do código o agente escreve, o que já deu errado em projetos parecidos.
+- *Nomes e vocabulário* (grilling + `/domain-modeling`): idioma dos nomes, termos do GLOSSARY.md no
+  código, como nomear funções, tipos, arquivos e testes.
+- *Desenho de módulos e seams* (grilling + `/codebase-design`): tamanho de interface, onde ficam as
+  seams, quando um adapter se justifica, o que não se extrai só para testar.
+- *Erros, validação e logs* (grilling): onde se valida entrada, como um erro sobe, o que se loga.
+- *Testes* (grilling + `/tdd`): o que se testa pela interface, o que se mocka, nome e lugar dos testes.
+- *Opções de lint, formatador e typecheck* (pesquisa) → *Lint e formatador* (grilling).
+- *Atrito do código existente* (tarefa, só em projeto com código): `/improve-codebase-architecture`
+  e as regras que saem dele.
+- *Escrever docs/regras-de-codigo.md* (tarefa): junta as decisões num documento curto, com exemplo
+  por regra; fecha o mapa.
 
 ## Mapa de Infra
 

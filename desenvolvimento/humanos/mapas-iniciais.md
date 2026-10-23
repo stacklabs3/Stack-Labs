@@ -1,6 +1,7 @@
-# Os quatro mapas iniciais
+# Os cinco mapas iniciais
 
-Todo projeto abre estes quatro mapas no primeiro dia ([ADR 0002](../adr/0002-quatro-mapas-iniciais.md)).
+Todo projeto abre estes cinco mapas no primeiro dia ([ADR 0002](../adr/0002-quatro-mapas-iniciais.md)
+e [ADR 0007](../adr/0007-mapa-de-regras-de-codigo.md)).
 Cada um é uma issue no GitHub, com tickets filhos que são perguntas. O corpo exato de cada mapa, que
 o agente usa, fica em [docs/agents/mapas-iniciais.md](../agentes/modelo-de-projeto/docs/agents/mapas-iniciais.md).
 
@@ -8,14 +9,16 @@ Num projeto que já está rodando, os mapas registram as decisões que ele já t
 quando nada está em aberto: veja [adotar-em-projeto-existente.md](adotar-em-projeto-existente.md).
 
 Em todos: **grilling** em cada decisão, e **nenhuma recomendação sem pesquisa**. A implementação só
-começa com **Protótipo**, **Arquitetura** e **Fases** fechados.
+começa com **Protótipo**, **Arquitetura**, **Fases** e **Regras de código** fechados.
 
 ```
 Protótipo ──────► Fases
      │              ▲
      ▼              │
 Arquitetura ────────┤
-     │              │
+     │
+     ├──────► Regras de código
+     │
      └──────► Infra (informativo, não trava)
 ```
 
@@ -62,7 +65,31 @@ como ele quer fazer.
 **Fecha quando:** cada fase tem entrega e critério de pronto. **Bloqueia a implementação.** Cada
 fase vira depois uma spec e fatias verticais.
 
-## 4. Infra
+## 4. Regras de código
+
+**Decide:** as regras que todo código do projeto segue: como nomear, como desenhar módulos e
+interfaces, como tratar erro, como testar e o que o lint e o formatador garantem sozinhos. O
+resultado é um documento curto, `docs/regras-de-codigo.md`, com o porquê e um exemplo do projeto em
+cada regra. É a régua do agente que implementa e do agente que revisa: sem ela, cada sessão escreve
+de um jeito.
+
+**Quem participa:** os sócios técnicos e quem vai manter o projeto.
+
+**Perguntas que você vai ouvir:** os nomes no código são em português ou em inglês? Um termo do
+glossário vira o nome da classe? Quando vale criar uma interface? Onde se valida o que o usuário
+digita? O que se testa e o que se mocka? Qual lint e qual formatador?
+
+**Como anda:** depois que a Arquitetura decidiu a linguagem e a stack. Usa quatro skills:
+`/human-architect-mindset` para as restrições (quem mantém, o nível do time, o que o agente costuma
+errar), `/domain-modeling` para os nomes que vêm do glossário, `/codebase-design` para o desenho de
+módulos e `/improve-codebase-architecture` quando já existe código. Lint e formatador passam por
+pesquisa, como toda escolha técnica. Configurar o lint é implementação: entra como a primeira fatia
+da primeira fase.
+
+**Fecha quando:** `docs/regras-de-codigo.md` está escrito e você aprovou. **Bloqueia a
+implementação.** Regra nova ou mudada depois passa por ticket, nunca por edição solta.
+
+## 5. Infra
 
 **Decide:** nada que trave o projeto. É um retrato para **conhecimento de causa**: que infra vamos
 usar, quanto custa, quais tecnologias e soluções estarão disponíveis e o que teremos que construir
@@ -70,7 +97,7 @@ em volta delas.
 
 **Quem participa:** os sócios técnicos e quem paga a conta.
 
-**Como anda:** é o menor dos quatro mapas, com poucos tickets, quase todos de pesquisa. Preço e
+**Como anda:** é o menor dos cinco mapas, com poucos tickets, quase todos de pesquisa. Preço e
 limite de provedor só entram com fonte e data da consulta.
 
 **Fecha quando:** não precisa fechar. Detalhes de ambientes e deploy viram um mapa próprio quando a

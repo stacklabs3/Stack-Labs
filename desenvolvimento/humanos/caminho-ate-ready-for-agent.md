@@ -6,7 +6,7 @@ onde a tarefa nasce. O detalhe que o agente segue está em
 [docs/agents/caminho-ate-ready-for-agent.md](../agentes/modelo-de-projeto/docs/agents/caminho-ate-ready-for-agent.md).
 
 ```
-projeto novo ──► 4 mapas iniciais ─────────────┐
+projeto novo ──► 5 mapas iniciais ─────────────┐
                                                ▼
 ideia grande ──► /wayfinder ──► (mapa claro) ──► /to-spec ──► /to-tickets ──► ready-for-agent ──► orquestração
 ideia clara ───► /grill-with-docs ─────────────┘                ▲
@@ -16,7 +16,7 @@ bug / pedido ──► /triage ────────────────�
 
 ## Qual caminho
 
-- **Projeto novo:** primeiro os quatro mapas iniciais. Depois, cada fase vira uma ideia grande.
+- **Projeto novo:** primeiro os cinco mapas iniciais. Depois, cada fase vira uma ideia grande.
 - **Ideia grande**, com muita coisa a decidir: `/wayfinder`. Um ticket de decisão por sessão, até o
   mapa não ter mais nada a decidir. Então `/to-spec` e `/to-tickets`.
 - **Ideia clara**, mas grande para uma sessão: `/grill-with-docs`, depois `/to-spec` e `/to-tickets`.

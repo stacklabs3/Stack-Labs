@@ -18,7 +18,7 @@ método dizendo qual é o próximo passo. A lista técnica completa fica em
 | Mensagem | O que fazer |
 |---|---|
 | "faltam mapas iniciais" | Abra os mapas que faltam com `/wayfinder` |
-| "mapas iniciais ... ainda estão abertos" | Feche Protótipo (desenho inicial), Arquitetura e Fases antes de implementar |
+| "mapas iniciais ... ainda estão abertos" | Feche Protótipo (desenho inicial), Arquitetura, Fases e Regras de código antes de implementar |
 | "exige uma issue ativa" | Ative uma issue `ready-for-*` com `node .claude/hooks/ativar-issue.mjs <n>`, ou passe por `/to-tickets` |
 | "seria fechado sem ## Fontes" | A decisão precisa citar a pesquisa ou a fonte primária |
 | "não foi reivindicado" | O ticket precisa de responsável antes do trabalho |
@@ -46,6 +46,11 @@ Num projeto que já existia, os watchdogs ligam em etapas: na **observação** q
 
 Rode `/setup-stacklabs` no projeto. O que for watchdog ele não sobrescreve sozinho: entrega a você o
 comando com `--atualizar-watchdogs`, que só você roda.
+
+Projeto que entrou no método antes do mapa de Regras de código
+([ADR 0007](../adr/0007-mapa-de-regras-de-codigo.md)) passa a ver "faltam mapas iniciais" depois da
+atualização. Abra o mapa como retroativo: ele registra as regras que o código já segue e fecha na
+hora quando nada está em aberto.
 
 ## Mudar um watchdog
 

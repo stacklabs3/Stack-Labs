@@ -23,7 +23,9 @@ O que já estava em andamento (branches e PRs abertas antes da adoção) termina
    e o que só eles faziam vira regra do projeto ou proposta para o método.
 3. **Instalação em observação:** uma PR com o método instalado. Você faz o merge.
 4. **Mapas iniciais retroativos:** uma sessão por mapa. Eles registram as decisões que o projeto
-   **já tomou**, com as ADRs que você confirmar. O que ninguém decidiu de verdade vira ticket.
+   **já tomou**, com as ADRs que você confirmar. O que ninguém decidiu de verdade vira ticket. O de
+   Regras de código começa pelo `/improve-codebase-architecture` e escreve as regras que o código já
+   segue de fato em `docs/regras-de-codigo.md`.
 5. **Triage das issues abertas**, em lotes de até 10: só passam a `ready-for-agent` as que cumprem a
    [definição de pronto](caminho-ate-ready-for-agent.md).
 6. **Passagem para planejamento** e, depois, **para completo**: o agente mostra que as condições

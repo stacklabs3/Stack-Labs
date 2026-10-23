@@ -11,7 +11,7 @@ máquina) e o `vigia-do-metodo` do GitHub Actions (todos, na PR). O estado de ca
 | `vigia-prompt` | UserPromptSubmit | Mede o contexto: avisa em 450k e exige `/nova-sessao` a partir de 550k (constantes em `.claude/hooks/lib/comum.mjs`). Em sessão de grilling, relembra a **linguagem simples** a cada resposta do humano | Injeta alerta |
 | `vigia-skill` | PostToolUse `Skill` | Quando uma skill de grilling carrega (`grilling`, `grill-me`, `grill-with-docs`, `wayfinder`), marca o grilling na sessão e injeta a regra: pergunta curta, sem jargão, com exemplo real do cenário do projeto (texto em `REGRA_LINGUAGEM_GRILLING`, `.claude/hooks/lib/comum.mjs`) | Injeta contexto |
 | `guarda-edicao` | PreToolUse `Write\|Edit\|NotebookEdit` | Protege os watchdogs, aplica a smart zone e só libera código de produção com issue ativa, fora da `main` (documentação, `HANDOFF-*.md` na raiz e protótipos ficam livres) | **Bloqueia** |
-| `guarda-bash` | PreToolUse `Bash` | Protege os watchdogs; ativa issue (uma por sessão ou por subagente, e uma por comando) só com os **quatro mapas iniciais** criados e Protótipo, Arquitetura e Fases fechados, e nunca um `spec`; exige claim antes de comentar ou fechar ticket; exige comentário de resolução **com `## Fontes`** em grilling, tarefa e pesquisa; um ticket de decisão por sessão; nada de commit na `main`, push forçado, `--no-verify` nem `--atualizar-watchdogs` | **Bloqueia** |
+| `guarda-bash` | PreToolUse `Bash` | Protege os watchdogs; ativa issue (uma por sessão ou por subagente, e uma por comando) só com os **cinco mapas iniciais** criados e Protótipo, Arquitetura, Fases e Regras de código fechados, e nunca um `spec`; exige claim antes de comentar ou fechar ticket; exige comentário de resolução **com `## Fontes`** em grilling, tarefa e pesquisa; um ticket de decisão por sessão; nada de commit na `main`, push forçado, `--no-verify` nem `--atualizar-watchdogs` | **Bloqueia** |
 | `vigia-parada` | Stop | O turno não termina sem o ponteiro do ticket resolvido em *Decisions so far* | **Bloqueia o fim do turno** |
 | `orquestrar-issues` | Sessão do orquestrador, com os papéis de `.claude/agents/` | Subagentes em sequência; uma issue por implementador; revisor e conferente aprovam antes de integrar; até 2 ciclos de correção; para após 2 issues devolvidas seguidas; nunca faz merge. Ver [orquestracao.md](orquestracao.md) | **Devolve a issue / para a rodada** |
 | `pre-push` | `git push` | Recusa push direto para `main`/`master` | **Bloqueia o push** |
@@ -60,9 +60,9 @@ caminhos livres sem issue. Mudança que vale para todos os projetos vai primeiro
 ## Limites conhecidos
 
 - A proteção contra Bash é heurística: procura verbos mutantes junto dos caminhos protegidos. Barra o
-  descuido, não um agente decidido a contornar; por isso a regra 20 também está escrita.
+  descuido, não um agente decidido a contornar; por isso a regra 21 também está escrita.
 - O `guarda-bash` lê o **texto** do comando (e os arquivos de `--body-file`). Um comando guardado num
-  script e executado por ele não é visto. A regra 21 cobre esse caso.
+  script e executado por ele não é visto. A regra 22 cobre esse caso.
 - A regra de fontes confere que a seção e o link existem, não que a fonte sustenta a recomendação.
   Isso é do humano no grilling e do `/auditar-metodo`.
 - Grilling com o humano respondendo e TDD não dão para checar por máquina.
