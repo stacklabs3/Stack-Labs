@@ -75,6 +75,7 @@ Pronto quando a PR existe, ou o humano sabe exatamente o que a impede.
 
 ### 7. Próximo passo
 
-Diga ao humano para abrir uma **sessão nova**: os hooks só carregam no início de uma sessão. O
-`sessao-inicio` vai mostrar o setup ✅ e os mapas iniciais ❌. Na **instalação**, o próximo
+O humano precisa de uma **janela nova**: os hooks só carregam no início de uma sessão. Gere o
+kickoff com o `/nova-sessao` para ele colar lá. O `sessao-inicio` vai mostrar o setup ✅ e os mapas
+iniciais ❌. Na **instalação**, o próximo
 trabalho é abrir os quatro mapas iniciais (`docs/agents/mapas-iniciais.md`).

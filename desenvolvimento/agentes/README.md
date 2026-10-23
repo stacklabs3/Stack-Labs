@@ -14,6 +14,7 @@ agentes/
 │   │   ├── pesquisa-antes-de-recomendar.md
 │   │   ├── roteiro-de-prototipo.md    família *-prototipo
 │   │   ├── watchdogs.md
+│   │   ├── loop-de-issues.md          o loop de issues em sequência
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
 │   ├── .claude/                hooks do Claude Code (watchdogs) e o loop de issues
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
@@ -23,8 +24,9 @@ agentes/
     ├── loop-de-issues/         prepara e lê rodadas do loop de issues (.claude/loop/)
     ├── auditar-metodo/         auditoria do projeto inteiro, sob demanda
     └── recomendada/            cópia das skills recomendadas (matheus3006/my-claude-skills): a família
-                                *-prototipo, human-architect-mindset e outras; as do Matt foram atualizadas
-                                para mattpocock/skills 5beb35b (v1.3.1)
+                                *-prototipo, /nova-sessao, /voltar-a-principal, human-architect-mindset
+                                e outras. Difere da origem em dois pontos: as skills do Matt seguem
+                                mattpocock/skills 5beb35b (v1.3.1) e o tirar-prints.sh virou só .mjs
 ```
 
 ## Instalar num projeto novo

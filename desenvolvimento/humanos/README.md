@@ -18,6 +18,7 @@ iniciais, a pesquisa antes de recomendar e a família `*-prototipo`. O projeto d
 | Responde o grilling e decide | Pergunta, recomenda e mostra a fonte |
 | Aprova protótipo por escrito | Constrói, audita e leva a aprovação até você |
 | Revisa e faz merge da PR | Implementa uma issue por sessão, com testes |
+| Dispara o loop de issues no terminal | Roda as issues da fila em sequência e abre as PRs |
 | Abre a janela nova e cola o kickoff | Gera o kickoff com o `/nova-sessao` |
 | Muda os watchdogs, se precisar | Nunca mexe neles |
 
