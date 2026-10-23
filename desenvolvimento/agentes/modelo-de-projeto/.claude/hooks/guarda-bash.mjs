@@ -71,9 +71,12 @@ if (/STACKLABS_PERMITIR_PUSH_MAIN/.test(comando)) {
 }
 
 // ---------- W4: ativação de issue (uma issue por sessão) ----------
-const ativacaoIssue = comando.match(/ativar-issue(?:\.sh)?\s+#?(\d+)/);
-if (ativacaoIssue) {
-  const numeroIssue = Number(ativacaoIssue[1]);
+const numerosAtivados = [...new Set([...comando.matchAll(/ativar-issue(?:\.mjs)?\s+#?(\d+)/g)].map((correspondencia) => Number(correspondencia[1])))];
+if (numerosAtivados.length > 1) {
+  bloquearFerramenta(NOME_WATCHDOG, `o comando ativa mais de uma issue (${numerosAtivados.map((numero) => `#${numero}`).join(", ")}). Uma sessão trabalha uma issue só.`);
+}
+if (numerosAtivados.length === 1) {
+  const numeroIssue = numerosAtivados[0];
   const estadoSessao = lerEstadoSessao(diretorioProjeto, idSessao);
   if (estadoSessao.issueAtiva && estadoSessao.issueAtiva.numero !== numeroIssue) {
     bloquearFerramenta(NOME_WATCHDOG, `esta sessão já trabalha na issue #${estadoSessao.issueAtiva.numero}. Contexto limpo por issue: termine, rode /handoff se preciso, e abra uma sessão nova para a #${numeroIssue}.`);

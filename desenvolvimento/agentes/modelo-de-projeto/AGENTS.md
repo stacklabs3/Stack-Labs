@@ -49,7 +49,7 @@ ideia grande demais para uma sessão
 
 ### 3. Planejar antes de construir
 3. **[W]** Código de produção só se edita com uma **issue ativa** na sessão:
-   `.claude/hooks/ativar-issue.sh <n>`. A issue está aberta, tem `ready-for-agent` ou
+   `node .claude/hooks/ativar-issue.mjs <n>`. A issue está aberta, tem `ready-for-agent` ou
    `ready-for-human` e não é ticket do wayfinder. Ficam livres: `AGENTS.md`, `CLAUDE.md`,
    `GLOSSARY*.md`, `README.md`, `docs/`, `.scratch/`, `prototipos/`, `.claude/` (exceto os
    watchdogs) e as branches `prototype/*` e `research/*`.

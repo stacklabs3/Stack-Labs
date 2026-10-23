@@ -43,7 +43,7 @@ o `CLAUDE.md` e o `settings.json` em vez de sobrescrever. Termina numa PR `chore
 
 **Atualizar** um projeto é rodar `/setup-stacklabs` de novo. Watchdog desatualizado num projeto que
 já tem watchdogs só um humano atualiza:
-`~/.claude/skills/setup-stacklabs/instalar.sh --atualizar-watchdogs`.
+`node ~/.claude/skills/setup-stacklabs/instalar.mjs --atualizar-watchdogs`.
 
 Não instale também o plugin `mattpocock-skills`: as skills dele já ficam no projeto e apareceriam
 duplicadas.

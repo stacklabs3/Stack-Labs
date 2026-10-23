@@ -19,7 +19,7 @@ máquina) e o `vigia-do-metodo` do GitHub Actions (todos, na PR). O estado de ca
 ## Ativar uma issue
 
 ```bash
-.claude/hooks/ativar-issue.sh 42
+node .claude/hooks/ativar-issue.mjs 42
 ```
 
 O `guarda-bash` intercepta o comando antes de ele rodar e confere a issue (aberta, `ready-for-agent`

@@ -2,7 +2,7 @@ Você está numa sessão do loop de issues: implemente a issue #{{ISSUE}} deste 
 do começo ao fim. Ninguém está olhando, então não há a quem perguntar.
 {{CONTINUACAO}}
 1. Leia a issue e o spec pai dela: `gh issue view {{ISSUE}} --comments`.
-2. Ative a issue: `.claude/hooks/ativar-issue.sh {{ISSUE}}`. Trabalhe na branch `issue/{{ISSUE}}-<slug>`:
+2. Ative a issue: `node .claude/hooks/ativar-issue.mjs {{ISSUE}}`. Trabalhe na branch `issue/{{ISSUE}}-<slug>`:
    crie a branch se ela não existe, ou entre nela se ela já existe.
 3. Implemente com `/implement`, usando `/tdd` nas seams que a issue ou o spec combinam. Siga o
    `AGENTS.md`: vocabulário do `GLOSSARY.md`, ADRs de `docs/adr/` e watchdogs.

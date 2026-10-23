@@ -112,7 +112,7 @@ O "aprovado" escrito pelo humano no comentário de resolução do ticket de prot
 
 **Issue ativa**:
 A única fatia vertical em que uma sessão de agente pode editar código de produção, ativada com
-`.claude/hooks/ativar-issue.sh <n>`.
+`node .claude/hooks/ativar-issue.mjs <n>`.
 
 **Sessão**:
 Uma janela de contexto de um agente, do início ao `/handoff`. Uma sessão resolve um ticket de decisão

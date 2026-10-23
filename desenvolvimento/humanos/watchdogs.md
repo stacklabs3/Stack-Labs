@@ -19,7 +19,7 @@ método dizendo qual é o próximo passo. A lista técnica completa fica em
 |---|---|
 | "faltam mapas iniciais" | Abra os mapas que faltam com `/wayfinder` |
 | "mapas iniciais ... ainda estão abertos" | Feche Protótipo (desenho inicial), Arquitetura e Fases antes de implementar |
-| "exige uma issue ativa" | Ative uma issue `ready-for-*` com `ativar-issue.sh`, ou passe por `/to-tickets` |
+| "exige uma issue ativa" | Ative uma issue `ready-for-*` com `node .claude/hooks/ativar-issue.mjs <n>`, ou passe por `/to-tickets` |
 | "seria fechado sem ## Fontes" | A decisão precisa citar a pesquisa ou a fonte primária |
 | "não foi reivindicado" | O ticket precisa de responsável antes do trabalho |
 | "esta sessão já resolveu" | Um ticket de decisão por sessão: abra outra |
