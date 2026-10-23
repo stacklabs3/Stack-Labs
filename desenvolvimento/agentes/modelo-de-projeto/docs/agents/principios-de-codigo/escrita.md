@@ -5,8 +5,12 @@ funções, tipos, erros, efeitos, comentários, duplicação e valores.
 
 ### E1. O nome diz o que é, na língua do domínio
 
+**Obrigatório** (regra 20 da constituição): o grilling adapta o E1 ao projeto, mas não o afasta.
+
 Variável diz o que guarda, função diz o que faz, tipo diz o que representa, com as palavras do
-`GLOSSARY.md`. Sem abreviação que só o autor entende. Booleano lê como pergunta (`estaPago`,
+`GLOSSARY.md`: `produto = valor - custo`, nunca `x = y - z`. Nome de uma letra nunca, nem em laço,
+lambda, `catch` ou genérico (`<Item>`, não `<T>`); a única exceção é `_` para valor descartado. Sem
+abreviação que só o autor entende. Booleano lê como pergunta (`estaPago`,
 `temEstoque`). Quantidade com unidade leva a unidade no nome (`prazoEmMinutos`, `valorEmCentavos`).
 
 **Por quê:** o leitor (humano ou agente) entende o código pelo nome antes de ler o corpo. Nome
@@ -19,12 +23,12 @@ const p = x.filter((i) => i.s === 2);
 const pedidosEmPreparo = pedidos.filter((pedido) => pedido.status === StatusPedido.EmPreparo);
 ```
 
-**No grilling:** Os nomes no código ficam em português ou em inglês? Um termo do glossário ("comanda", por exemplo) vira exatamente o nome do tipo?
+**No grilling:** Os nomes no código ficam em português ou em inglês? Um termo do glossário ("comanda", por exemplo) vira exatamente o nome do tipo? (Se o E1 vale não se pergunta: vale sempre.)
 
-**No diff:** nome de uma letra fora de laço curto, sinônimo de termo do glossário, `data`, `info`,
-`manager`, `helper`, `utils` como nome de módulo.
+**No diff:** nome de uma letra (fora o `_` descartado), sinônimo de termo do glossário, `data`,
+`info`, `manager`, `helper`, `utils` como nome de módulo.
 
-**No validador:** `termo-evitado`; a convenção de caixa pelo `lint-cobre` (as regras da linguagem estão no arquivo dela).
+**No validador:** `termo-evitado`; nome de uma letra e a convenção de caixa pelo `lint-cobre`; o genérico de uma letra pelo `ast-grep` com o modelo `parametro-de-tipo-sem-nome.yml` (as regras da linguagem estão no arquivo dela). A `cobertura` reprova o E1 afastado.
 
 ### E2. Função curta, num só nível de abstração, com saída cedo
 

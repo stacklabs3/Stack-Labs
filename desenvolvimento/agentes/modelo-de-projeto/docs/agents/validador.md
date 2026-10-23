@@ -34,7 +34,7 @@ Nasce do modelo `.claude/watchdogs/modelos/regras-de-codigo.json` no ticket que 
 A tabela de cobertura do `.md` é a dona das decisões; o `.json` diz como cada regra se verifica. A
 checagem `cobertura` roda sempre e confere os dois juntos: os 22 princípios com decisão válida, cada
 princípio adotado ou adaptado citando um `R<n>` que existe no `.json` com o mesmo princípio, e nenhuma
-regra do `.json` sem linha na tabela. Regra que nasce de prática da linguagem leva o ID dela em
+regra do `.json` sem linha na tabela. O E1 nunca é `afastado` (regra 20 da constituição). Regra que nasce de prática da linguagem leva o ID dela em
 `principio` (`TS<n>`, `JV<n>`, `RS<n>`) e é citada na tabela *Práticas da linguagem* do `.md`, fora
 dos 22.
 

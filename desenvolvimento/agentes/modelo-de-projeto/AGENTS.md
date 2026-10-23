@@ -99,7 +99,9 @@ ideia grande demais para uma sessão
     mapa novo. O que é mecânico o validador confere (`sh .claude/watchdogs/rodar validar`,
     [docs/agents/validador.md](docs/agents/validador.md)); onde elas calam, os princípios de código
     valem como julgamento ([docs/agents/principios-de-codigo.md](docs/agents/principios-de-codigo.md)).
-20. Todo nome de variável diz o que guarda (`valorProduto = produto.valor`, nunca `p = x.valor`).
+20. **Todo nome diz o que é:** variável, função, parâmetro, tipo, módulo e parâmetro de tipo
+    (`produto = valor - custo`, nunca `x = y - z`). Nome de uma letra nunca, nem em laço ou lambda;
+    a única exceção é `_` para valor descartado. Nenhum projeto afasta esta regra (princípio E1).
 
 ### 8. Os watchdogs
 21. **[W]** Você **não edita, move, apaga nem contorna** `.claude/watchdogs/`, `.claude/githooks/`,

@@ -31,5 +31,7 @@ com o `/wayfinder` como porta de entrada, mais as regras da casa.
 7. Issues `ready-for-agent` vão para a **orquestração**: uma sessão orquestradora dispara, em
    sequência, quem implementa, quem revisa e quem confere com o spec, numa branch de integração.
 8. **Watchdogs** barram o que foge do método, na sessão, no push e na PR.
+9. **Todo nome diz o que é:** `produto = valor - custo`, nunca `x = y - z`; nome de uma letra nunca,
+   fora o `_` descartado.
 
 Projeto de referência: [appetito_v2](https://github.com/stacklabs1/appetito_v2).

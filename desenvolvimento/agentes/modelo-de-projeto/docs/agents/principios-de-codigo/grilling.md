@@ -11,7 +11,7 @@ princípios de cada um, estão em [mapas-iniciais/regras-de-codigo.md](../mapas-
    **No grilling**, a linha da linguagem e, se houver, o atrito que o quebra.
 2. **Monte a rodada.** Cada pergunta-guia vira uma pergunta do projeto, no formato da regra 10 da
    constituição, com o atrito como exemplo quando houver. A recomendação é **adotar**, **adaptar**
-   (e como) ou **afastar** (e por quê), com a fonte: *Fontes* do arquivo do grupo para o princípio,
+   (e como) ou **afastar** (e por quê; o E1 nunca se afasta), com a fonte: *Fontes* do arquivo do grupo para o princípio,
    `docs/research/` para o que depende da stack, a linha do arquivo da linguagem para a regra que o
    confere, as restrições para o que depende do time. Princípio
    que a linha **No validador** confere por máquina leva, na mesma pergunta, o parâmetro que a

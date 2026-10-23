@@ -32,7 +32,7 @@ caminho).
 - `docs/regras-de-codigo.md` existe, cada regra tem o porquê e um exemplo, e o mapa de Regras de
   código aponta para ele. Amostra de 3 PRs mergeadas: o diff segue as regras.
 - `docs/regras-de-codigo.md` tem a tabela de cobertura com os 22 princípios de
-  `docs/agents/principios-de-codigo.md`, cada um adotado, adaptado ou afastado com o porquê, e cada regra cita o princípio de onde nasceu. Cada ticket de grupo do mapa
+  `docs/agents/principios-de-codigo.md`, cada um adotado, adaptado ou afastado com o porquê (o E1 nunca afastado), e cada regra cita o princípio de onde nasceu. Cada ticket de grupo do mapa
   fechou com uma linha de decisão por princípio. Projeto anterior à ADR 0008 sem cobertura: ⚠️ e o
   ticket que a completa.
 - Em projeto TypeScript, Java ou Rust, `docs/regras-de-codigo.md` tem a tabela *Práticas da

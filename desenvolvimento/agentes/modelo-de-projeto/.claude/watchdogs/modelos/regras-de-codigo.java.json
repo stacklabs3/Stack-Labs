@@ -7,6 +7,8 @@
   "regras": [
     { "id": "R1", "principio": "E1", "texto": "Nomes declarados usam o vocabulário do GLOSSARY.md",
       "verificacao": { "tipo": "termo-evitado", "glossario": "GLOSSARY.md" } },
+    { "id": "R20", "principio": "E1", "texto": "Nenhum nome de uma letra, genérico incluído; só `_` para valor descartado",
+      "verificacao": { "tipo": "lint-cobre", "config": "config/checkstyle.xml", "regras": ["LocalVariableName", "ParameterName", "LambdaParameterName", "CatchParameterName", "ClassTypeParameterName", "MethodTypeParameterName"] } },
     { "id": "R2", "principio": "E2", "texto": "Até 3 parâmetros e 3 níveis de if",
       "verificacao": { "tipo": "lint-cobre", "config": "config/checkstyle.xml", "regras": ["ParameterNumber", "NestedIfDepth"] } },
     { "id": "R3", "principio": "E4", "texto": "Nenhum catch vazio ou que só loga",

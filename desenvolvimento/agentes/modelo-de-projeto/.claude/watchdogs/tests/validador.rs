@@ -150,6 +150,19 @@ fn cobertura_reprova_regra_citada_noutro_principio() {
 }
 
 #[test]
+fn cobertura_reprova_e1_afastado_mesmo_com_o_porque() {
+    let regras = regras_de(json!([{ "id": "R1", "principio": "E2", "verificacao": { "tipo": "revisor" } }]));
+    let mensagens: Vec<String> = checar_cobertura(
+        &tabela_com(&[("E1", "afastado | o time prefere nomes curtos"), ("E2", "adotado | R1")]),
+        &regras,
+    )
+    .into_iter()
+    .map(|violacao| violacao.mensagem)
+    .collect();
+    assert_eq!(mensagens, vec!["E1 é regra dura da constituição: adapte, mas não afaste".to_string()]);
+}
+
+#[test]
 fn termo_evitado_le_o_glossario_e_acha_o_nome_declarado() {
     assert_eq!(
         termos_evitados_do_glossario("_Evitar_: Épico, roadmap, Tarefa (quando não é), ok\n"),

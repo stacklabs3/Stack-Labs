@@ -131,8 +131,8 @@ fn resolver(caminho: &str) -> PathBuf {
 }
 
 /// Compara como o `sort()` do JavaScript (unidades UTF-16).
-fn ordem_do_javascript(a: &str, b: &str) -> std::cmp::Ordering {
-    a.encode_utf16().cmp(b.encode_utf16())
+fn ordem_do_javascript(primeiro: &str, segundo: &str) -> std::cmp::Ordering {
+    primeiro.encode_utf16().cmp(segundo.encode_utf16())
 }
 
 /// Caminhos relativos de todos os arquivos de uma pasta, em ordem, com "/" como separador.
@@ -165,7 +165,7 @@ fn listar_arquivos(pasta_raiz: &Path) -> Resultado<Vec<String>> {
     }
     let mut arquivos = Vec::new();
     visitar(pasta_raiz, "", &mut arquivos)?;
-    arquivos.sort_by(|a, b| ordem_do_javascript(a, b));
+    arquivos.sort_by(|primeiro, segundo| ordem_do_javascript(primeiro, segundo));
     Ok(arquivos)
 }
 
@@ -177,7 +177,7 @@ fn arquivos_iguais(caminho_a: &Path, caminho_b: &Path) -> bool {
         return false;
     }
     match (fs::read(caminho_a), fs::read(caminho_b)) {
-        (Ok(a), Ok(b)) => a == b,
+        (Ok(conteudo_a), Ok(conteudo_b)) => conteudo_a == conteudo_b,
         _ => false,
     }
 }
@@ -287,7 +287,7 @@ fn subpastas(pasta: &Path) -> Resultado<Vec<PathBuf>> {
         })
         .map(|entrada| entrada.path())
         .collect();
-    pastas.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+    pastas.sort_by(|primeira, segunda| primeira.file_name().cmp(&segunda.file_name()));
     Ok(pastas)
 }
 
@@ -334,9 +334,9 @@ fn agora_em_iso() -> String {
     let dias = milissegundos.div_euclid(86_400_000);
     let resto = milissegundos.rem_euclid(86_400_000);
     // Conversão de dias desde 1970 em data civil (algoritmo de Howard Hinnant).
-    let z = dias + 719_468;
-    let era = z.div_euclid(146_097);
-    let dia_da_era = z.rem_euclid(146_097);
+    let dias_desde_a_era = dias + 719_468;
+    let era = dias_desde_a_era.div_euclid(146_097);
+    let dia_da_era = dias_desde_a_era.rem_euclid(146_097);
     let ano_da_era =
         (dia_da_era - dia_da_era / 1460 + dia_da_era / 36_524 - dia_da_era / 146_096) / 365;
     let dia_do_ano = dia_da_era - (365 * ano_da_era + ano_da_era / 4 - ano_da_era / 100);

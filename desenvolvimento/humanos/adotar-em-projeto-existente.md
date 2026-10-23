@@ -27,7 +27,8 @@ Rode `/adotar-metodo-stack-labs` no projeto: ele descobre em que ponto a adoçã
 4. **Mapas iniciais retroativos:** uma sessão por mapa. Você confirma as ADRs das decisões que o
    projeto **já tomou**; o que ninguém decidiu de verdade vira ticket. O de Regras de código começa
    pelo `/improve-codebase-architecture` e escreve em `docs/regras-de-codigo.md` as regras que o
-   código já segue de fato.
+   código já segue de fato. O E1 (todo nome diz o que é) entra sempre; nome curto no código antigo
+   vira ticket, e o validador só cobra o que muda.
 5. **Triage das issues abertas**, em lotes de até 10: só passam a `ready-for-agent` as que cumprem a
    [definição de pronto](caminho-ate-ready-for-agent.md).
 6. **Passagem para planejamento** e, depois, **para completo**: o agente mostra que as condições

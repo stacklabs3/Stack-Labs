@@ -20,7 +20,9 @@ Dois mapas pedem trabalho a mais na sessão deles:
   código e da conversa.
 - **Regras de código:** rode antes o `/improve-codebase-architecture` e escreva
   `docs/regras-de-codigo.md` com as regras que o código e o lint já seguem de fato; o atrito que ele
-  achar vira ticket ou névoa, não regra inventada.
+  achar vira ticket ou névoa, não regra inventada. Exceção: o E1 entra sempre (regra 20 da
+  constituição); nome de uma letra no código existente vira ticket, e o validador com `--base` só
+  cobra os arquivos que mudam.
 
 Pronto, por mapa, quando ele existe e cada linha de *Decisions so far* aponta uma ADR, um documento
 ou um ticket fechado.

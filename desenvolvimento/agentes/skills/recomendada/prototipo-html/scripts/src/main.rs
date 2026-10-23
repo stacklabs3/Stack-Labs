@@ -170,7 +170,7 @@ fn verdadeiro(valor: Option<&Value>) -> bool {
     match valor {
         None | Some(Value::Null) => false,
         Some(Value::Bool(logico)) => *logico,
-        Some(Value::Number(numero)) => numero.as_f64().is_some_and(|n| n != 0.0),
+        Some(Value::Number(numero)) => numero.as_f64().is_some_and(|valor| valor != 0.0),
         Some(Value::String(texto)) => !texto.is_empty(),
         Some(_) => true,
     }

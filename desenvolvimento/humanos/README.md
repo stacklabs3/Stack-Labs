@@ -7,8 +7,9 @@ Guia para sócios e funcionários. Vale em **todo projeto**. A versão que os ag
 
 **A IA executa; você decide.** O agente pesquisa, pergunta, prototipa e escreve código. Toda decisão
 passa por você, e toda recomendação dele vem com a fonte que a sustenta. O método é o do Matt Pocock
-([ADR 0001](../adr/0001-metodo-matt-pocock-com-wayfinder.md)), mais três regras da casa: os mapas
-iniciais, a pesquisa antes de recomendar e a família `*-prototipo`. O projeto de referência é o
+([ADR 0001](../adr/0001-metodo-matt-pocock-com-wayfinder.md)), mais quatro regras da casa: os mapas
+iniciais, a pesquisa antes de recomendar, a família `*-prototipo` e todo nome que diz o que é
+(`produto = valor - custo`, nunca `x = y - z`). O projeto de referência é o
 [appetito_v2](https://github.com/stacklabs1/appetito_v2).
 
 ## Quem faz o quê

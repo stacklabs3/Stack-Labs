@@ -32,6 +32,10 @@ export default tseslint.config(
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
     rules: {
+      // E1 (regra 20 da constituição, obrigatória): nenhum nome de uma letra; só `_` para valor
+      // descartado. Vale para variável, parâmetro, laço, lambda, catch e propriedade.
+      "id-length": ["error", { min: 2, exceptions: ["_"], properties: "always" }], // E1
+
       // E1: booleano lê como pergunta. Opcional: decisão do grilling (não roda no oxlint).
       // "@typescript-eslint/naming-convention": ["error",
       //   { selector: "variable", types: ["boolean"], format: ["PascalCase"], prefix: ["esta", "tem", "pode", "deve"] }],

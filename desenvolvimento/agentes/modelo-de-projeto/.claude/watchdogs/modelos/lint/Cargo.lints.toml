@@ -21,6 +21,10 @@ dead_code = "deny" # E6, P7: código morto sai
 unused_mut = "deny" # E5: mut só onde muda
 
 [lints.clippy]
+# E1 (regra 20 da constituição, obrigatória): nenhum nome de uma letra; só `_`. O clippy.toml esvazia
+# a lista de liberados, que por padrão aceita i, j, x, y, z, w e n. O genérico (<T>) fica com o
+# ast-grep parametro-de-tipo-sem-nome.yml, que o Clippy não confere.
+min_ident_chars = "deny" # E1
 # Grupos com prioridade baixa, para os lints abaixo os sobrescreverem.
 all = { level = "deny", priority = -1 } # correção, estilo, complexidade e desempenho
 pedantic = { level = "deny", priority = -1 }

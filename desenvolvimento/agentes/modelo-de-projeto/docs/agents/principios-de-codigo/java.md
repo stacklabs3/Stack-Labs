@@ -34,6 +34,7 @@ Error Prone exige `-XDaddTypeAnnotationsToSymbol=true`.
 
 | Princípio | Em Java | Confere |
 |---|---|---|
+| E1 (obrigatório) | Nenhum nome de uma letra, nem em laço, lambda, `catch` ou genérico; só `_` | Checkstyle `LocalVariableName`, `ParameterName`, `LambdaParameterName`, `CatchParameterName`, `ClassTypeParameterName`, `MethodTypeParameterName` com `format` de duas letras ou mais (o padrão aceita uma) |
 | E1 | `UpperCamelCase`, `lowerCamelCase`, `UPPER_SNAKE_CASE`; sigla como palavra | Checkstyle `TypeName`, `MethodName`, `MemberName`, `ConstantName`, `AbbreviationAsWordInName`; `termo-evitado` |
 | E2 | Até 3 parâmetros; aninhamento raso; variável perto do uso | Checkstyle `ParameterNumber`, `NestedIfDepth`, `MethodLength`, `VariableDeclarationUsageDistance`; PMD `CognitiveComplexity` |
 | E3 | Valor do domínio é `record` validado no construtor compacto; nulidade no tipo (`@NullMarked`, `@Nullable` onde falta) | `-Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true`; o tipo próprio é do revisor |

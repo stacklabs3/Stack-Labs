@@ -20,7 +20,7 @@ pub fn verdadeiro(valor: Campo) -> bool {
     match valor {
         None | Some(Value::Null) => false,
         Some(Value::Bool(logico)) => *logico,
-        Some(Value::Number(numero)) => numero.as_f64().is_some_and(|n| n != 0.0),
+        Some(Value::Number(numero)) => numero.as_f64().is_some_and(|valor| valor != 0.0),
         Some(Value::String(texto)) => !texto.is_empty(),
         Some(Value::Array(_)) | Some(Value::Object(_)) => true,
     }
@@ -75,18 +75,28 @@ pub fn texto_do_numero(numero: f64) -> String {
     let sinal = if numero < 0.0 { "-" } else { "" };
     let cientifico = format!("{:e}", numero.abs());
     let (mantissa, expoente) = cientifico.split_once('e').expect("formato {:e}");
-    let digitos: String = mantissa.chars().filter(|c| *c != '.').collect();
+    let digitos: String = mantissa
+        .chars()
+        .filter(|caractere| *caractere != '.')
+        .collect();
     let expoente: i32 = expoente.parse().expect("expoente do {:e}");
     let quantidade = digitos.len() as i32;
-    let n = expoente + 1;
-    let corpo = if quantidade <= n && n <= 21 {
-        format!("{digitos}{}", "0".repeat((n - quantidade) as usize))
-    } else if 0 < n && n <= 21 {
-        format!("{}.{}", &digitos[..n as usize], &digitos[n as usize..])
-    } else if -6 < n && n <= 0 {
-        format!("0.{}{digitos}", "0".repeat((-n) as usize))
+    let posicao_do_ponto = expoente + 1;
+    let corpo = if quantidade <= posicao_do_ponto && posicao_do_ponto <= 21 {
+        format!(
+            "{digitos}{}",
+            "0".repeat((posicao_do_ponto - quantidade) as usize)
+        )
+    } else if 0 < posicao_do_ponto && posicao_do_ponto <= 21 {
+        format!(
+            "{}.{}",
+            &digitos[..posicao_do_ponto as usize],
+            &digitos[posicao_do_ponto as usize..]
+        )
+    } else if -6 < posicao_do_ponto && posicao_do_ponto <= 0 {
+        format!("0.{}{digitos}", "0".repeat((-posicao_do_ponto) as usize))
     } else {
-        let sinal_do_expoente = if n - 1 < 0 { '-' } else { '+' };
+        let sinal_do_expoente = if posicao_do_ponto - 1 < 0 { '-' } else { '+' };
         let resto = if quantidade > 1 {
             format!(".{}", &digitos[1..])
         } else {
@@ -95,7 +105,7 @@ pub fn texto_do_numero(numero: f64) -> String {
         format!(
             "{}{resto}e{sinal_do_expoente}{}",
             &digitos[..1],
-            (n - 1).abs()
+            (posicao_do_ponto - 1).abs()
         )
     };
     format!("{sinal}{corpo}")
@@ -103,7 +113,8 @@ pub fn texto_do_numero(numero: f64) -> String {
 
 /// `Number(texto)`: espaços nas pontas não contam, texto vazio é 0 e o que não é número é NaN.
 fn numero_do_texto(texto: &str) -> f64 {
-    let limpo = texto.trim_matches(|c: char| c.is_whitespace() || c == '\u{FEFF}');
+    let limpo =
+        texto.trim_matches(|caractere: char| caractere.is_whitespace() || caractere == '\u{FEFF}');
     if limpo.is_empty() {
         return 0.0;
     }
@@ -116,11 +127,11 @@ fn numero_do_texto(texto: &str) -> f64 {
         ("0B", 2),
     ] {
         if let Some(digitos) = limpo.strip_prefix(prefixo) {
-            if digitos.is_empty() || !digitos.chars().all(|c| c.is_digit(base)) {
+            if digitos.is_empty() || !digitos.chars().all(|digito| digito.is_digit(base)) {
                 return f64::NAN;
             }
-            return digitos.chars().fold(0.0, |total, c| {
-                total * base as f64 + c.to_digit(base).unwrap() as f64
+            return digitos.chars().fold(0.0, |total, digito| {
+                total * base as f64 + digito.to_digit(base).unwrap() as f64
             });
         }
     }
@@ -145,7 +156,7 @@ fn decimal_valido(texto: &str) -> bool {
         None => (texto, None),
     };
     let (inteira, fracao) = base.split_once('.').unwrap_or((base, ""));
-    let so_digitos = |parte: &str| parte.chars().all(|c| c.is_ascii_digit());
+    let so_digitos = |parte: &str| parte.chars().all(|caractere| caractere.is_ascii_digit());
     if !so_digitos(inteira) || !so_digitos(fracao) || (inteira.is_empty() && fracao.is_empty()) {
         return false;
     }
@@ -184,8 +195,15 @@ fn numero_do_primitivo(valor: &Primitivo) -> f64 {
 /// A comparação abstrata do JavaScript; `None` quando um dos lados é NaN.
 fn comparar(esquerda: Campo, direita: Campo) -> Option<Ordering> {
     match (primitivo(esquerda), primitivo(direita)) {
-        (Primitivo::Texto(a), Primitivo::Texto(b)) => Some(a.encode_utf16().cmp(b.encode_utf16())),
-        (a, b) => numero_do_primitivo(&a).partial_cmp(&numero_do_primitivo(&b)),
+        (Primitivo::Texto(texto_da_esquerda), Primitivo::Texto(texto_da_direita)) => Some(
+            texto_da_esquerda
+                .encode_utf16()
+                .cmp(texto_da_direita.encode_utf16()),
+        ),
+        (primitivo_da_esquerda, primitivo_da_direita) => {
+            numero_do_primitivo(&primitivo_da_esquerda)
+                .partial_cmp(&numero_do_primitivo(&primitivo_da_direita))
+        }
     }
 }
 
