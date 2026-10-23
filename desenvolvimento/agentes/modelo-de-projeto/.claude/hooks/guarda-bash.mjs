@@ -7,7 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   lerEntradaDoHook, diretorioDoProjeto, bloquearFerramenta, watchdogsDesligados,
-  lerEstadoSessao, gravarEstadoSessao, buscarIssue, tipoWayfinder,
+  lerEstadoSessao, gravarEstadoSessao, buscarIssue, tipoWayfinder, chaveDoAgente,
   branchAtual, branchEhPrincipal, repositorioTemCommits, LABELS_IMPLEMENTAVEIS,
   buscarMapasIniciais, buscarCorposDosComentarios, textoTemFontes,
   MAPAS_INICIAIS_FECHADOS_PARA_IMPLEMENTAR, TIPOS_QUE_EXIGEM_FONTES,
@@ -47,13 +47,13 @@ function comandoReivindicaNoMesmoPasso(numeroTicket) {
 
 // ---------- W1: os watchdogs não se desligam por Bash ----------
 const comandoSemRedirecionamentoInofensivo = comando.replace(/\d*>&\d+/g, "").replace(/\d*>\s*\/dev\/null/g, "");
-const padraoCaminhoProtegido = /\.claude\/(hooks|githooks|loop|settings\.json|state)|\.github\/workflows\/vigia-do-metodo\.yml/;
+const padraoCaminhoProtegido = /\.claude\/(hooks|githooks|agents|settings\.json|state)|\.github\/workflows\/vigia-do-metodo\.yml/;
 const verboMutante = /(>|\brm\b|\bmv\b|\bcp\b|sed\s+-i|perl\s+-[a-z]*i|\btee\b|\bchmod\b|\btruncate\b|\bln\b|\bunlink\b|git\s+(checkout|restore|rm|stash)\b)/;
 const trechoMutaCaminhoProtegido = comandoSemRedirecionamentoInofensivo
   .split(/&&|\|\||;|\n/)
   .some((trechoComando) => padraoCaminhoProtegido.test(trechoComando) && verboMutante.test(trechoComando));
 if (trechoMutaCaminhoProtegido) {
-  bloquearFerramenta(NOME_WATCHDOG, "o comando altera .claude/hooks, .claude/githooks, .claude/loop, .claude/settings.json, .claude/state ou o vigia-do-metodo do CI. Só um humano altera a infraestrutura dos watchdogs.");
+  bloquearFerramenta(NOME_WATCHDOG, "o comando altera .claude/hooks, .claude/githooks, .claude/agents, .claude/settings.json, .claude/state ou o vigia-do-metodo do CI. Só um humano altera a infraestrutura dos watchdogs.");
 }
 
 // ---------- W8: o pre-push que protege a main não se desliga ----------
@@ -78,8 +78,12 @@ if (numerosAtivados.length > 1) {
 if (numerosAtivados.length === 1) {
   const numeroIssue = numerosAtivados[0];
   const estadoSessao = lerEstadoSessao(diretorioProjeto, idSessao);
-  if (estadoSessao.issueAtiva && estadoSessao.issueAtiva.numero !== numeroIssue) {
-    bloquearFerramenta(NOME_WATCHDOG, `esta sessão já trabalha na issue #${estadoSessao.issueAtiva.numero}. Contexto limpo por issue: termine, rode /nova-sessao e cole o kickoff numa janela nova para a #${numeroIssue}.`);
+  const chaveAgente = chaveDoAgente(entradaHook);
+  const issueJaAtiva = estadoSessao.issuesAtivas[chaveAgente];
+  if (issueJaAtiva && issueJaAtiva.numero !== numeroIssue) {
+    bloquearFerramenta(NOME_WATCHDOG, chaveAgente === "principal"
+      ? `esta sessão já trabalha na issue #${issueJaAtiva.numero}. Contexto limpo por issue: termine, rode /nova-sessao e cole o kickoff numa janela nova para a #${numeroIssue}.`
+      : `este subagente já trabalha na issue #${issueJaAtiva.numero}. Um implementador por issue: o orquestrador dispara outro para a #${numeroIssue}.`);
   }
   const issueCandidata = buscarIssueOuBloquear(numeroIssue);
   if (issueCandidata.estado !== "open") {
@@ -107,7 +111,7 @@ if (numerosAtivados.length === 1) {
     bloquearFerramenta(NOME_WATCHDOG, `os mapas iniciais ${mapasAindaAbertos.map((mapaInicial) => `"${mapaInicial.titulo}"`).join(" e ")} ainda estão abertos. Implementação só começa com o desenho inicial do protótipo aprovado e a arquitetura e as fases decididas (o mapa de Infra não trava).`);
   }
 
-  estadoSessao.issueAtiva = { numero: issueCandidata.numero, titulo: issueCandidata.titulo, ativadaEm: new Date().toISOString() };
+  estadoSessao.issuesAtivas[chaveAgente] = { numero: issueCandidata.numero, titulo: issueCandidata.titulo, ativadaEm: new Date().toISOString() };
   gravarEstadoSessao(diretorioProjeto, idSessao, estadoSessao);
 }
 

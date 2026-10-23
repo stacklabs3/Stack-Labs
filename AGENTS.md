@@ -24,6 +24,6 @@ forma de instalar: assim todo projeto fica com a mesma versão e com a origem re
 
 - `desenvolvimento/humanos/`: o guia para pessoas.
 - `desenvolvimento/agentes/`: constituição, watchdogs e skills que a `/setup-stacklabs` instala. As
-  skills da casa ficam em `desenvolvimento/agentes/skills/`: `setup-stacklabs`, `loop-de-issues`,
+  skills da casa ficam em `desenvolvimento/agentes/skills/`: `setup-stacklabs`, `orquestrar-issues`,
   `auditar-metodo` e as recomendadas (família `*-prototipo`, `nova-sessao`, `voltar-a-principal` e outras).
 - `desenvolvimento/GLOSSARY.md` e `desenvolvimento/adr/`: linguagem e decisões do método.

@@ -18,7 +18,7 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 // Arquivos que o projeto pode ter com conteúdo próprio: nunca sobrescreve, deixa o novo ao lado.
 const ARQUIVOS_PARA_MESCLAR = ["AGENTS.md", "CLAUDE.md", ".gitignore", ".claude/settings.json"];
 // Infraestrutura dos watchdogs: só se sobrescreve com --atualizar-watchdogs.
-const CAMINHOS_DOS_WATCHDOGS = [".claude/hooks", ".claude/githooks", ".claude/loop", ".claude/settings.json", ".github/workflows/vigia-do-metodo.yml"];
+const CAMINHOS_DOS_WATCHDOGS = [".claude/hooks", ".claude/githooks", ".claude/agents", ".claude/settings.json", ".github/workflows/vigia-do-metodo.yml"];
 const LABELS_DO_METODO = [
   "wayfinder:map", "wayfinder:research", "wayfinder:prototype", "wayfinder:grilling", "wayfinder:task",
   "mapa-inicial:prototipo", "mapa-inicial:arquitetura", "mapa-inicial:fases", "mapa-inicial:infra",

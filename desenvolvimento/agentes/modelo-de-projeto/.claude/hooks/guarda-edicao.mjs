@@ -4,7 +4,7 @@
 
 import {
   lerEntradaDoHook, diretorioDoProjeto, bloquearFerramenta, watchdogsDesligados,
-  lerEstadoSessao, caminhoRelativoAoProjeto, caminhoEhProtegido, caminhoEhLivreSemIssue,
+  lerEstadoSessao, chaveDoAgente, caminhoRelativoAoProjeto, caminhoEhProtegido, caminhoEhLivreSemIssue,
   branchAtual, branchEhPrincipal, branchEhDescartavel, repositorioTemCommits,
   medirTokensDeContexto, LIMITE_DURO_CONTEXTO,
 } from "./lib/comum.mjs";
@@ -40,7 +40,8 @@ if (branchEhDescartavel(nomeBranch)) process.exit(0); // prototype/* e research/
 
 // W3 — código de produção nasce de uma issue (to-tickets / triage) numa sessão limpa.
 const estadoSessao = lerEstadoSessao(diretorioProjeto, entradaHook.session_id);
-if (!estadoSessao.issueAtiva) {
+const issueAtiva = estadoSessao.issuesAtivas[chaveDoAgente(entradaHook)];
+if (!issueAtiva) {
   bloquearFerramenta(NOME_WATCHDOG, [
     `editar "${caminhoRelativo}" é código de produção e exige uma issue ativa nesta sessão.`,
     `Ative com: node .claude/hooks/ativar-issue.mjs <número>  (issue aberta com label ready-for-agent ou ready-for-human).`,
@@ -49,7 +50,7 @@ if (!estadoSessao.issueAtiva) {
 }
 
 if (branchEhPrincipal(nomeBranch) && repositorioTemCommits(diretorioProjeto)) {
-  const numeroIssue = estadoSessao.issueAtiva.numero;
+  const numeroIssue = issueAtiva.numero;
   bloquearFerramenta(NOME_WATCHDOG, `issue #${numeroIssue} ativa, mas a branch é "${nomeBranch}". Crie a branch da issue antes: git switch -c issue/${numeroIssue}-<slug>`);
 }
 

@@ -18,7 +18,7 @@ iniciais, a pesquisa antes de recomendar e a família `*-prototipo`. O projeto d
 | Responde o grilling e decide | Pergunta, recomenda e mostra a fonte |
 | Aprova protótipo por escrito | Constrói, audita e leva a aprovação até você |
 | Revisa e faz merge da PR | Implementa uma issue por sessão, com testes |
-| Dispara o loop de issues no terminal | Roda as issues da fila em sequência e abre as PRs |
+| Escolhe a fila e a branch de integração, e decide como ela chega à `main` | Orquestra a fila: implementa, revisa, confere e corrige, uma issue por vez |
 | Abre a janela nova e cola o kickoff | Gera o kickoff com o `/nova-sessao` |
 | Muda os watchdogs, se precisar | Nunca mexe neles |
 
@@ -75,10 +75,11 @@ liberam o protótipo para virar código. Veja o [roteiro de protótipo](../agent
 - A `main` só muda por PR. A PR cita a issue (`Closes #42`) e passa no `vigia-do-metodo`.
 - "Pronto" é teste passando, não o agente dizendo que terminou.
 
-## Várias issues sem você olhando
+## Issues prontas: a orquestração
 
-Com várias issues `ready-for-agent` prontas, o **loop de issues** implementa até N delas em sequência,
-cada uma numa sessão nova, e entrega PRs para você revisar. Veja [loop-de-issues.md](loop-de-issues.md).
+Quando issues chegam a `ready-for-agent`, o agente recomenda a **orquestração**: uma janela nova em
+que um agente orquestrador implementa a fila uma issue por vez, com revisão e conferência a cada uma,
+numa branch de integração. Veja [orquestracao.md](orquestracao.md).
 
 ## Hábitos de sessão
 

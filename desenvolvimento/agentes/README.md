@@ -14,14 +14,14 @@ agentes/
 │   │   ├── pesquisa-antes-de-recomendar.md
 │   │   ├── roteiro-de-prototipo.md    família *-prototipo
 │   │   ├── watchdogs.md
-│   │   ├── loop-de-issues.md          o loop de issues em sequência
+│   │   ├── orquestracao.md            a orquestração de issues
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
-│   ├── .claude/                hooks do Claude Code (watchdogs) e o loop de issues
+│   ├── .claude/                hooks do Claude Code (watchdogs) e os papéis da orquestração (agents/)
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
 │   └── .gitignore
 └── skills/
     ├── setup-stacklabs/        instala e atualiza o método num projeto
-    ├── loop-de-issues/         prepara e lê rodadas do loop de issues (.claude/loop/)
+    ├── orquestrar-issues/      orquestra a fila de issues ready-for-agent
     ├── auditar-metodo/         auditoria do projeto inteiro, sob demanda
     └── recomendada/            cópia das skills recomendadas (matheus3006/my-claude-skills): a família
                                 *-prototipo, /nova-sessao, /voltar-a-principal, human-architect-mindset
