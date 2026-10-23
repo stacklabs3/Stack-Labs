@@ -21,6 +21,7 @@ if (watchdogsDesligados()) {
 const arquivosDoSetup = [
   "AGENTS.md", "docs/agents/issue-tracker.md", "docs/agents/triage-labels.md", "docs/agents/domain.md",
   "docs/agents/mapas-iniciais.md", "docs/agents/pesquisa-antes-de-recomendar.md", "docs/agents/roteiro-de-prototipo.md",
+  "docs/agents/caminho-ate-ready-for-agent.md", "docs/agents/orquestracao.md", "docs/agents/watchdogs.md",
 ];
 const arquivosFaltando = arquivosDoSetup.filter((arquivoSetup) => !existsSync(join(diretorioProjeto, arquivoSetup)));
 
@@ -46,7 +47,7 @@ const estadoSessao = lerEstadoSessao(diretorioProjeto, entradaHook.session_id);
 const linhasContexto = [
   "## Watchdogs do método StackLabs (wayfinder / Matt Pocock) ativos",
   "AGENTS.md é a constituição deste repositório: regras DURAS, não sugestões. Releia antes de agir.",
-  arquivosFaltando.length ? `❌ Setup incompleto, faltam: ${arquivosFaltando.join(", ")}. Copie o modelo-de-projeto do repositório Stack-Labs (desenvolvimento/agentes/) antes de qualquer fluxo.` : "✅ Setup do issue tracker (GitHub) presente.",
+  arquivosFaltando.length ? `❌ Setup incompleto, faltam: ${arquivosFaltando.join(", ")}. Rode /setup-stacklabs antes de qualquer fluxo.` : "✅ Setup do issue tracker (GitHub) presente.",
   caminhoHooksDoGit(diretorioProjeto) === CAMINHO_GITHOOKS ? "✅ pre-push da main ativo." : `❌ pre-push da main INATIVO neste clone. Peça ao usuário para rodar: git config core.hooksPath ${CAMINHO_GITHOOKS}`,
   `Branch atual: ${branchAtual(diretorioProjeto) || "(desconhecida)"}`,
   `Issue ativa nesta sessão: ${estadoSessao.issuesAtivas.principal ? `#${estadoSessao.issuesAtivas.principal.numero} ${estadoSessao.issuesAtivas.principal.titulo}` : "nenhuma (editar código de produção está bloqueado)"}`,
