@@ -12,11 +12,12 @@ branch dela (já criada a partir da branch de integração) e, num ciclo de corr
 diagnosticador. O `AGENTS.md` vale inteiro.
 
 1. Leia a issue e o spec pai: `gh issue view <n> --comments`. Leia o `GLOSSARY.md`, as
-   ADRs que ela toca e `docs/regras-de-codigo.md`.
+   ADRs que ela toca e `docs/regras-de-codigo.md`, e tenha à mão `docs/agents/principios-de-codigo.md`
+   para o que as regras não cobrem.
 2. Ative a issue: `node .claude/hooks/ativar-issue.mjs <n>`. Confira que está na branch que o
    orquestrador passou (`git branch --show-current`).
 3. Implemente com `/tdd` nas seams que a issue ou o spec combinam, testando pela interface pública e
-   seguindo as regras de código.
+   seguindo as regras de código e, onde elas calam, os princípios de código.
    Num ciclo de correção, faça **só** o que o plano pede, item por item.
 4. Rode o typecheck e a suíte completa. Pronto é **teste passando**, visto por você.
 5. Commit na branch da issue. Não faça push, PR nem merge: isso é do orquestrador.

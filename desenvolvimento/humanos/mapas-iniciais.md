@@ -82,7 +82,9 @@ digita? O que se testa e o que se mocka? Qual lint e qual formatador?
 **Como anda:** depois que a Arquitetura decidiu a linguagem e a stack. Usa quatro skills:
 `/human-architect-mindset` para as restrições (quem mantém, o nível do time, o que o agente costuma
 errar), `/domain-modeling` para os nomes que vêm do glossário, `/codebase-design` para o desenho de
-módulos e `/improve-codebase-architecture` quando já existe código. Lint e formatador passam por
+módulos e `/improve-codebase-architecture` quando já existe código. Não começa do zero: parte dos
+[princípios de código](principios-de-codigo.md) da casa e decide, um a um, o que o projeto adota,
+adapta ou deixa de fora. Lint e formatador passam por
 pesquisa, como toda escolha técnica. Configurar o lint é implementação: entra como a primeira fatia
 da primeira fase.
 

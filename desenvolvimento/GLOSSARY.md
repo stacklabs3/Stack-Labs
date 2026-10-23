@@ -26,6 +26,13 @@ regras que todo código segue, cada uma com o porquê e um exemplo do projeto. �
 implementador e do revisor. Muda só por ticket.
 _Evitar_: Style guide, padrões, boas práticas, coding standards
 
+**Princípios de código**:
+A base da casa em `docs/agents/principios-de-codigo.md`, igual em todo projeto: escrita de código
+(E1 a E8), padrões de desenvolvimento (P1 a P9) e SOLID lido com o vocabulário do `/codebase-design`.
+É o ponto de partida do mapa de Regras de código, que adota, adapta ou afasta cada um. O que o
+projeto não adotou é julgamento, não regra dura.
+_Evitar_: Boas práticas, clean code, style guide
+
 **Destino**:
 O que significa chegar ao fim de um mapa: uma spec, uma decisão travada ou uma mudança feita. É a
 primeira coisa que se escreve num mapa e define o escopo dele.
@@ -200,6 +207,7 @@ _Evitar_: Prompt, instruções
 - Um **mapa** fechado vira uma **spec**, que vira **fatias verticais**; cada fatia é a **issue ativa** de uma **sessão**.
 - Um **watchdog** vigia uma regra da **constituição**.
 - Toda **fatia vertical** segue as **regras de código**; o revisor reprova a que quebra uma.
+- As **regras de código** de um projeto partem dos **princípios de código** da casa, e cada regra cita o princípio de onde nasceu.
 
 ## Flagged ambiguities
 

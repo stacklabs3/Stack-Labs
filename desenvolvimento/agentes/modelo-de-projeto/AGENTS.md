@@ -102,7 +102,9 @@ ideia grande demais para uma sessão
     aponta, nunca se sobrescreve em silêncio.
 19. Todo código segue as **regras de código** do projeto, em `docs/regras-de-codigo.md` (o destino
     do mapa de Regras de código). Contradição com uma regra se aponta, nunca se contorna em silêncio;
-    regra nova ou mudada passa por ticket nesse mapa ou num mapa novo.
+    regra nova ou mudada passa por ticket nesse mapa ou num mapa novo. Onde ele cala, valem como
+    julgamento os princípios de código da casa
+    ([docs/agents/principios-de-codigo.md](docs/agents/principios-de-codigo.md)).
 20. Todo nome de variável diz o que guarda (`valorProduto = produto.valor`, nunca `p = x.valor`).
 
 ### 8. Os watchdogs

@@ -160,8 +160,10 @@ da orquestração.
 - Configurar o lint e o CI é implementação: entra como a primeira fatia da primeira fase, não como
   ticket deste mapa.
 - O documento é curto e verificável. Regra que o revisor não consegue apontar num diff não é regra.
-- Ponto de partida: as regras da constituição (nome de variável diz o que guarda, teste pela
-  interface pública, vocabulário do GLOSSARY.md) e a lista de smells do `/code-review`.
+- Ponto de partida: os princípios de código da casa (docs/agents/principios-de-codigo.md: escrita
+  E1 a E8, padrões P1 a P9 e SOLID). Cada ticket passa pelos princípios que toca e decide, um a um,
+  adotar, adaptar ou afastar com o porquê; cada regra do documento cita o ID de onde nasceu. Somam-se
+  as regras da constituição e a lista de smells do `/code-review`.
 
 ## Decisions so far
 

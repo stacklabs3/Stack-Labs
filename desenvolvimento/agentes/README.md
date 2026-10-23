@@ -17,6 +17,7 @@ agentes/
 │   │   ├── caminho-ate-ready-for-agent.md   rotas e definição de pronto
 │   │   ├── orquestracao.md            a orquestração de issues
 │   │   ├── adocao.md                  as etapas de adoção num projeto que já existia
+│   │   ├── principios-de-codigo.md    a base da casa: escrita, padrões e SOLID (ADR 0008)
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
 │   ├── .claude/                hooks do Claude Code (watchdogs) e os papéis da orquestração (agents/)
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)

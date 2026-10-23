@@ -30,6 +30,8 @@ grande. Cada item termina com ✅, ⚠️ ou ❌ e a evidência (nome do ticket 
   código fecharem (compare as datas).
 - `docs/regras-de-codigo.md` existe, cada regra tem o porquê e um exemplo, e o mapa de Regras de
   código aponta para ele. Amostra de 3 PRs mergeadas: o diff segue as regras.
+- Cada regra de `docs/regras-de-codigo.md` cita o princípio de `docs/agents/principios-de-codigo.md`
+  de onde nasceu, e o mapa de Regras de código registra os princípios que o projeto afastou e o porquê.
 
 **Pesquisa antes de recomendar**
 - Todo ticket fechado de grilling, tarefa e pesquisa tem `## Fontes` com link no comentário de resolução.

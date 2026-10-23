@@ -22,7 +22,7 @@ const arquivosDoSetup = [
   "AGENTS.md", "docs/agents/issue-tracker.md", "docs/agents/triage-labels.md", "docs/agents/domain.md",
   "docs/agents/mapas-iniciais.md", "docs/agents/pesquisa-antes-de-recomendar.md", "docs/agents/roteiro-de-prototipo.md",
   "docs/agents/caminho-ate-ready-for-agent.md", "docs/agents/orquestracao.md", "docs/agents/watchdogs.md",
-  "docs/agents/adocao.md",
+  "docs/agents/adocao.md", "docs/agents/principios-de-codigo.md",
 ];
 const arquivosFaltando = arquivosDoSetup.filter((arquivoSetup) => !existsSync(join(diretorioProjeto, arquivoSetup)));
 

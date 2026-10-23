@@ -50,7 +50,8 @@ Todo projeto abre, no primeiro dia, cinco mapas no GitHub
 2. **Arquitetura**: linguagem, stack e módulos.
 3. **Fases**: como o desenvolvimento se divide, decidido pelo desenvolvedor que conduz o projeto.
 4. **Regras de código**: as regras que todo código do projeto segue, para o código sair com qualidade
-   e o revisor ter uma régua.
+   e o revisor ter uma régua. Parte dos [princípios de código](principios-de-codigo.md) da casa
+   ([ADR 0008](../adr/0008-principios-de-codigo-da-casa.md)).
 5. **Infra**: o que vamos usar, quanto custa e o que teremos que construir em volta.
 
 Ninguém começa a implementar antes de **Protótipo** (o desenho inicial), **Arquitetura**, **Fases** e
