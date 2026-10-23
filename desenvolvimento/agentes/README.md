@@ -18,8 +18,10 @@ agentes/
 │   │   ├── orquestracao.md            a orquestração de issues
 │   │   ├── adocao.md                  as etapas de adoção num projeto que já existia
 │   │   ├── principios-de-codigo.md    os 22 princípios (ADR 0008); grupos e grilling em principios-de-codigo/
+│   │   ├── validador.md               o formato de regras-de-codigo.json, o catálogo e como refinar
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
-│   ├── .claude/                hooks do Claude Code (watchdogs) e os papéis da orquestração (agents/)
+│   ├── .claude/                hooks do Claude Code (watchdogs), os papéis da orquestração (agents/) e o
+│   │                           validador de regras de código (validador/, ADR 0010)
 │   ├── .github/workflows/      vigia-do-metodo (watchdog de CI)
 │   └── .gitignore
 └── skills/

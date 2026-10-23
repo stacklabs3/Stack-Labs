@@ -47,7 +47,7 @@ function comandoReivindicaNoMesmoPasso(numeroTicket) {
 
 // ---------- W1: os watchdogs não se desligam por Bash ----------
 const comandoSemRedirecionamentoInofensivo = comando.replace(/\d*>&\d+/g, "").replace(/\d*>\s*\/dev\/null/g, "");
-const padraoCaminhoProtegido = /\.claude\/(hooks|githooks|agents|metodo\.json|settings\.json|state)|\.github\/workflows\/vigia-do-metodo\.yml/;
+const padraoCaminhoProtegido = /\.claude\/(hooks|githooks|agents|validador|metodo\.json|settings\.json|state)|\.github\/workflows\/vigia-do-metodo\.yml/;
 const verboMutante = /(>|\brm\b|\bmv\b|\bcp\b|sed\s+-i|perl\s+-[a-z]*i|\btee\b|\bchmod\b|\btruncate\b|\bln\b|\bunlink\b|git\s+(checkout|restore|rm|stash)\b)/;
 const trechoMutaCaminhoProtegido = comandoSemRedirecionamentoInofensivo
   .split(/&&|\|\||;|\n/)

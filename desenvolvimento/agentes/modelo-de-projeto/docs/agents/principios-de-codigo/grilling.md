@@ -11,16 +11,20 @@ princípios de cada um, estão em [mapas-iniciais/regras-de-codigo.md](../mapas-
 2. **Monte a rodada.** Cada pergunta-guia vira uma pergunta do projeto, no formato da regra 10 da
    constituição, com o atrito como exemplo quando houver. A recomendação é **adotar**, **adaptar**
    (e como) ou **afastar** (e por quê), com a fonte: *Fontes* do arquivo do grupo para o princípio,
-   `docs/research/` para o que depende da stack, as restrições para o que depende do time. Pronto
-   quando todo princípio do grupo está numa pergunta numerada.
+   `docs/research/` para o que depende da stack, as restrições para o que depende do time. Princípio
+   que a linha **No validador** confere por máquina leva, na mesma pergunta, o parâmetro que a
+   checagem precisa (a pasta do domínio, o formato do commit). Pronto quando todo princípio do grupo
+   está numa pergunta numerada.
 3. **Resolva o ticket** com uma linha por princípio (`E3: adaptado, erro esperado como exceção com
    tipo próprio`) e as `## Fontes`. Atrito que o projeto vai corrigir vira ticket novo. Pronto quando
    todo princípio do grupo tem linha.
 
 ## No ticket *Escrever docs/regras-de-codigo.md*
 
-Junte as decisões no modelo abaixo. Pronto quando a tabela de cobertura tem as 22 linhas, cada regra
-cita o princípio de onde nasceu e o humano aprovou o documento.
+Junte as decisões no modelo abaixo e escreva `docs/regras-de-codigo.json` a partir de
+`.claude/validador/modelos/regras-de-codigo.json`, uma entrada por regra, como manda
+[validador.md](../validador.md). Pronto quando `node .claude/validador/validar.mjs --so-cobertura`
+termina em `VALIDADOR: APROVADO` e o humano aprovou o documento.
 
 ## Modelo de `docs/regras-de-codigo.md`
 

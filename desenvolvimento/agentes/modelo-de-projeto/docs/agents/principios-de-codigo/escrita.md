@@ -24,6 +24,8 @@ const pedidosEmPreparo = pedidos.filter((pedido) => pedido.status === StatusPedi
 **No diff:** nome de uma letra fora de laço curto, sinônimo de termo do glossário, `data`, `info`,
 `manager`, `helper`, `utils` como nome de módulo.
 
+**No validador:** `termo-evitado`; a convenção de caixa (camelCase, snake_case) pelo `lint-cobre`.
+
 ### E2. Função curta, num só nível de abstração, com saída cedo
 
 Uma função ou orquestra passos com nome, ou faz um passo concreto; não as duas coisas. Trate o caso
@@ -51,6 +53,8 @@ function confirmarPedido(pedido: Pedido, condicoes: CondicoesDeVenda): PedidoCon
 **No diff:** três ou mais níveis de aninhamento, função que mistura regra de negócio com SQL ou HTML,
 lista longa de parâmetros soltos.
 
+**No validador:** `lint-cobre` (no ESLint: `max-depth`, `max-params`, `max-lines-per-function`).
+
 ### E3. Conceito do domínio tem tipo próprio; valide na borda, uma vez
 
 Dinheiro, e-mail, CPF, identificador de pedido: cada um tem um tipo, não `string` ou `number`
@@ -72,6 +76,8 @@ function aplicarDesconto(valor: Dinheiro, desconto: Percentual): Dinheiro {}
 
 **No diff:** a mesma checagem em dois lugares, `string` passando por três funções até virar algo,
 `any` ou `unknown` atravessando a borda.
+
+**No validador:** `lint-cobre` (no TypeScript: `@typescript-eslint/no-explicit-any`); o tipo próprio na borda fica com o revisor.
 
 ### E4. Erro nunca é engolido; erro esperado é parte da interface
 
@@ -100,6 +106,8 @@ if (cobranca.tipo === "recusada") return avisarClienteDaRecusa(pedido, cobranca.
 **No diff:** `catch` sem relançar nem tratar, `throw new Error("erro")`, erro de domínio como
 `string` comparada por texto.
 
+**No validador:** `opengrep` com o modelo `catch-vazio.yml`.
+
 ### E5. Comando ou consulta, e imutável por padrão
 
 Uma função ou **responde** (consulta, sem efeito colateral) ou **faz** (comando, muda estado), e o
@@ -120,6 +128,8 @@ function calcularTotal(carrinho: Carrinho): Dinheiro { return somar(carrinho.ite
 
 **No diff:** `get`/`calcular`/`buscar` que grava, parâmetro recebido e alterado por dentro,
 `let` que nunca é reatribuído.
+
+**No validador:** `lint-cobre` (no ESLint: `prefer-const`, `no-param-reassign`).
 
 ### E6. Comentário explica o porquê; o resto se apaga
 
@@ -142,6 +152,8 @@ tentativasDeCobranca += 1;
 
 **No diff:** bloco comentado, `TODO` sem issue, comentário que parafraseia a linha de baixo.
 
+**No validador:** `todo-sem-issue`; código comentado fica com o revisor.
+
 ### E7. Duplicação de conhecimento se remove; semelhança de forma, não sempre
 
 A mesma **regra de negócio** em dois lugares é defeito: extraia. Dois trechos que só **parecem**
@@ -156,6 +168,8 @@ um módulo que muda por dois motivos (veja **S**).
 **No diff:** a mesma fórmula de preço, taxa ou prazo em dois arquivos; ou o oposto, uma função com
 um `if (origem === "app")` criada para unir dois casos que não tinham nada em comum.
 
+**No validador:** `comando` com o jscpd; duplicação de conhecimento sem texto igual fica com o revisor.
+
 ### E8. Valor com significado tem nome
 
 Número, texto e limite que carregam regra (taxa de 10%, 3 tentativas, `"pago"`) viram constante
@@ -169,6 +183,8 @@ cinco lugares quando o cliente mudar a regra.
 
 **No diff:** literal numérico que não é 0, 1 ou -1 numa regra de negócio; status comparado como
 texto solto.
+
+**No validador:** `lint-cobre` (no ESLint: `no-magic-numbers`).
 
 ## Fontes
 

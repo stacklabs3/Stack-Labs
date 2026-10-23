@@ -1,0 +1,27 @@
+{
+  "versao": 1,
+  "projeto": {
+    "codigo": ["src/**"],
+    "ignorar": ["**/*.gerado.*", "dist/**"]
+  },
+  "regras": [
+    { "id": "R1", "principio": "E1", "texto": "Nomes declarados usam o vocabulário do GLOSSARY.md",
+      "verificacao": { "tipo": "termo-evitado", "glossario": "GLOSSARY.md" } },
+    { "id": "R2", "principio": "E2", "texto": "Até 3 níveis de aninhamento e 3 parâmetros",
+      "verificacao": { "tipo": "lint-cobre", "config": "eslint.config.js", "regras": ["max-depth", "max-params"] } },
+    { "id": "R3", "principio": "E4", "texto": "Nenhum catch vazio ou que só loga",
+      "verificacao": { "tipo": "opengrep", "regras": "docs/regras-de-codigo/opengrep/catch-vazio.yml" } },
+    { "id": "R4", "principio": "E6", "texto": "TODO e FIXME só com a issue",
+      "verificacao": { "tipo": "todo-sem-issue" } },
+    { "id": "R5", "principio": "E7", "texto": "Sem bloco duplicado de 8 linhas ou mais",
+      "verificacao": { "tipo": "comando", "executar": "npx jscpd --min-lines 8 --threshold 0 --exitCode 1 src" } },
+    { "id": "R6", "principio": "D", "texto": "O domínio não importa infraestrutura",
+      "verificacao": { "tipo": "opengrep", "regras": "docs/regras-de-codigo/opengrep/dominio-sem-infra.yml" } },
+    { "id": "R7", "principio": "L", "texto": "Toda port tem teste de contrato que roda contra todos os adapters",
+      "verificacao": { "tipo": "teste-de-contrato-por-port", "ports": "src/**/portas/*.ts", "contrato": "{dir}/{nome}.contrato.test.ts" } },
+    { "id": "R8", "principio": "P9", "texto": "Commits em Conventional Commits, em português",
+      "verificacao": { "tipo": "mensagem-de-commit", "padrao": "^(feat|fix|refactor|test|docs|chore)(\\(.+\\))?: .+" } },
+    { "id": "R9", "principio": "S", "texto": "Cada módulo muda por um ator só",
+      "verificacao": { "tipo": "revisor" } }
+  ]
+}

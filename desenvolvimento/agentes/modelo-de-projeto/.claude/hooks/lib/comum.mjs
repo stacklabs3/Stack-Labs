@@ -45,7 +45,7 @@ export function nomeDaSkillDeGrilling(textoOuNome) {
 }
 
 // Caminhos que nenhum agente edita: são os próprios watchdogs e o estado deles.
-export const CAMINHOS_PROTEGIDOS = [".claude/hooks/", ".claude/githooks/", ".claude/agents/", ".claude/metodo.json", ".claude/settings.json", ".claude/state/", ".github/workflows/vigia-do-metodo.yml"];
+export const CAMINHOS_PROTEGIDOS = [".claude/hooks/", ".claude/githooks/", ".claude/agents/", ".claude/validador/", ".claude/metodo.json", ".claude/settings.json", ".claude/state/", ".github/workflows/vigia-do-metodo.yml"];
 
 // Onde o git procura os hooks deste repo (pre-push que protege a main).
 export const CAMINHO_GITHOOKS = ".claude/githooks";

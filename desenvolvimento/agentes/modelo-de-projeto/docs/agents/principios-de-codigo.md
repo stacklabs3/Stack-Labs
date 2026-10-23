@@ -17,7 +17,8 @@ Precedência: `docs/regras-de-codigo.md` → ADRs do projeto → estes princípi
 
 ## Os 22 princípios
 
-Cada um traz a regra, o porquê, um exemplo, a pergunta **No grilling** e o que procurar **No diff**.
+Cada um traz a regra, o porquê, um exemplo, a pergunta **No grilling**, o que procurar **No diff** e
+a checagem que o confere **No validador** ([validador.md](validador.md)).
 **Ao escrever ou revisar código** que toca um grupo, leia o arquivo dele.
 
 **[Escrita](principios-de-codigo/escrita.md)**: E1 nome na língua do domínio · E2 função curta, um

@@ -1,0 +1,14 @@
+# Princípio E4: erro nunca é engolido. Copie para docs/regras-de-codigo/opengrep/. Pega o catch vazio e
+# o catch que só loga e segue. Para outra linguagem, acrescente o padrão dela (Python: except: pass).
+rules:
+  - id: catch-vazio
+    message: "E4: o erro é engolido. Trate o caso esperado ou deixe o erro subir até a borda."
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern-either:
+      - pattern: |
+          try { ... } catch ($E) { }
+      - pattern: |
+          try { ... } catch { }
+      - pattern: |
+          try { ... } catch ($E) { console.$LOG(...); }

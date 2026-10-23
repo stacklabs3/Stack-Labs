@@ -1,0 +1,21 @@
+# Princípios D e P3: o domínio não importa infraestrutura. Copie para docs/regras-de-codigo/opengrep/
+# e troque os dois marcadores: <PASTA_DO_DOMINIO> (ex.: src/dominio) e <PACOTES_DE_INFRA> (regex,
+# ex.: prisma|@prisma/|express|axios|pg). Para outra linguagem, acrescente uma regra com os padrões
+# de import dela (Python: "import $MOD" e "from $MOD import ...").
+rules:
+  - id: dominio-sem-infra
+    message: "D/P3: o domínio importa '$MOD', que é infraestrutura. Defina a port no domínio; o adapter vive fora."
+    severity: ERROR
+    languages: [typescript, javascript]
+    paths:
+      include: ["<PASTA_DO_DOMINIO>/**"]
+    patterns:
+      - pattern-either:
+          - pattern: import $X from "$MOD"
+          - pattern: import { ... } from "$MOD"
+          - pattern: import * as $X from "$MOD"
+          - pattern: import "$MOD"
+          - pattern: require("$MOD")
+      - metavariable-regex:
+          metavariable: $MOD
+          regex: ^(<PACOTES_DE_INFRA>)

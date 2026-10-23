@@ -32,6 +32,12 @@ P9 e SOLID), em `docs/agents/principios-de-codigo.md`. Guiam o grilling do mapa 
 que adota, adapta ou afasta cada um.
 _Evitar_: Boas práticas, clean code, style guide
 
+**Validador**:
+O motor do método em `.claude/validador/` que confere por máquina as regras de código decididas em
+`docs/regras-de-codigo.json` e a cobertura dos 22 princípios. O projeto refina a configuração; o
+motor é protegido como um watchdog.
+_Evitar_: Linter (quando é o validador), checker
+
 **Destino**:
 O que significa chegar ao fim de um mapa: uma spec, uma decisão travada ou uma mudança feita. É a
 primeira coisa que se escreve num mapa e define o escopo dele.

@@ -21,6 +21,8 @@ Se ela reaparece em vários chamadores, o módulo se paga.
 **No diff:** classe ou função que só chama outra com os mesmos parâmetros; o chamador precisando
 chamar três métodos numa ordem certa para fazer uma coisa.
 
+**No validador:** `revisor` (teste da exclusão).
+
 ### P2. Seam só onde algo varia de verdade
 
 Uma interface (port) com uma implementação só é indireção, não design. Crie a seam quando há duas
@@ -34,6 +36,8 @@ hipotética; dois adapters, uma seam real."
 
 **No diff:** `interface ServicoDeX` com uma única `ServicoDeXImpl`; fábrica ou container de injeção
 para algo que nunca varia.
+
+**No validador:** `revisor`.
 
 ### P3. Dependência entra, não é criada; o domínio não conhece a infraestrutura
 
@@ -55,6 +59,8 @@ function fecharConta(mesa: Mesa, cobranca: Cobranca): ContaFechada { /* ... */ }
 **No diff:** `new` de cliente externo dentro da regra; import de ORM ou de framework web num arquivo
 do domínio; leitura de `process.env` fora da montagem.
 
+**No validador:** `opengrep` com os modelos `dominio-sem-infra.yml` e `ambiente-so-na-montagem.yml`.
+
 ### P4. O que muda junto fica junto
 
 Organize pelo conceito do domínio (pedido, cardápio, pagamento), não pela camada técnica, salvo
@@ -66,6 +72,8 @@ manter, para humano e para agente, que precisa carregar tudo no contexto.
 **No grilling:** As pastas se organizam por conceito do negócio (pedido, cardápio) ou por camada técnica (controllers, services)?
 
 **No diff:** uma regra nova que obriga a editar cinco pastas distantes.
+
+**No validador:** `comando` com o dependency-cruiser em JS/TS; nas outras stacks, `revisor`.
 
 ### P5. Teste pela interface, com o comportamento como frase
 
@@ -82,6 +90,8 @@ muda e o comportamento não, está testando além da interface e trava o código
 **No diff:** teste que acessa método privado ou estado interno; mock de módulo nosso; teste chamado
 `test1` ou `deve funcionar`.
 
+**No validador:** `opengrep` com o modelo `dominio-sem-infra.yml` apontado para os testes e para os módulos nossos que não se mockam; o nome do teste fica com o revisor.
+
 ### P6. Vermelho, verde, refatorar; e nunca os dois juntos
 
 Nas seams combinadas na spec, use `/tdd`: um teste falhando, o mínimo para passar, depois limpar com
@@ -96,6 +106,8 @@ commit torna impossível revisar o que mudou de comportamento.
 **No diff:** commit "refatora X" que também altera teste de comportamento; código de produção sem o
 teste que o motivou.
 
+**No validador:** `revisor`.
+
 ### P7. Nada para um requisito que não existe
 
 Não acrescente parâmetro, opção, camada ou ponto de extensão para uma necessidade que a spec não
@@ -108,6 +120,8 @@ testar e entender que não entrega nada hoje e costuma errar a forma do amanhã.
 
 **No diff:** flag que só tem um valor em uso; classe abstrata com uma filha; configuração que
 ninguém configura.
+
+**No validador:** `revisor`.
 
 ### P8. Consistência vence preferência
 
@@ -123,6 +137,8 @@ mantida com disciplina vence a arquitetura "perfeita" abandonada no meio (`/huma
 **No diff:** segundo cliente HTTP, segundo jeito de tratar erro ou segunda biblioteca de datas sem
 ticket que o decidiu.
 
+**No validador:** `opengrep` com o modelo `dominio-sem-infra.yml` apontado para o código todo e as bibliotecas que o padrão fixo exclui.
+
 ### P9. Commit conta uma mudança, e a mensagem diz o porquê
 
 Cada commit é uma mudança coerente que passa nos testes. A mensagem diz o que mudou e por quê, na
@@ -134,6 +150,8 @@ reverter uma coisa sem levar outra junto.
 **No grilling:** Qual o formato e o idioma da mensagem de commit (Conventional Commits ou livre)?
 
 **No diff:** commit "ajustes", "wip" ou "fix" que mistura três assuntos.
+
+**No validador:** `mensagem-de-commit`.
 
 ## Fontes
 

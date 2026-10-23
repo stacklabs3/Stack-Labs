@@ -1,0 +1,19 @@
+# Princípio P3: configuração por ambiente se lê num ponto só, a montagem. Copie para
+# docs/regras-de-codigo/opengrep/ e troque <ARQUIVOS_DA_MONTAGEM> (ex.: src/montagem/**).
+rules:
+  - id: ambiente-so-na-montagem
+    message: "P3: leitura de ambiente fora da montagem. Receba o valor por parâmetro."
+    severity: ERROR
+    languages: [typescript, javascript]
+    paths:
+      exclude: ["<ARQUIVOS_DA_MONTAGEM>"]
+    pattern: process.env
+  - id: ambiente-so-na-montagem-python
+    message: "P3: leitura de ambiente fora da montagem. Receba o valor por parâmetro."
+    severity: ERROR
+    languages: [python]
+    paths:
+      exclude: ["<ARQUIVOS_DA_MONTAGEM>"]
+    pattern-either:
+      - pattern: os.environ
+      - pattern: os.getenv(...)

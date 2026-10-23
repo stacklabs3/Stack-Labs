@@ -35,6 +35,8 @@ caminho).
   `docs/agents/principios-de-codigo.md`, cada um adotado, adaptado ou afastado com o porquê, e cada regra cita o princípio de onde nasceu. Cada ticket de grupo do mapa
   fechou com uma linha de decisão por princípio. Projeto anterior à ADR 0008 sem cobertura: ⚠️ e o
   ticket que a completa.
+- `node .claude/validador/validar.mjs` termina em `VALIDADOR: APROVADO` e roda no CI do projeto.
+  Projeto anterior à ADR 0010 sem `docs/regras-de-codigo.json`: ⚠️ e o ticket que o escreve.
 
 **Pesquisa antes de recomendar**
 - Todo ticket fechado de grilling, tarefa e pesquisa tem `## Fontes` com link no comentário de resolução.

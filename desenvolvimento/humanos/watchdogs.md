@@ -30,6 +30,11 @@ Três camadas barram; o `/auditar-metodo` confere depois.
 | "push direto para main" | Suba a branch e abra PR |
 | "a PR não fecha a issue da branch" | Acrescente `Closes #<n>` no corpo da PR |
 | "a PR altera os watchdogs" | Um sócio revisa e aplica a label `altera-watchdogs` |
+| `VALIDADOR: REPROVADO` | O código quebra uma regra de código; a lista diz qual, onde e de que princípio ela nasceu |
+
+O **validador** de regras de código também barra: ele roda no CI do projeto e na revisão de cada
+issue, e reprova o que quebra uma regra que a máquina consegue conferir
+([ADR 0010](../adr/0010-validador-de-regras-de-codigo.md)).
 
 Sem rede ou sem `gh` autenticado, os watchdogs que consultam o GitHub bloqueiam: confira o
 `gh auth status`.

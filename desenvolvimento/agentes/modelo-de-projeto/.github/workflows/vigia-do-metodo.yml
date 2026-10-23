@@ -65,7 +65,7 @@ jobs:
 
             // 3. Watchdogs só mudam com aval humano explícito (label aplicada por uma pessoa).
             const arquivosAlterados = await github.paginate(github.rest.pulls.listFiles, { ...context.repo, pull_number: pr.number });
-            const caminhosDosWatchdogs = /^(\.claude\/(hooks|githooks|agents)\/|\.claude\/(settings|metodo)\.json$|\.github\/workflows\/vigia-do-metodo\.yml$)/;
+            const caminhosDosWatchdogs = /^(\.claude\/(hooks|githooks|agents|validador)\/|\.claude\/(settings|metodo)\.json$|\.github\/workflows\/vigia-do-metodo\.yml$)/;
             const alteraWatchdogs = arquivosAlterados.some((arquivo) => caminhosDosWatchdogs.test(arquivo.filename));
             const temAvalHumano = pr.labels.some((label) => label.name === "altera-watchdogs");
             const problemasDosWatchdogs = alteraWatchdogs && !temAvalHumano

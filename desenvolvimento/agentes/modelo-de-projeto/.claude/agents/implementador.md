@@ -19,7 +19,9 @@ diagnosticador. O `AGENTS.md` vale inteiro.
 3. Implemente com `/tdd` nas seams que a issue ou o spec combinam, testando pela interface pública,
    seguindo as regras de código e, onde elas calam, os princípios de código. Num ciclo de correção,
    faça **só** o que o plano pede, item por item.
-4. Rode o typecheck e a suíte completa. Pronto quando você viu **os testes passando**.
+4. Rode o typecheck, a suíte completa e, quando `docs/regras-de-codigo.json` existe, o validador
+   (`node .claude/validador/validar.mjs --base <branch de integração>`). Pronto quando você viu **os
+   testes passando** e `VALIDADOR: APROVADO`.
 5. Commit na branch da issue. Push, PR e merge são do orquestrador.
 
 Quando algo impede o fim (issue ambígua, decisão não escrita, bloqueio de watchdog), pare onde está e
