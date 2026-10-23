@@ -14,6 +14,7 @@ agentes/
 │   │   ├── pesquisa-antes-de-recomendar.md
 │   │   ├── roteiro-de-prototipo.md    família *-prototipo
 │   │   ├── watchdogs.md
+│   │   ├── caminho-ate-ready-for-agent.md   rotas e definição de pronto
 │   │   ├── orquestracao.md            a orquestração de issues
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
 │   ├── .claude/                hooks do Claude Code (watchdogs) e os papéis da orquestração (agents/)

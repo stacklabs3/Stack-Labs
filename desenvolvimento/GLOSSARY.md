@@ -43,8 +43,15 @@ O que está além do destino. Não é névoa e nunca vira ticket deste mapa.
 _Evitar_: Backlog, depois
 
 **Spec**:
-O documento que fecha um mapa: tudo o que foi decidido, pronto para ser fatiado. Sai do `/to-spec`.
+O documento que fecha um mapa: tudo o que foi decidido, pronto para ser fatiado. Sai do `/to-spec`
+e leva a label `spec`: é o pai das fatias verticais, nunca implementado inteiro.
 _Evitar_: PRD, requisito, documento de requisitos
+
+**Definição de pronto**:
+A lista de dez itens que uma fatia vertical cumpre antes de receber `ready-for-agent`: verificável
+sozinha, cabe numa janela, critérios de aceite, bloqueios ligados, nenhuma decisão em aberto, ligada
+à origem, vocabulário do glossário, sem caminho de arquivo, protótipo aprovado quando toca tela e sem
+humano no meio.
 
 **Fatia vertical**:
 Uma issue de implementação que atravessa todas as camadas necessárias e entrega algo verificável.

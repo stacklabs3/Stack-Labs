@@ -18,12 +18,15 @@ ideia grande demais para uma sessão
   → /wayfinder   (mapa de tickets de decisão, 1 ticket por sessão)
   → /to-spec     (mapa fechado: nada mais a decidir)
   → /to-tickets  (fatias verticais com bloqueios e ready-for-agent)
-  → /implement + /tdd + /code-review   (uma sessão limpa por issue)
+  → /orquestrar-issues   (implementa, revisa e confere, uma issue por vez)
 ```
 
 - **Ideia clara, mas com várias sessões:** `/grill-with-docs` → `/to-spec` → `/to-tickets`.
-- **Ideia clara que cabe numa sessão:** `/grill-with-docs` → `/implement`, com uma issue ativa.
-- **Bug ou pedido de fora:** `/triage` → `/implement`.
+- **Ideia clara que cabe numa sessão:** `/grill-with-docs` → `/to-tickets` com uma fatia só.
+- **Bug ou pedido de fora:** `/triage`.
+- **Chegar a `ready-for-agent`:** só por essas rotas e só depois da **definição de pronto**
+  ([docs/agents/caminho-ate-ready-for-agent.md](docs/agents/caminho-ate-ready-for-agent.md)). Depois
+  do `/to-spec`, troque `ready-for-agent` por `spec` no spec: quem se implementa são as fatias.
 - **Issues em `ready-for-agent`:** a sessão que as deixou prontas (`/to-tickets` ou `/triage`)
   recomenda a orquestração e gera, com o `/nova-sessao`, o kickoff que abre a janela do
   orquestrador com `/orquestrar-issues <N>` ([docs/agents/orquestracao.md](docs/agents/orquestracao.md)).

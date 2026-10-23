@@ -23,8 +23,11 @@ com o `/wayfinder` como porta de entrada, mais as regras da casa.
 4. Aparência se prototipa com a família **`*-prototipo`** e só vira código com aprovação explícita.
 5. **Uma janela por trabalho**: trabalho novo ou continuação abre com o kickoff do **`/nova-sessao`**;
    assunto paralelo vai para uma **sessão satélite** e volta pelo **`/voltar-a-principal`**.
-6. Issues `ready-for-agent` vão para a **orquestração**: uma sessão orquestradora dispara, em
+6. Uma issue só chega a **`ready-for-agent`** por uma rota do método e depois da **definição de
+   pronto** ([humanos](humanos/caminho-ate-ready-for-agent.md) ·
+   [agentes](agentes/modelo-de-projeto/docs/agents/caminho-ate-ready-for-agent.md)).
+7. Issues `ready-for-agent` vão para a **orquestração**: uma sessão orquestradora dispara, em
    sequência, quem implementa, quem revisa e quem confere com o spec, numa branch de integração.
-7. **Watchdogs** barram o que foge do método, na sessão, no push e na PR.
+8. **Watchdogs** barram o que foge do método, na sessão, no push e na PR.
 
 Projeto de referência: [appetito_v2](https://github.com/stacklabs1/appetito_v2).
