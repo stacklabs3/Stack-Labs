@@ -62,8 +62,12 @@ impl Drop for Repositorio {
     }
 }
 
-fn rand_sufixo() -> u128 {
-    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+// O relógio do macOS tem resolução de microssegundo: o contador separa testes paralelos.
+fn rand_sufixo() -> String {
+    static PROXIMO: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    let ordem = PROXIMO.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let instante = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
+    format!("{ordem}-{instante}")
 }
 
 // O P5 não se afasta e exige a checagem teste-cobre-risco: sem linha própria no teste, ele cita a
