@@ -21,8 +21,8 @@ instala o Rust (https://rustup.rs). Testes: `cargo test --release --manifest-pat
 | `vigia-teste` | PostToolUse `Write\|Edit\|MultiEdit` | No teste que acabou de ser editado, roda as regras do P5 de `docs/regras-de-codigo.json`: teste sem `RK<n>` ou com risco fora do registro, sem afirmação, com afirmação trivial, desligado ou focado ([riscos.md](riscos.md)). Projeto sem `docs/regras-de-codigo.json` passa; na etapa de observação, só avisa | **Devolve ao agente para corrigir** |
 | `vigia-parada` | Stop | O turno só termina com o ponteiro do ticket resolvido em *Decisions so far* | **Bloqueia o fim do turno** |
 | `orquestrar-issues` | Sessão do orquestrador, com os papéis de `.claude/agents/` | Ciclo e limites da [orquestração](orquestracao.md); nunca faz merge na base | **Devolve a issue / para a rodada** |
-| `validador` | CI do projeto, implementador e revisor | As regras de `docs/regras-de-codigo.json` e a cobertura dos 22 princípios e das práticas da linguagem e o registro de riscos contra os testes ([validador.md](validador.md)); o motor é o mesmo binário dos watchdogs, protegido como eles | **Reprova a fatia / o CI** |
-| `pre-push` | `git push` | Recusa push direto para `main`/`master` | **Bloqueia o push** |
+| `validador` | CI local (`ci`), CI do projeto, implementador e revisor | As regras de `docs/regras-de-codigo.json` e a cobertura dos 22 princípios e das práticas da linguagem e o registro de riscos contra os testes ([validador.md](validador.md)); o motor é o mesmo binário dos watchdogs, protegido como eles | **Reprova a fatia / o CI** |
+| `pre-push` | `git push` | Recusa push direto para `main`/`master`; depois roda o `ci` contra `<remoto>/main`: lint e typecheck (regras `comando`), o validador e a revisão consultiva por modelo dos testes alterados ([validador.md](validador.md#onde-roda)). Na etapa de observação, o `ci` vermelho só avisa | **Bloqueia o push** |
 | `vigia-do-metodo` | GitHub Actions, em toda PR | Branch do método; PR de `issue/<n>-*` com `Closes #<n>` e issue `ready-for-*`; `research/*` nunca entra na `main`; mudança nos watchdogs só com a label `altera-watchdogs` | **Reprova a PR** |
 
 Num projeto em adoção, a etapa de `.claude/metodo.json` decide quais destes bloqueios valem
@@ -63,4 +63,9 @@ Ao dar com um destes, entregue o comando ao usuário:
 - Grilling com o humano respondendo e TDD não dão para checar por máquina.
 - O `vigia-teste` e o validador conferem que o teste cita um risco do registro e tem afirmação que
   não é trivial; não conferem que ele exercita o risco que cita, nem que o esperado não copia o
-  código. Isso é do revisor, e o teste de mutação, quando adotado, mede.
+  código. Isso é do revisor, que parte da lista da `revisao-por-modelo` quando o projeto a liga; o
+  teste de mutação, quando adotado, mede.
+- A `revisao-por-modelo` é consultiva e **falha aberta**, ao contrário dos watchdogs: sem `claude` no
+  PATH, sem rede ou sem login, o `ci` avisa e segue. Ela lê só o trecho do teste e a linha do risco,
+  não o código de produção, e erra nos dois sentidos; por isso não reprova. Os hooks nunca chamam o
+  modelo, pela latência a cada edição.

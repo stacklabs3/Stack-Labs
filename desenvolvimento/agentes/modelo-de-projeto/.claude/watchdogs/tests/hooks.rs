@@ -14,8 +14,11 @@ struct Projeto {
 
 impl Projeto {
     fn novo(branch: &str) -> Self {
+        // O relógio do macOS tem resolução de microssegundo: o contador separa testes paralelos.
+        static PROXIMO: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let ordem = PROXIMO.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let sufixo = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-        let raiz = std::env::temp_dir().join(format!("hooks-{}-{sufixo}", std::process::id()));
+        let raiz = std::env::temp_dir().join(format!("hooks-{}-{ordem}-{sufixo}", std::process::id()));
         let pasta_do_gh = raiz.join(".gh-falso");
         fs::create_dir_all(&pasta_do_gh).unwrap();
         let projeto = Projeto { raiz, pasta_do_gh };

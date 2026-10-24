@@ -43,7 +43,7 @@ pub const DECISOES: [&str; 4] = ["adotado", "adaptado", "afastado", "garantido p
 pub const OBRIGATORIOS: [&str; 2] = ["E1", "P5"];
 // Princípio que só conta como decidido se a coluna "Onde" cita uma regra com esta checagem.
 pub const CHECAGEM_EXIGIDA: [(&str, &str); 1] = [("P5", "teste-cobre-risco")];
-pub const TIPOS: [&str; 9] = [
+pub const TIPOS: [&str; 10] = [
     "termo-evitado",
     "teste-cobre-risco",
     "teste-de-contrato-por-port",
@@ -53,7 +53,10 @@ pub const TIPOS: [&str; 9] = [
     "comando",
     "ast-grep",
     "revisor",
+    "revisao-por-modelo",
 ];
+// Tipo que só aconselha (ADR 0015): roda no ci, nunca reprova e fica fora da cobertura dos 22.
+pub const TIPO_CONSULTIVO: &str = "revisao-por-modelo";
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Violacao {
@@ -305,7 +308,10 @@ pub fn checar_cobertura(texto_md: &str, regras: &[Regra]) -> Vec<Violacao> {
             citadas_nas_praticas.extend(ids_na_linha.into_iter().map(String::from));
         }
     }
-    for regra in regras {
+    for regra in regras
+        .iter()
+        .filter(|regra| regra.verificacao.get("tipo").and_then(Value::as_str) != Some(TIPO_CONSULTIVO))
+    {
         if eh_pratica(&regra.principio) {
             if !citadas_nas_praticas.contains(&regra.id) {
                 violacoes.push(Violacao::so_mensagem(format!(
@@ -1212,6 +1218,9 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
         // Princípios de julgamento: o validador só os lista; quem decide é o revisor da orquestração.
         "revisor" => Vec::new(),
 
+        // Consultiva: quem a roda é o ci (revisao_por_modelo.rs); o validador nunca chama o modelo.
+        TIPO_CONSULTIVO => Vec::new(),
+
         outro => return erro(format!("tipo de verificação \"{outro}\" não existe no catálogo ({})", TIPOS.join(", "))),
     })
 }
@@ -1279,6 +1288,11 @@ pub fn ler_regras(config: &Value) -> Result<Vec<Regra>, ErroDeConfiguracao> {
             ));
         }
         let verificacao = regra["verificacao"].as_object().cloned().unwrap_or_default();
+        if tipo == TIPO_CONSULTIVO && verificacao.get("consultivo") != Some(&Value::Bool(true)) {
+            return erro(format!(
+                "{id}: \"{TIPO_CONSULTIVO}\" só existe consultiva (ADR 0015): declare \"consultivo\": true"
+            ));
+        }
         regras.push(Regra {
             id: id.into(),
             principio: principio.into(),
@@ -1398,32 +1412,43 @@ pub fn relatorio_em_json(relatorio: &Relatorio) -> Value {
     json!({ "aprovado": relatorio.aprovado, "escopo": relatorio.escopo, "resultados": resultados, "avisos": relatorio.avisos })
 }
 
+// As linhas de uma regra no relatório: o rótulo com ✅ ou ❌ e cada violação embaixo.
+pub fn formatar_resultado(resultado: &Resultado) -> Vec<String> {
+    let mut linhas = Vec::new();
+    let rotulo = format!("{} ({}) {}", resultado.id, resultado.principio, resultado.tipo);
+    if resultado.tipo == "revisor" {
+        linhas.push(format!("👁  {rotulo}: fica com o revisor"));
+        return linhas;
+    }
+    if resultado.tipo == TIPO_CONSULTIVO {
+        linhas.push(format!("💬 {rotulo}: consultiva, roda no ci"));
+        return linhas;
+    }
+    let quantidade = resultado.violacoes.len();
+    linhas.push(format!(
+        "{} {rotulo}{}",
+        if quantidade > 0 { "❌" } else { "✅" },
+        if quantidade > 0 {
+            format!(": {quantidade} violação(ões)")
+        } else {
+            String::new()
+        }
+    ));
+    for violacao in &resultado.violacoes {
+        let local = match (&violacao.arquivo, violacao.linha) {
+            (Some(arquivo), Some(linha)) => format!("{arquivo}:{linha}  "),
+            (Some(arquivo), None) => format!("{arquivo}  "),
+            _ => String::new(),
+        };
+        linhas.push(format!("   {local}{}", violacao.mensagem.replace('\n', "\n      ")));
+    }
+    linhas
+}
+
 pub fn formatar(relatorio: &Relatorio) -> String {
     let mut linhas = vec![format!("Validador de regras de código: {}", relatorio.escopo)];
     for resultado in &relatorio.resultados {
-        let rotulo = format!("{} ({}) {}", resultado.id, resultado.principio, resultado.tipo);
-        if resultado.tipo == "revisor" {
-            linhas.push(format!("👁  {rotulo}: fica com o revisor"));
-            continue;
-        }
-        let quantidade = resultado.violacoes.len();
-        linhas.push(format!(
-            "{} {rotulo}{}",
-            if quantidade > 0 { "❌" } else { "✅" },
-            if quantidade > 0 {
-                format!(": {quantidade} violação(ões)")
-            } else {
-                String::new()
-            }
-        ));
-        for violacao in &resultado.violacoes {
-            let local = match (&violacao.arquivo, violacao.linha) {
-                (Some(arquivo), Some(linha)) => format!("{arquivo}:{linha}  "),
-                (Some(arquivo), None) => format!("{arquivo}  "),
-                _ => String::new(),
-            };
-            linhas.push(format!("   {local}{}", violacao.mensagem.replace('\n', "\n      ")));
-        }
+        linhas.extend(formatar_resultado(resultado));
     }
     for aviso in &relatorio.avisos {
         linhas.push(format!("⚠️  {aviso}"));

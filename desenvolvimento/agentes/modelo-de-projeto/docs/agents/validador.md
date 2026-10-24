@@ -8,6 +8,7 @@ fica protegido em `.claude/watchdogs/` (o mesmo binário Rust dos watchdogs); o 
 sh .claude/watchdogs/rodar validar --base origin/main  # só o que mudou desde a base (CI, implementador, revisor)
 sh .claude/watchdogs/rodar validar                     # o repositório inteiro (auditoria)
 sh .claude/watchdogs/rodar validar --so-cobertura      # só a tabela dos 22 contra o .json (fecha o mapa)
+sh .claude/watchdogs/rodar ci --base origin/main       # o CI local: comandos, validador e revisão por modelo
 ```
 
 Sai com 0 aprovado, 1 violação, 2 configuração inválida; a última linha é sempre
@@ -34,7 +35,7 @@ Nasce do modelo `.claude/watchdogs/modelos/regras-de-codigo.json` no ticket que 
 A tabela de cobertura do `.md` é a dona das decisões; o `.json` diz como cada regra se verifica. A
 checagem `cobertura` roda sempre e confere os dois juntos: os 22 princípios com decisão válida, cada
 princípio adotado ou adaptado citando um `R<n>` que existe no `.json` com o mesmo princípio, e nenhuma
-regra do `.json` sem linha na tabela. O E1 e o P5 nunca são `afastado` (regras 20 e 15 da
+regra do `.json` sem linha na tabela (fora a `revisao-por-modelo`, consultiva). O E1 e o P5 nunca são `afastado` (regras 20 e 15 da
 constituição), e a linha do P5 cita uma regra com a checagem `teste-cobre-risco`. Regra que nasce de prática da linguagem leva o ID dela em
 `principio` (`TS<n>`, `JV<n>`, `RS<n>`) e é citada na tabela *Práticas da linguagem* do `.md`, fora
 dos 22.
@@ -52,6 +53,20 @@ dos 22.
 | `ast-grep` | `regras` (arquivo ou lista), `alvos`, `binario` | Padrões de código (TypeScript, JavaScript, Python, Go, Java, Rust e outras) |
 | `comando` | `executar` (aceita `{arquivos}`) | Qualquer ferramenta: saída diferente de 0 é violação |
 | `revisor` | | Nada: marca a regra como julgamento do revisor |
+| `revisao-por-modelo` | `consultivo` (obrigatório, `true`), `modelo` (padrão `claude-haiku-5-5`), `testes`, `declaracao`, `riscos`, `ignorar`, `tetoUsd` (padrão 0.05), `limiteSegundos` (padrão 120) | Nada no validador. O `ci` pergunta ao modelo, teste a teste, se cada teste alterado desde a base exercita o risco que cita, e lista os suspeitos com o motivo. Consultiva, fora da `cobertura` e não substitui o `teste-cobre-risco` (ADR 0015) |
+
+**`revisao-por-modelo` é opcional.** Para ligá-la, acrescente ao `.json` uma regra do P5 que a tabela
+não precisa citar:
+
+```json
+{ "id": "R15", "principio": "P5", "texto": "O modelo lista o teste que cita o risco e não o exercita",
+  "verificacao": { "tipo": "revisao-por-modelo", "modelo": "claude-haiku-5-5", "consultivo": true } }
+```
+
+Ela roda só no `ci`, chamando o `claude -p` com o login de quem roda: uma chamada por teste alterado,
+em paralelo, com o trecho do teste e a linha do risco em `docs/riscos.md`. O veredito fica em cache
+em `.claude/state/revisao-de-testes/`; o mesmo teste com o mesmo risco não chama de novo. Falha
+aberta: sem `claude` no PATH, sem rede ou sem login, o `ci` avisa e segue. Os hooks nunca a chamam.
 
 **`lint-cobre` falha fechado:** a regra conta só se algum arquivo de `config` a liga com nível que
 bloqueia; senão, a violação diz se ela falta, está comentada, está desligada ou se o arquivo é
@@ -112,6 +127,10 @@ ou as violações listadas viraram tickets.
 
 ## Onde roda
 
+- **CI local**, a cada `git push` pelo `pre-push` e à mão: `sh .claude/watchdogs/rodar ci [--base <ref>]`
+  (base padrão `origin/main`; no `pre-push`, `<remoto>/main`). Roda, em ordem, as regras `comando`
+  (lint e typecheck), o resto do validador com `--base` e a `revisao-por-modelo`; reprova só pelas
+  duas primeiras. Sem `docs/regras-de-codigo.json`, passa. Termina em `CI: APROVADO` ou `CI: REPROVADO`.
 - **CI do projeto**, configurado na primeira fatia da primeira fase, junto com o lint:
   `sh .claude/watchdogs/rodar validar --base origin/${{ github.base_ref }}`, com o ast-grep instalado
   no passo anterior quando o `.json` usa `ast-grep` (`npm i -g @ast-grep/cli@0.51.0`).
