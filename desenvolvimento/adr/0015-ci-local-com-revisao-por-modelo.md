@@ -25,7 +25,8 @@ teste, do risco, do modelo e do prompt: repetir não chama de novo, e o veredito
 nunca chamam o modelo, pela latência a cada edição. O revisor da orquestração lê a lista do Haiku
 como ponto de partida, confirma ou descarta cada item, e o veredito continua dele. O `claude -p` usa
 o login e o plano de quem roda, sem chave de API: medido em 2026-10-24, uma chamada leva uns 3 s e
-custa US$ 0,001 no Haiku. **O humano confirma** se isso respeita a regra "ferramenta que não cobra a
-gente usa; a que cobra a gente escreve" (ADR 0010). A revisão vira bloqueante só depois de um piloto
+custa US$ 0,001 no Haiku. O humano confirmou, em 2026-10-24, que isso cabe na regra "ferramenta que
+não cobra a gente usa; a que cobra a gente escreve" (ADR 0010): o gasto sai do plano que a pessoa já
+paga, sem chave de API nem cobrança à parte. A revisão vira bloqueante só depois de um piloto
 medido contra teste de mutação e de outra ADR. Fica como próximo passo publicar o resultado do `ci`
 como status `metodo/ci-local` no commit, pelo `gh api`.
