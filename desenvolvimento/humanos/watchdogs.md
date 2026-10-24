@@ -11,7 +11,7 @@ Três camadas barram; o `/auditar-metodo` confere depois.
 | Camada | Vigia |
 |---|---|
 | Hooks do Claude Code | O agente, durante a sessão |
-| `pre-push` do git | Você e o agente, na sua máquina |
+| `pre-push` do git | Você e o agente, na sua máquina: a `main` e o CI local |
 | `vigia-do-metodo` (CI) | Toda PR, de qualquer pessoa |
 | `/auditar-metodo` | O histórico do projeto inteiro, quando você pedir |
 
@@ -32,6 +32,7 @@ Três camadas barram; o `/auditar-metodo` confere depois.
 | "a PR altera os watchdogs" | Um sócio revisa e aplica a label `altera-watchdogs` |
 | "tem teste sem valor" (`vigia-teste`) | O agente escreveu teste sem risco do `docs/riscos.md`, sem afirmação ou desligado. Ele corrige; se faltar risco no registro, ele te pergunta, e quem aprova é você |
 | `VALIDADOR: REPROVADO` | O código quebra uma regra de código; a lista diz qual, onde e de que princípio ela nasceu |
+| "o CI local reprovou" (`pre-push`) | Lint, typecheck ou validador vermelho na sua branch. A saída acima diz qual regra e onde; corrija e suba de novo |
 
 O **validador** de regras de código também barra: ele roda no CI do projeto e na revisão de cada
 issue, e reprova o que quebra uma regra que a máquina consegue conferir
@@ -39,6 +40,22 @@ issue, e reprova o que quebra uma regra que a máquina consegue conferir
 
 Sem rede ou sem `gh` autenticado, os watchdogs que consultam o GitHub bloqueiam: confira o
 `gh auth status`.
+
+## O CI local no push
+
+Todo `git push` roda o CI local do projeto antes de subir
+([ADR 0015](../adr/0015-ci-local-com-revisao-por-modelo.md)): lint e typecheck, o validador e, se o
+projeto ligou a regra `revisao-por-modelo`, uma revisão dos testes alterados por um modelo barato
+(o Haiku). Você vê três blocos, `[ci] 1/3`, `2/3` e `3/3`, e a última linha `CI: APROVADO` ou
+`CI: REPROVADO`. Só os dois primeiros barram o push.
+
+A revisão por modelo só aconselha. Uma linha como
+`⚠️  tests/cupom.rs:3 rk2_recusa_cupom_vencido (RK2): não exercita o risco que cita.` diz que o teste
+cita o risco mas passaria mesmo se ele acontecesse. Ela não barra: quem decide é o revisor da issue.
+
+Para ela rodar, o `claude` do terminal precisa estar logado (`claude auth login`). Sem ele, o CI
+avisa e segue sem a revisão. Ela usa o seu plano, sem chave de API: cerca de US$ 0,001 e 3 s por
+teste novo, e o mesmo teste não é perguntado de novo.
 
 ## Ativar o pre-push
 
