@@ -1,8 +1,13 @@
-// Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto.
+// Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto. Depois, o CI local
+// (ci.rs) contra <remoto>/main: lint, typecheck ou validador vermelho barram o push; na etapa de
+// observação, só avisam.
 // Ativação (uma vez por clone): git config core.hooksPath .claude/githooks
 // Escape humano para emergências: STACKLABS_PERMITIR_PUSH_MAIN=1 git push ...
 
+use crate::ci;
+use crate::comum::etapa_de_adocao;
 use std::io::Read;
+use std::path::PathBuf;
 
 pub fn rodar(argumentos: &[String]) -> i32 {
     let nome_do_remoto = argumentos.first().map(String::as_str).unwrap_or("origin");
@@ -22,5 +27,17 @@ pub fn rodar(argumentos: &[String]) -> i32 {
             return 1;
         }
     }
-    0
+    let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let base = format!("{nome_do_remoto}/main");
+    if ci::executar(&raiz, &base, &mut std::io::stderr()) == 0 {
+        return 0;
+    }
+    if etapa_de_adocao(&raiz) == "observacao" {
+        eprintln!("[pre-push] o CI local reprovou; na etapa de observação isso só avisa. (docs/agents/adocao.md)");
+        return 0;
+    }
+    eprintln!(
+        "[pre-push] BLOQUEADO — o CI local reprovou (lint, typecheck ou validador, acima). Corrija e suba de novo.\nPara ver de novo: sh .claude/watchdogs/rodar ci --base {base} (docs/agents/validador.md)"
+    );
+    1
 }

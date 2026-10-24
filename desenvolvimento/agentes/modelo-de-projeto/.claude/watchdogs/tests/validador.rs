@@ -1103,3 +1103,31 @@ fn ast_grep_modelos_de_teste_acham_teste_sem_valor() {
         vec!["src/cobranca.test.ts:5", "src/cupom.rs:13", "src/test/java/CupomTest.java:8"]
     );
 }
+
+// ---------- revisão por modelo: consultiva e fora da cobertura (ADR 0015) ----------
+
+// Risco: a revisão por modelo vira portão sem o piloto medido, ou passa a contar como a checagem do P5.
+#[test]
+fn revisao_por_modelo_so_entra_consultiva_e_fora_da_cobertura() {
+    let sem_consultivo = json!({ "versao": 1, "regras": [{ "id": "R91", "principio": "P5", "verificacao": { "tipo": "revisao-por-modelo" } }] });
+    let erro = ler_regras(&sem_consultivo).err().expect("sem consultivo é configuração inválida").0;
+    assert!(erro.contains("R91") && erro.contains("\"consultivo\": true"), "{erro}");
+
+    let revisao = json!({ "id": "R91", "principio": "P5", "verificacao": { "tipo": "revisao-por-modelo", "modelo": "claude-haiku-5-5", "consultivo": true } });
+    let regras = regras_de(json!([
+        { "id": "R1", "principio": "E1", "verificacao": { "tipo": "revisor" } },
+        { "id": "R90", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco" } },
+        revisao
+    ]));
+    assert!(
+        checar_cobertura(&tabela_com(&[("E1", "adotado | R1")]), &regras).is_empty(),
+        "a regra consultiva não precisa de linha na tabela"
+    );
+    let violacoes = checar_cobertura(&tabela_com(&[("E1", "adotado | R1"), ("P5", "adotado | R91")]), &regras);
+    assert!(
+        violacoes
+            .iter()
+            .any(|violacao| violacao.mensagem.contains("P5 precisa citar uma regra com a checagem teste-cobre-risco")),
+        "a revisão por modelo não substitui o teste-cobre-risco: {violacoes:?}"
+    );
+}
