@@ -26,6 +26,12 @@ diagnosticador. O `AGENTS.md` vale inteiro.
    testes passando** e `VALIDADOR: APROVADO`.
 5. Commit na branch da issue. Push, PR e merge são do orquestrador.
 
+**Trava da máquina (obrigatória).** Numa máquina sem swap, dois builds ao mesmo tempo matam tudo,
+inclusive o shell do agente (ADR 0016). Todo comando pesado (build, dev server, suíte de testes, e2e,
+build nativo, CI local) roda dentro da trava `$HOME/.stacklabs/pesado.lock`, um por vez, com
+`NODE_OPTIONS=--max-old-space-size=4096`. O bloco de espera e limpeza está na skill `/orquestrar-issues`,
+seção *A trava da máquina*. Typecheck, lint, `git` e `gh` não precisam dela.
+
 Quando algo impede o fim (issue ambígua, decisão não escrita, bloqueio de watchdog), pare onde está e
 responda `BLOQUEADO` com o que um humano precisa decidir.
 
