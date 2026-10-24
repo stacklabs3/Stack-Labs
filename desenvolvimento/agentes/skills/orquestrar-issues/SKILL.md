@@ -1,14 +1,14 @@
 ---
 name: orquestrar-issues
-description: Orquestra a fila de issues ready-for-agent numa sessão própria, com subagentes em sequência numa branch de integração.
-disable-model-invocation: true
+description: Orquestra a fila de issues ready-for-agent numa sessão própria: uma sessão por issue, em sequência, numa branch de integração.
 argument-hint: "N issues, ou --retomar <arquivo de estado>"
 ---
 
 Você é o **orquestrador**: o código é dos subagentes. Você os dispara de `.claude/agents/`, lê os
-pareceres, cuida das branches e do estado da rodada. Um subagente por vez, sempre em primeiro plano
-(espere cada um terminar), cada um com a janela limpa. Passe a eles **ponteiros** (número da issue, nomes das
-branches, o plano); o conteúdo eles mesmos leem. O porquê de cada peça está em
+pareceres, cuida das branches e do estado da rodada. **Uma issue por vez, até o fim:** cada issue
+ganha uma sessão própria do Claude, de janela limpa, que segue o ciclo fixo do passo 3; só quando ela
+termina (integrada ou devolvida) abre-se a sessão da próxima (seção *Uma sessão por issue*). Passe a
+eles **ponteiros** (número da issue, nomes das branches, o plano); o conteúdo eles mesmos leem. O porquê de cada peça está em
 `docs/agents/orquestracao.md`.
 
 ## Esforço por ciclo
@@ -28,6 +28,57 @@ Todos os papéis rodam no modelo `opus`. O esforço vai na chamada de cada subag
 de integração e a base dela, e para cada issue da rodada o número, o título, a branch, o ciclo, a
 situação (`em-andamento`, `integrada`, `devolvida`) e o último parecer de cada papel; mais o contador
 de issues devolvidas em sequência. É por ele que uma janela nova retoma a rodada.
+
+## Vários orquestradores ao mesmo tempo
+
+Cada trilha (uma fila de issues independente das outras) roda na **sua sessão**, com a **sua branch de integração** e o
+**seu arquivo de estado** em `.claude/orquestracao/`. Um orquestrador nunca lê para decidir, grava nem
+retoma o estado de outra trilha, nem faz merge na integração dela. As trilhas precisam de filas sem
+arquivo, contrato de API ou migração em comum; quem combina isso é o desenvolvedor, no passo 2. A
+trava da máquina (abaixo) vale entre todos os orquestradores e qualquer outro agente da máquina.
+
+## A trava da máquina (obrigatória)
+
+Várias sessões na mesma máquina disputam a memória. Numa máquina sem swap não há lentidão gradual: o
+kernel mata processos, inclusive o shell do agente (num projeto da casa, dois builds de Next ao mesmo
+tempo derrubaram tudo; ADR 0016). Por isso todo **comando pesado** — build, dev server, suíte de
+testes, e2e (Playwright), build nativo (Flutter, `cargo build`) e o CI local — roda dentro da trava
+global, um por vez **na máquina inteira**, valendo para todos os projetos:
+
+```sh
+TRAVA="$HOME/.stacklabs/pesado.lock"; mkdir -p "$HOME/.stacklabs"
+until mkdir "$TRAVA" 2>/dev/null; do
+  dono=$(cat "$TRAVA/pid" 2>/dev/null)
+  if [ -n "$dono" ] && ! kill -0 "$dono" 2>/dev/null; then rm -rf "$TRAVA"; continue; fi
+  sleep 15
+done
+echo $$ > "$TRAVA/pid"; trap 'rm -rf "$TRAVA"' EXIT INT TERM
+NODE_OPTIONS=--max-old-space-size=4096 <comando pesado>   # um comando por trava
+rm -rf "$TRAVA"; trap - EXIT INT TERM
+```
+
+- A espera limpa a trava de um dono que morreu (`kill -0` falha); trava viva não se toca.
+- `next dev` segura a trava enquanto estiver de pé: suba, use e derrube dentro da mesma trava.
+- Leve: typecheck, lint, `git` e `gh` rodam fora dela.
+- O prompt de **todo** subagente que roda comandos (implementador, e os outros papéis se rodarem
+  testes, e o brief de cada sessão de issue) traz este bloco e a frase: "todo comando pesado passa pela trava
+  `$HOME/.stacklabs/pesado.lock`, com
+  `NODE_OPTIONS=--max-old-space-size=4096`; sem swap, dois ao mesmo tempo matam a máquina".
+
+## Uma sessão por issue
+
+- **Abrir:** para a issue da vez, abra uma sessão própria com o `start_session` do app (contexto
+  `fresh`, worktree própria; o brief dá a issue, a branch da issue, a branch de integração e manda
+  seguir o ciclo do passo 3, itens 2 a 5, até `integrada` ou `devolvida`). Sem `start_session` no
+  ambiente, rode o mesmo ciclo com os subagentes de `.claude/agents/`, um por vez, como antes.
+- **Workflow fixo dentro da sessão:** implementador → revisor → conferente → (diagnosticador →
+  implementador → revisor → conferente, até 2 ciclos de correção). Um papel por vez; nada pula etapa.
+- **Uma por vez:** nunca duas sessões de issue abertas pelo mesmo orquestrador. A próxima só abre
+  depois que a anterior terminou e o orquestrador conferiu.
+- **Acompanhar sem polling:** espere o aviso de fim da sessão. Então confira o resultado de verdade
+  (os pareceres, a branch da issue, o commit na integração), grave o estado e siga.
+- **O merge** na integração é do orquestrador, um por vez, depois da conferência.
+- O brief traz a regra da trava da máquina (seção acima), com a frase pronta.
 
 ## Passos
 
@@ -49,21 +100,21 @@ Pergunte numa rodada só, com recomendação em cada pergunta, e **espere as res
 
 1. **A fila:** as issues da fronteira (regra no passo 3), pelo nome, na ordem, até N.
 2. **A branch de integração:** o nome (`integracao/<nome>`, sugira um a partir do spec ou do mapa)
-   e a base (padrão: `main`).
+   e a base (padrão: `main`). Com outra trilha rodando, nome e arquivo de estado são outros.
 
 Crie a branch a partir da base, `git push -u origin integracao/<nome>`, e grave o estado.
 
 Pronto quando o desenvolvedor respondeu, a branch de integração está no `origin` e o estado da rodada
 está gravado.
 
-### 3. Uma issue por vez
+### 3. Uma issue por vez, numa sessão própria
 
 **Fronteira:** issues abertas com `ready-for-agent`, sem responsável, sem label `wayfinder:*` nem
 `spec`, sem sub-issues (issue com filhas é um spec, mesmo sem a label) e sem bloqueio aberto, da mais
 antiga para a mais nova. Um bloqueador já `integrada` nesta rodada conta
 como resolvido: o código dele já está na branch de integração.
 
-Para a próxima issue da fronteira:
+Para a próxima issue da fronteira, na sessão dela (seção *Uma sessão por issue*):
 
 1. Reivindique (`gh issue edit <n> --add-assignee @me`) e crie `issue/<n>-<slug>` a partir da branch
    de integração.

@@ -167,9 +167,9 @@ resolve um ticket de decisão, implementa uma issue ou conduz uma fase.
 _Evitar_: Chat, conversa
 
 **Orquestrador**:
-O agente principal da sessão aberta com `/orquestrar-issues`. Não escreve código: dispara em
-sequência os subagentes implementador, revisor, conferente e diagnosticador, um por vez, e cuida da
-branch de integração.
+O agente principal da sessão aberta com `/orquestrar-issues`. Não escreve código: abre uma sessão por
+issue, uma de cada vez, em que os papéis implementador, revisor, conferente e diagnosticador levam a
+issue até o fim; confere o resultado e cuida da branch de integração. Um orquestrador por trilha.
 _Evitar_: Loop, gerente, coordenador
 
 **Branch de integração**:

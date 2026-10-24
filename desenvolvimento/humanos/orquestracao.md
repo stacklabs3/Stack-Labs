@@ -1,12 +1,13 @@
 # Orquestração de issues: a fila implementada com revisão
 
 Quando as issues chegam a `ready-for-agent`, o agente recomenda a **orquestração**: numa janela
-própria, um **orquestrador** implementa a fila **uma issue de cada vez**, com subagentes de uma tarefa
-só (implementador, revisor, conferente e diagnosticador). Cada issue entra na **branch de integração**
+própria, um **orquestrador** implementa a fila **uma issue de cada vez**: cada issue ganha uma sessão própria, em que
+papéis de uma tarefa só (implementador, revisor, conferente e diagnosticador) a levam até o fim. Cada issue entra na **branch de integração**
 só com revisor e conferente aprovando, e tem até dois **ciclos de correção**; passou disso, volta para
 triagem com os pareceres. Papéis e ciclo:
 [docs/agents/orquestracao.md](../agentes/modelo-de-projeto/docs/agents/orquestracao.md). O porquê do
-desenho: [ADR 0005](../adr/0005-orquestracao-de-issues-com-subagentes.md).
+desenho: [ADR 0005](../adr/0005-orquestracao-de-issues-com-subagentes.md) e
+[ADR 0016](../adr/0016-uma-sessao-por-issue-e-trava-da-maquina.md).
 
 ## Como usar
 
@@ -24,6 +25,12 @@ desenho: [ADR 0005](../adr/0005-orquestracao-de-issues-com-subagentes.md).
 
 - Acabou a fila, ou não há mais issue livre e desbloqueada.
 - **Duas issues seguidas** foram devolvidas: algo comum a elas precisa de você.
+
+## Mais de uma fila ao mesmo tempo
+
+Filas que não mexem nos mesmos arquivos podem rodar juntas: abra **um orquestrador por fila**, cada um
+na sua janela, com a sua branch de integração. Os comandos pesados se revezam sozinhos numa trava da
+máquina, para que dois builds ao mesmo tempo não derrubem tudo.
 
 ## Bons hábitos
 
