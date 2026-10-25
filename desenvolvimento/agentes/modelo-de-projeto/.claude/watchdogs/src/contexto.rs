@@ -221,6 +221,9 @@ fn adrs_que_citam(raiz: &Path, arquivos_do_repositorio: &[String], citacoes_proc
             adrs.push(Ligacao { rotulo: primeira_linha_util(&texto_adr), local: caminho.clone() });
         }
     }
+    // A ADR que tem a consulta no título decide sobre ela; a que só a cita no corpo vem depois.
+    let cita_no_titulo = |adr: &Ligacao| citacoes_minusculas.iter().any(|citacao| adr.rotulo.to_lowercase().contains(citacao));
+    adrs.sort_by_key(|adr| !cita_no_titulo(adr));
     adrs
 }
 
