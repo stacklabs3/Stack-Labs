@@ -13,6 +13,12 @@ O script é idempotente: num projeto em dia não muda nada, e depois de o Matt o
 ele faz a **atualização**. As skills do Matt vêm sempre do `plugin.json` mais novo de
 `mattpocock/skills`; skill que saiu da fonte sai do projeto.
 
+O instalador aplica às skills do Matt, a cada cópia, dois remendos do método (não os reaplique à mão):
+`wayfinder`, `handoff`, `to-spec`, `to-tickets` e `implement` perdem a linha
+`disable-model-invocation`, para o agente rodar a cadeia sozinho; o `implement-spec` ganha a regra de
+rodar os subagentes implementadores um de cada vez (máquina sem swap). Se o upstream mudar o trecho
+que ancora o remendo, o instalador falha em vez de pular.
+
 ## Passos
 
 ### 1. Diagnóstico
