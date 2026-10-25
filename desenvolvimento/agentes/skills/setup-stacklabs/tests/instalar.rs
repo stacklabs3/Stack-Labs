@@ -514,3 +514,35 @@ fn versao_pedida_diferente_da_fonte_sai_com_erro() {
     assert!(String::from_utf8_lossy(&saida.stderr)
         .contains("pediu a versão 2.0.0, mas a fonte do Stack-Labs está na 1.0.0"));
 }
+
+#[test]
+fn falha_das_labels_vai_para_o_relatorio_e_a_instalacao_termina() {
+    let cenario = Cenario::novo();
+    let pasta_do_gh = cenario.raiz.join("bin");
+    escrever(
+        &pasta_do_gh.join("gh"),
+        "#!/bin/sh\necho 'not logged in' >&2\nexit 1\n",
+    );
+    tornar_executavel(&pasta_do_gh.join("gh"));
+    let caminho = format!(
+        "{}:{}",
+        pasta_do_gh.display(),
+        std::env::var("PATH").unwrap()
+    );
+    let saida = Command::new(env!("CARGO_BIN_EXE_instalar"))
+        .args(["--destino", cenario.projeto.to_str().unwrap()])
+        .env("STACKLABS_ORIGEM", &cenario.stacklabs)
+        .env("MATT_ORIGEM", &cenario.matt)
+        .env("PATH", caminho)
+        .output()
+        .unwrap();
+    assert!(
+        saida.status.success(),
+        "{}",
+        String::from_utf8_lossy(&saida.stderr)
+    );
+    assert!(String::from_utf8(saida.stdout).unwrap().contains(
+        "FALHA     labels do método não criadas (gh label create wayfinder:map: not logged in)"
+    ));
+    assert!(cenario.projeto.join(".claude/skills/ORIGEM.json").exists());
+}

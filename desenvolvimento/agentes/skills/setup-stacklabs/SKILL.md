@@ -71,6 +71,8 @@ Trate as linhas `MESCLAR`, `PULADO`, `PRE-PUSH inativo` e `FALHA`; as demais sã
   comando exato e espere que ele rode:
   `sh <pasta desta skill>/rodar --atualizar-watchdogs`. Com essa opção, os watchdogs antigos em
   node (`.claude/hooks/` e `.claude/validador/`) saem do projeto (linhas `REMOVIDA`).
+- **`FALHA` das labels** (sem `origin` no GitHub ou `gh` sem login): o resto já foi instalado.
+  Peça ao humano o `gh auth login` ou o `origin` e rode o script de novo; ele só refaz o que falta.
 - **`FALHA`** (os watchdogs não compilaram): rode `sh .claude/watchdogs/rodar --version` e
   mostre o erro do cargo ao humano: o passo 5 só passa com os watchdogs compilados.
 
@@ -83,7 +85,8 @@ arquivos de watchdog entregues ao humano.
 - `sh -n .claude/githooks/pre-push` passa;
 - `.claude/hooks/` e `.claude/validador/` não existem;
 - `git config core.hooksPath` responde `.claude/githooks`;
-- toda pasta em `.claude/skills/` tem `SKILL.md`, e `ORIGEM.json` lista as skills do Matt e as da casa;
+- toda pasta em `.claude/skills/` tem `SKILL.md` (fora `prototipo-html/`, que guarda o modelo e os
+  scripts da família `*-prototipo`), e `ORIGEM.json` lista as skills do Matt e as da casa;
 - com `docs/regras-de-codigo.json`, `sh .claude/watchdogs/rodar validar` termina em
   `VALIDADOR: APROVADO`, ou cada violação virou ajuste no `.json` ou ticket. Depois da ADR 0012, o
   `lint-cobre` reprova regra desligada, comentada ou ligada só por preset, que antes passava; depois

@@ -16,7 +16,7 @@ depende do projeto:
 Para qualquer um dos dois:
 
 1. **Instale as skills na máquina**, uma vez:
-   `cp -R desenvolvimento/agentes/skills/setup-stacklabs desenvolvimento/agentes/skills/adotar-metodo-stack-labs desenvolvimento/agentes/skills/auditar-metodo ~/.claude/skills/`
+   `mkdir -p ~/.claude/skills && cp -R desenvolvimento/agentes/skills/setup-stacklabs desenvolvimento/agentes/skills/adotar-metodo-stack-labs desenvolvimento/agentes/skills/auditar-metodo ~/.claude/skills/`
    (com o Stack-Labs clonado; sem clone, `git clone https://github.com/stacklabs1/Stack-Labs` antes).
    Requisitos na máquina: `cargo` (Rust), `gh` autenticado e `git`.
 2. **Diga ao humano para rodar a skill certa** dentro do projeto. Elas são invocadas só pelo humano:

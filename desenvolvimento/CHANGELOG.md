@@ -21,3 +21,6 @@ Primeira versão marcada: o método como estava no commit `c7c1fa1`, mais:
 - O `AGENTS.md` do modelo traz a seção `## Regras deste projeto`, com `### Acrescentadas` e
   `### Afastadas`. Na atualização, o instalador troca o resto do arquivo pelo modelo novo e mantém a
   seção (`MESCLADO`), sem mesclagem à mão.
+- Instalação: label que o `gh` não cria (sem login ou sem `origin`) vira `FALHA` no relatório em vez
+  de abortar no fim com o projeto já copiado; fora de um repositório git, o erro diz o que fazer; o
+  `cp` das skills de entrada não depende de `{a,b}` do shell, e a pasta `.claude/skills` é criada.

@@ -496,7 +496,10 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
     conferir_cargo()?;
     let destino = match &opcoes.destino {
         Some(pasta) => resolver(pasta),
-        None => resolver(&git(&["rev-parse", "--show-toplevel"])?),
+        None => resolver(&git(&["rev-parse", "--show-toplevel"]).map_err(|_| {
+            "a pasta atual não é um repositório git: rode dentro do projeto ou passe --destino <pasta>"
+                .to_string()
+        })?),
     };
     let pasta_temporaria = PastaTemporaria::criar()?;
     let mut relatorio: Vec<String> = Vec::new();
@@ -807,26 +810,37 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
     }
 
     if !opcoes.sem_labels {
+        // Label que falha não desfaz o que já foi instalado: vira FALHA no relatório.
+        let mut falha_das_labels: Option<String> = None;
         if !simular {
             for label in LABELS_DO_METODO {
                 let criacao_da_label = Command::new("gh")
                     .args(["label", "create", label, "--force"])
                     .current_dir(&destino)
                     .stdin(Stdio::null())
-                    .output()
-                    .map_err(|erro| format!("gh label create {label} falhou: {erro}"))?;
-                if !criacao_da_label.status.success() {
-                    return Err(format!(
-                        "gh label create {label} falhou: {}",
-                        String::from_utf8_lossy(&criacao_da_label.stderr).trim()
-                    ));
+                    .output();
+                let motivo = match criacao_da_label {
+                    Err(erro) => Some(erro.to_string()),
+                    Ok(saida) if !saida.status.success() => {
+                        Some(String::from_utf8_lossy(&saida.stderr).trim().to_string())
+                    }
+                    Ok(_) => None,
+                };
+                if let Some(motivo) = motivo {
+                    falha_das_labels = Some(format!("gh label create {label}: {motivo}"));
+                    break;
                 }
             }
         }
-        relatorio.push(format!(
-            "LABELS    as {} do método conferidas no GitHub",
-            LABELS_DO_METODO.len()
-        ));
+        relatorio.push(match falha_das_labels {
+            Some(motivo) => format!(
+                "FALHA     labels do método não criadas ({motivo}); com o origin no GitHub e o gh autenticado, rode de novo"
+            ),
+            None => format!(
+                "LABELS    as {} do método conferidas no GitHub",
+                LABELS_DO_METODO.len()
+            ),
+        });
     }
 
     // ---------- relatório ----------
