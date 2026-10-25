@@ -1,8 +1,9 @@
 //! Instala ou atualiza o método StackLabs num projeto: modelo-de-projeto, skills da casa e as skills
 //! publicadas do Matt Pocock (sempre da versão mais nova do repositório dele).
 //!
-//! Uso: sh rodar [--destino <pasta>] [--simular] [--sem-labels] [--atualizar-watchdogs] [--adocao]
+//! Uso: sh rodar [--destino <pasta>] [--versao <x.y.z>] [--simular] [--sem-labels] [--atualizar-watchdogs] [--adocao]
 //!   --destino              raiz do projeto (padrão: a raiz do git da pasta atual)
+//!   --versao               instala a versão marcada (tag v<x.y.z> do Stack-Labs) em vez da main
 //!   --simular              mostra o que faria, sem escrever nada
 //!   --sem-labels           não cria as labels do método no GitHub
 //!   --atualizar-watchdogs  sobrescreve watchdogs que já existem. SÓ HUMANO (o guarda-bash barra o agente)
@@ -24,6 +25,8 @@ const ARQUIVOS_PARA_MESCLAR: [&str; 4] = [
     ".gitignore",
     ".claude/settings.json",
 ];
+/// Seção do `AGENTS.md` que pertence ao projeto: o instalador a carrega de uma versão para a outra.
+const SECAO_DO_PROJETO: &str = "## Regras deste projeto";
 /// Infraestrutura dos watchdogs: só se sobrescreve com --atualizar-watchdogs.
 const CAMINHOS_DOS_WATCHDOGS: [&str; 5] = [
     ".claude/watchdogs",
@@ -67,6 +70,7 @@ type Resultado<T> = Result<T, String>;
 #[derive(Default)]
 struct Opcoes {
     destino: Option<String>,
+    versao: Option<String>,
     simular: bool,
     sem_labels: bool,
     atualizar_watchdogs: bool,
@@ -81,6 +85,14 @@ fn ler_argumentos(argumentos_da_linha: &[String]) -> Resultado<Opcoes> {
     while let Some(argumento) = argumentos.next() {
         match argumento.as_str() {
             "--destino" => opcoes.destino = argumentos.next().cloned(),
+            "--versao" => {
+                opcoes.versao = Some(
+                    argumentos
+                        .next()
+                        .map(|versao| versao.trim_start_matches('v').to_string())
+                        .ok_or("--versao precisa de um valor, como 1.0.0")?,
+                )
+            }
             "--simular" => opcoes.simular = true,
             "--sem-labels" => opcoes.sem_labels = true,
             "--atualizar-watchdogs" => opcoes.atualizar_watchdogs = true,
@@ -247,6 +259,17 @@ fn caminho_eh_watchdog(caminho_relativo: &str) -> bool {
         caminho_relativo == *caminho_watchdog
             || caminho_relativo.starts_with(&format!("{caminho_watchdog}/"))
     })
+}
+
+/// O `AGENTS.md` novo do modelo com a seção do projeto do antigo no lugar da seção do modelo.
+/// `None` quando o antigo não tem a seção: aí a mesclagem é à mão.
+fn mesclar_agents(modelo_novo: &str, antigo: &str) -> Option<String> {
+    let secao_do_projeto = &antigo[antigo.find(SECAO_DO_PROJETO)?..];
+    let base = match modelo_novo.find(SECAO_DO_PROJETO) {
+        Some(inicio) => &modelo_novo[..inicio],
+        None => modelo_novo,
+    };
+    Some(format!("{}\n\n{}", base.trim_end(), secao_do_projeto))
 }
 
 fn criar_pasta(pasta: &Path) -> Resultado<()> {
@@ -481,32 +504,46 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
 
     let buscar_origem = |clone_local: Option<String>,
                          url_do_repositorio: &str,
-                         nome_da_pasta: &str|
+                         nome_da_pasta: &str,
+                         tag: Option<String>|
      -> Resultado<PathBuf> {
         if let Some(clone) = clone_local.filter(|clone| !clone.is_empty()) {
             return Ok(resolver(&clone));
         }
         let pasta_do_clone = pasta_temporaria.0.join(nome_da_pasta);
-        git(&[
-            "clone",
-            "-q",
-            "--depth",
-            "1",
-            url_do_repositorio,
-            &texto(&pasta_do_clone),
-        ])?;
+        let pasta_em_texto = texto(&pasta_do_clone);
+        let mut argumentos = vec!["clone", "-q", "--depth", "1"];
+        if let Some(tag) = &tag {
+            argumentos.extend(["--branch", tag.as_str()]);
+        }
+        argumentos.extend([url_do_repositorio, pasta_em_texto.as_str()]);
+        git(&argumentos)?;
         Ok(pasta_do_clone)
     };
     let origem_stacklabs = buscar_origem(
         std::env::var("STACKLABS_ORIGEM").ok(),
         "https://github.com/stacklabs1/Stack-Labs",
         "stacklabs",
+        opcoes.versao.as_ref().map(|versao| format!("v{versao}")),
     )?;
     let origem_matt = buscar_origem(
         std::env::var("MATT_ORIGEM").ok(),
         "https://github.com/mattpocock/skills",
         "matt",
+        None,
     )?;
+    let versao_do_metodo =
+        fs::read_to_string(origem_stacklabs.join("desenvolvimento").join("VERSAO"))
+            .ok()
+            .map(|versao| versao.trim().to_string())
+            .filter(|versao| !versao.is_empty());
+    if let (Some(pedida), Some(encontrada)) = (&opcoes.versao, &versao_do_metodo) {
+        if pedida != encontrada {
+            return Err(format!(
+                "pediu a versão {pedida}, mas a fonte do Stack-Labs está na {encontrada}"
+            ));
+        }
+    }
     let pasta_do_modelo = origem_stacklabs
         .join("desenvolvimento")
         .join("agentes")
@@ -565,6 +602,24 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
                 "PULADO    {caminho_relativo} (watchdog ausente ou desatualizado: um humano roda com --atualizar-watchdogs)"
             ));
             continue;
+        }
+        if caminho_relativo == "AGENTS.md" && arquivo_do_destino.exists() {
+            let mesclado = mesclar_agents(
+                &fs::read_to_string(&arquivo_do_modelo).map_err(|erro| erro.to_string())?,
+                &fs::read_to_string(&arquivo_do_destino).map_err(|erro| erro.to_string())?,
+            );
+            if let Some(mesclado) = mesclado {
+                if fs::read_to_string(&arquivo_do_destino).ok().as_deref() != Some(&mesclado) {
+                    if !simular {
+                        fs::write(&arquivo_do_destino, &mesclado)
+                            .map_err(|erro| format!("AGENTS.md: {erro}"))?;
+                    }
+                    relatorio.push(format!(
+                        "MESCLADO  AGENTS.md (modelo novo com a seção {SECAO_DO_PROJETO} do projeto)"
+                    ));
+                }
+                continue;
+            }
         }
         if ARQUIVOS_PARA_MESCLAR.contains(&caminho_relativo.as_str()) && arquivo_do_destino.exists()
         {
@@ -626,6 +681,16 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
     let arquivo_de_origem = pasta_das_skills_do_projeto.join("ORIGEM.json");
     if arquivo_de_origem.exists() {
         let origem_anterior = ler_json(&arquivo_de_origem)?;
+        let versao_anterior = origem_anterior["stacklabs"]["versao"]
+            .as_str()
+            .map(str::to_string);
+        if versao_anterior != versao_do_metodo {
+            relatorio.push(format!(
+                "VERSÃO    método {} → {} (o que mudou: desenvolvimento/CHANGELOG.md)",
+                versao_anterior.as_deref().unwrap_or("sem versão"),
+                versao_do_metodo.as_deref().unwrap_or("sem versão"),
+            ));
+        }
         let mut nomes_anteriores =
             lista_de_textos(&origem_anterior, "skillsDoMatt", "ORIGEM.json")?;
         nomes_anteriores.extend(lista_de_textos(
@@ -700,11 +765,16 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
         if let Some(versao) = &versao_do_matt {
             dados_do_matt["versao"] = versao.clone();
         }
+        let mut dados_do_stacklabs =
+            json!({ "repositorio": "stacklabs1/Stack-Labs", "commit": commit_stacklabs });
+        if let Some(versao) = &versao_do_metodo {
+            dados_do_stacklabs["versao"] = json!(versao);
+        }
         escrever_json(
             &arquivo_de_origem,
             &json!({
                 "instaladoEm": agora_em_iso(),
-                "stacklabs": { "repositorio": "stacklabs1/Stack-Labs", "commit": commit_stacklabs },
+                "stacklabs": dados_do_stacklabs,
                 "matt": dados_do_matt,
                 "skillsDoMatt": nomes_do_matt,
                 "skillsDaCasa": nomes_da_casa,
@@ -766,7 +836,10 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
         Some(versao) => versao.to_string(),
     };
     println!("\nMétodo StackLabs em {destino_em_texto}");
-    println!("Fontes: Stack-Labs {commit_stacklabs} · mattpocock/skills {commit_matt} (v{versao_em_texto})");
+    let versao_do_metodo_em_texto = versao_do_metodo
+        .as_ref()
+        .map_or("sem versão".to_string(), |versao| format!("v{versao}"));
+    println!("Fontes: Stack-Labs {versao_do_metodo_em_texto} ({commit_stacklabs}) · mattpocock/skills {commit_matt} (v{versao_em_texto})");
     if simular {
         println!("(simulação: nada foi escrito)");
     }

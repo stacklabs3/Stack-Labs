@@ -179,8 +179,9 @@ fn instalacao_copia_o_modelo_as_skills_e_ativa_o_pre_push() {
         "\nMétodo StackLabs em {}\n",
         cenario.projeto.display()
     )));
-    assert!(relatorio
-        .contains("Fontes: Stack-Labs desconhecido · mattpocock/skills desconhecido (v1.2.3)"));
+    assert!(relatorio.contains(
+        "Fontes: Stack-Labs sem versão (desconhecido) · mattpocock/skills desconhecido (v1.2.3)"
+    ));
     for arquivo in [
         "AGENTS.md",
         "CLAUDE.md",
@@ -459,4 +460,57 @@ fn skills_do_matt_chegam_com_os_remendos_do_metodo() {
         segunda_vez.ends_with("Nada a fazer: o projeto já está em dia.\n"),
         "{segunda_vez}"
     );
+}
+
+#[test]
+fn agents_com_a_secao_do_projeto_recebe_o_modelo_novo_e_mantem_a_secao() {
+    let cenario = Cenario::novo();
+    escrever(
+        &cenario.modelo().join("AGENTS.md"),
+        "# AGENTS do modelo v2\n\n## Regras deste projeto\n\n(vazia no modelo)\n",
+    );
+    escrever(
+        &cenario.projeto.join("AGENTS.md"),
+        "# AGENTS do modelo v1\n\n## Regras deste projeto\n\n### Acrescentadas\n\n- **P1.** Toda tela tem modo escuro.\n",
+    );
+    let relatorio = cenario.relatorio(&[]);
+    assert!(relatorio.contains(
+        "MESCLADO  AGENTS.md (modelo novo com a seção ## Regras deste projeto do projeto)\n"
+    ));
+    assert!(!cenario.projeto.join("AGENTS.md.stacklabs-novo").exists());
+    assert_eq!(
+        fs::read_to_string(cenario.projeto.join("AGENTS.md")).unwrap(),
+        "# AGENTS do modelo v2\n\n## Regras deste projeto\n\n### Acrescentadas\n\n- **P1.** Toda tela tem modo escuro.\n"
+    );
+    assert!(!cenario.relatorio(&[]).contains("MESCLADO"));
+}
+
+#[test]
+fn versao_do_metodo_vai_para_a_origem_e_a_mudanca_para_o_relatorio() {
+    let cenario = Cenario::novo();
+    escrever(&cenario.stacklabs.join("desenvolvimento/VERSAO"), "1.0.0\n");
+    let primeira = cenario.relatorio(&[]);
+    assert!(primeira.contains("Stack-Labs v1.0.0 ("));
+    assert!(linhas_que_comecam(&primeira, "VERSÃO").is_empty());
+    let origem: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(cenario.projeto.join(".claude/skills/ORIGEM.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(origem["stacklabs"]["versao"], "1.0.0");
+
+    escrever(&cenario.stacklabs.join("desenvolvimento/VERSAO"), "1.1.0\n");
+    assert_eq!(
+        linhas_que_comecam(&cenario.relatorio(&[]), "VERSÃO"),
+        ["VERSÃO    método 1.0.0 → 1.1.0 (o que mudou: desenvolvimento/CHANGELOG.md)"]
+    );
+}
+
+#[test]
+fn versao_pedida_diferente_da_fonte_sai_com_erro() {
+    let cenario = Cenario::novo();
+    escrever(&cenario.stacklabs.join("desenvolvimento/VERSAO"), "1.0.0\n");
+    let saida = cenario.rodar(&["--versao", "v2.0.0"]);
+    assert!(!saida.status.success());
+    assert!(String::from_utf8_lossy(&saida.stderr)
+        .contains("pediu a versão 2.0.0, mas a fonte do Stack-Labs está na 1.0.0"));
 }

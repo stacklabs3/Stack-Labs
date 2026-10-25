@@ -9,7 +9,9 @@ O modelo é a base; o que o projeto tinha de próprio entra no fim, numa seção
 `## Regras deste projeto`.
 
 1. Copie o `.stacklabs-novo` inteiro como novo `AGENTS.md`.
-2. Leve para `## Regras deste projeto` cada regra antiga que o modelo não cobre.
+2. Leve para `### Acrescentadas` (em `## Regras deste projeto`) cada regra antiga que o modelo não
+   cobre, com ID `RP<n>`, e para `### Afastadas` cada regra do modelo que o humano decidiu não seguir
+   ali, com o motivo. É a única seção que as atualizações seguintes preservam.
 3. Regra antiga que **contradiz** o modelo não entra: liste-a para o humano, com a regra do modelo
    que ela contradiz, e pergunte se vira exceção registrada ou se cai.
 4. Decisão antiga que não é regra de agente (escolha de stack, de arquitetura) vira ADR em

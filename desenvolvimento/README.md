@@ -7,6 +7,10 @@ com o `/wayfinder` como porta de entrada, mais as regras da casa.
 > ([instruções](agentes/README.md#instalar-num-projeto-novo)). Projeto novo: rode
 > **`/setup-stacklabs`**. Projeto que já está em execução:
 > **[`/adotar-metodo-stack-labs`](humanos/adotar-em-projeto-existente.md)**, que adota por etapas.
+>
+> **Versão atual:** a de [VERSAO](VERSAO); o que mudou em cada uma, no [CHANGELOG](CHANGELOG.md).
+> Cada projeto acrescenta ou afasta regras na seção `## Regras deste projeto` do `AGENTS.md`, que a
+> atualização preserva.
 
 | Pasta | Para quem | O que é |
 |---|---|---|

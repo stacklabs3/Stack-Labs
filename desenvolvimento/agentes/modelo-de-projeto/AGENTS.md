@@ -124,3 +124,30 @@ ideia grande demais para uma sessão
   Veja [docs/agents/triage-labels.md](docs/agents/triage-labels.md).
 - **Domain docs:** `GLOSSARY.md` e `docs/adr/` na raiz, criados sob demanda pelo `/domain-modeling`.
   Veja [docs/agents/domain.md](docs/agents/domain.md).
+
+## Regras deste projeto
+
+O que este projeto muda nas regras acima. Esta seção é **do projeto**: a atualização do método
+(`/setup-stacklabs`) troca o resto do arquivo pela versão nova e mantém esta seção como está. Fora
+dela, não edite: a mudança se perderia na próxima atualização. Regra que serve a todo projeto vai
+por PR no Stack-Labs. Mudança aqui se combina com o humano, por escrito, e vale como regra dura.
+
+### Acrescentadas
+
+Regra própria do projeto, com ID `RP<n>` que nunca se reusa:
+
+- (nenhuma)
+
+<!-- Formato: - **RP1.** Toda tela nova tem modo escuro. *Por quê:* [decisão](link). -->
+
+### Afastadas
+
+Regra do método que não vale aqui, pelo **título em negrito** (o número muda entre versões), com o
+motivo e o link da decisão. Não se afastam **Todo teste cobre um risco** (P5), **Todo nome diz
+o que é** (E1) nem as da seção *Os watchdogs*. Afastar uma regra **[W]** não desliga o watchdog: só
+o humano ajusta `.claude/metodo.json`. Regra de código se acrescenta ou afasta em `docs/regras-de-codigo.json`
+([docs/agents/validador.md](docs/agents/validador.md)), não aqui.
+
+- (nenhuma)
+
+<!-- Formato: - **Smart zone.** Sessões curtas por contrato do cliente. *Por quê:* [decisão](link). -->

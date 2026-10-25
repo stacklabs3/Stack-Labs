@@ -39,7 +39,8 @@ falta e pare.
 
 ### 2. Simulação
 
-Rode `sh <pasta desta skill>/rodar --simular` e mostre o relatório ao humano, agrupado por
+Rode `sh <pasta desta skill>/rodar --simular` (com `--versao <x.y.z>` se o humano quer uma versão
+marcada em vez da mais nova) e mostre o relatório ao humano, agrupado por
 tipo de linha. Se o clone do Stack-Labs falhar, peça o caminho de um clone local e rode com
 `STACKLABS_ORIGEM=<caminho>`.
 
@@ -47,18 +48,24 @@ Pronto quando o humano disse **sim** à lista. Ela inclui criar labels no GitHub
 
 ### 3. Instalação
 
-Rode `sh <pasta desta skill>/rodar` sem `--simular`. O
+Rode `sh <pasta desta skill>/rodar` sem `--simular`, com o mesmo `--versao` da simulação. O
 `--atualizar-watchdogs` é do humano (o `guarda-bash` barra): ele entra no passo 4.
 
 Pronto quando o script terminou sem erro e imprimiu o relatório.
 
 ### 4. Pendências do relatório
 
+A linha `VERSÃO` diz de qual versão do método para qual o projeto foi: leia as entradas do
+`desenvolvimento/CHANGELOG.md` entre as duas e trate o que elas mandam fazer à mão. `MESCLADO`
+(o `AGENTS.md` recebeu o modelo novo com a seção do projeto mantida) só se confere no diff.
+
 Trate as linhas `MESCLAR`, `PULADO`, `PRE-PUSH inativo` e `FALHA`; as demais são informativas.
 
 - **`MESCLAR`**: o modelo novo está em `<arquivo>.stacklabs-novo`; junte e apague o `.stacklabs-novo`.
-  No `.gitignore`, acrescente as linhas que faltam. No `AGENTS.md` e no `CLAUDE.md`, o modelo novo é
-  a base, e a seção `## Regras deste projeto` do arquivo antigo volta inteira no fim. No
+  No `.gitignore`, acrescente as linhas que faltam. No `AGENTS.md` (só chega aqui o que ainda não
+  tem a seção `## Regras deste projeto`) e no `CLAUDE.md`, o modelo novo é a base. Cada regra própria
+  do arquivo antigo vai para `### Acrescentadas`, e cada regra do modelo que o projeto não segue, para
+  `### Afastadas`, no formato da seção; o que não couber, pergunte ao humano. No
   `.claude/settings.json`, que é protegido, entregue o JSON junto ao humano.
 - **`PULADO`** (watchdog ausente ou desatualizado) e **`PRE-PUSH inativo`**: entregue ao humano o
   comando exato e espere que ele rode:
@@ -89,7 +96,7 @@ Pronto quando os seis passam. Falha é defeito da instalação: corrija antes de
 ### 6. Commit e PR
 
 Numa branch `chore/setup-metodo` (ou `chore/atualizar-metodo`), um commit com tudo o que o script e
-a mesclagem mudaram, push e PR. O corpo da PR traz os commits de origem de `ORIGEM.json` e o que foi
+a mesclagem mudaram, push e PR. O corpo da PR traz a versão do método e os commits de origem de `ORIGEM.json` e o que foi
 mesclado à mão. Num repositório sem `main`, diga ao humano que a PR depende de ele criar a `main`.
 
 Pronto quando a PR existe, ou o humano sabe exatamente o que a impede.
