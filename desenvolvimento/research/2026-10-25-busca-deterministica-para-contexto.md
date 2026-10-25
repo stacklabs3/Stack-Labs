@@ -256,6 +256,30 @@ ranqueia, e a saída `-o json` vem seguida de texto: quem integrar precisa ler s
 JSON. **Conclusão:** neste repositório, o probe não paga a adoção; a medição precisa ser repetida
 num projeto com código de produção antes de decidir o passo 2 da recomendação.
 
+## 8. Medição no Excurfly: a mesma pergunta com e sem o `rodar contexto`
+
+Rodado em 2026-10-25 no Excurfly (3.489 arquivos, TypeScript e Dart), com `claude -p --model sonnet`,
+as mesmas ferramentas só de leitura nas duas condições (Read, Grep, Glob, `git grep`, `git log`,
+`ls`) e os hooks do projeto desligados. Na condição "com", a saída do `rodar contexto <consulta>` vai
+no início do prompt. Seis perguntas, três repetições cada: cinco de "onde a função é definida e quem a
+chama em produção" e uma de "quais ADRs decidem o Vínculo". Gabarito: `git grep -F "<função>("` fora
+dos testes e as ADRs com "vínculo" no título. Acerto pela linha `ARQUIVOS:` da resposta.
+
+| Condição | Custo médio | Tokens equivalentes | Turnos | Revocação | Precisão | Tempo |
+|---|---|---|---|---|---|---|
+| Sem contexto | US$ 0,081 | 31.766 | 2,1 | 0,97 | 0,85 | 11 s |
+| Com contexto | US$ 0,041 | 16.124 | 1,1 | 1,00 | 0,97 | 7 s |
+
+O contexto cortou **49% do custo** e metade dos turnos, e subiu a precisão: sem ele, o modelo
+listava arquivo que só cita a função num comentário ou num teste. A maior diferença foi na pergunta
+de termo (Vínculo): revocação de 0,80 para 1,00 e precisão de 0,55 para 0,94, com 57% menos custo.
+
+Limites: são perguntas de localização, curtas e com resposta exata, o caso em que o comando mais
+ajuda; não medem uma issue inteira. O gabarito do Vínculo usa a mesma regra que ordena as ADRs no
+comando (título com a consulta), o que favorece a condição "com". A primeira repetição de cada
+condição pagou a escrita de cache, por isso custa mais que as outras. O tempo do comando (~1 s) não
+entra nos tokens. A medição de uma issue inteira continua sendo o `rodar custo` (ADR 0017).
+
 ## Recomendação
 
 Ordem:
