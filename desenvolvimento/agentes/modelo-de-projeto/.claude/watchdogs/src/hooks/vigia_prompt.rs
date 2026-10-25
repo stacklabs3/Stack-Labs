@@ -1,7 +1,9 @@
 // Watchdog UserPromptSubmit: mede a janela de contexto e cobra o /nova-sessao na smart zone; em
-// sessão de grilling, relembra a linguagem simples a cada resposta do humano.
+// sessão de grilling, relembra a linguagem simples a cada resposta do humano; com a issue ativa acima
+// do orçamento, relembra o custo.
 
 use crate::comum::*;
+use crate::custo::{em_milhares, ler_custo_da_issue, orcamento_por_issue};
 use regex::Regex;
 
 pub fn rodar() -> i32 {
@@ -32,6 +34,13 @@ pub fn rodar() -> i32 {
     if !grilling_ativo && comando_digitado.is_some_and(|comando| nome_da_skill_de_grilling(&comando).is_some()) {
         estado_sessao["grillingAtivo"] = true.into();
         gravar_estado_sessao(&diretorio_projeto, id_sessao, &estado_sessao);
+    }
+    if let Some(numero_issue) = estado_sessao["issuesAtivas"]["principal"]["numero"].as_i64() {
+        let tokens_da_issue = ler_custo_da_issue(&diretorio_projeto, numero_issue)["tokensEquivalentes"].as_u64().unwrap_or(0);
+        let orcamento = orcamento_por_issue(&diretorio_projeto);
+        if tokens_da_issue >= orcamento {
+            avisos_do_prompt.push(format!("💸 [watchdog vigia-custo] A issue #{numero_issue} já custou {} tokens equivalentes de entrada (orçamento {}). Leia trechos, filtre saídas, delegue buscas a subagente com modelo barato e não abra frente nova; o humano decide se a issue segue ou se fatia.", em_milhares(tokens_da_issue), em_milhares(orcamento)));
+        }
     }
     if estado_sessao["grillingAtivo"].as_bool().unwrap_or(false) {
         avisos_do_prompt.push(REGRA_LINGUAGEM_GRILLING.to_string());

@@ -398,3 +398,69 @@ fn vigia_teste_cobra_risco_e_afirmacao_no_teste_editado() {
         "na observação só avisa: {saida}"
     );
 }
+
+fn mensagem_do_modelo(id_mensagem: &str, modelo: &str, entrada: u64, leitura_cache: u64, saida: u64) -> String {
+    json!({ "type": "assistant", "message": { "id": id_mensagem, "model": modelo, "usage": {
+        "input_tokens": entrada, "cache_creation_input_tokens": 0, "cache_read_input_tokens": leitura_cache, "output_tokens": saida } } })
+    .to_string()
+}
+
+#[test]
+fn custo_soma_cada_mensagem_uma_vez_na_issue_ativa_e_avisa_no_orcamento() {
+    let projeto = Projeto::novo("issue/7-x");
+    projeto.estado(json!({ "issuesAtivas": { "principal": { "numero": 7, "titulo": "Cupom" } } }));
+    fs::create_dir_all(projeto.raiz.join(".claude")).unwrap();
+    fs::write(projeto.raiz.join(".claude/metodo.json"), json!({ "orcamentoPorIssue": 2_000_000 }).to_string()).unwrap();
+    let transcript = projeto.raiz.join("t.jsonl");
+    // A mesma mensagem aparece em duas linhas: conta uma vez (1M + 0,1 × 1M + 5 × 100k = 1,6M).
+    let linha_repetida = mensagem_do_modelo("m1", "claude-opus-5-5", 1_000_000, 1_000_000, 100_000);
+    fs::write(&transcript, format!("{linha_repetida}\n{linha_repetida}\n")).unwrap();
+    let parada = json!({ "session_id": "s1", "transcript_path": transcript }).to_string();
+    let (codigo, saida, _) = projeto.rodar(&["hook", "vigia-custo"], &parada, &[]);
+    assert_eq!(codigo, 0);
+    assert!(saida.is_empty(), "abaixo do orçamento não avisa: {saida}");
+    let custo: Value = serde_json::from_str(&fs::read_to_string(projeto.raiz.join(".claude/state/custos/issue-7.json")).unwrap()).unwrap();
+    assert_eq!(custo["tokensEquivalentes"], 1_600_000);
+
+    // O turno seguinte só soma o que é novo, e o primeiro a cruzar o orçamento avisa o humano.
+    let mut texto_transcript = fs::read_to_string(&transcript).unwrap();
+    texto_transcript.push_str(&format!("{}\n", mensagem_do_modelo("m2", "claude-haiku-5-5", 500_000, 0, 0)));
+    fs::write(&transcript, texto_transcript).unwrap();
+    let (_, saida, _) = projeto.rodar(&["hook", "vigia-custo"], &parada, &[]);
+    assert!(saida.contains("passou do orçamento"), "{saida}");
+    let custo: Value = serde_json::from_str(&fs::read_to_string(projeto.raiz.join(".claude/state/custos/issue-7.json")).unwrap()).unwrap();
+    assert_eq!(custo["tokensEquivalentes"], 2_100_000);
+    assert_eq!(custo["porModelo"]["claude-haiku-5-5"]["entrada"], 500_000);
+
+    let prompt = json!({ "session_id": "s1", "transcript_path": transcript, "prompt": "segue" }).to_string();
+    assert!(projeto.rodar(&["hook", "vigia-prompt"], &prompt, &[]).1.contains("já custou 2.1M"));
+    let (_, relatorio, _) = projeto.rodar(&["custo", "7"], "", &[]);
+    assert!(relatorio.contains("Issue #7 Cupom: 2.1M") && relatorio.contains("105%"), "{relatorio}");
+}
+
+#[test]
+fn custo_sem_issue_ativa_nao_grava_nada() {
+    let projeto = Projeto::novo("main");
+    let transcript = projeto.raiz.join("t.jsonl");
+    fs::write(&transcript, format!("{}\n", mensagem_do_modelo("m1", "claude-opus-5-5", 9_000_000, 0, 0))).unwrap();
+    let parada = json!({ "session_id": "s1", "transcript_path": transcript }).to_string();
+    assert_eq!(projeto.rodar(&["hook", "vigia-custo"], &parada, &[]), (0, String::new(), String::new()));
+    assert!(!projeto.raiz.join(".claude/state/custos").exists());
+}
+
+#[test]
+fn saida_grande_pede_filtro_e_pequena_passa_calada() {
+    let projeto = Projeto::novo("main");
+    let saida_ferramenta = |tamanho: usize| json!({ "session_id": "s1", "tool_name": "Bash", "tool_response": { "stdout": "x".repeat(tamanho) } }).to_string();
+    assert!(projeto.rodar(&["hook", "vigia-saida"], &saida_ferramenta(25_000), &[]).1.contains("filtre a saída com grep"));
+    assert!(projeto.rodar(&["hook", "vigia-saida"], &saida_ferramenta(500), &[]).1.is_empty());
+}
+
+#[test]
+fn subagente_de_busca_sem_modelo_recebe_lembrete() {
+    let projeto = Projeto::novo("main");
+    let lancamento = |entrada_agente: Value| json!({ "session_id": "s1", "tool_name": "Agent", "tool_input": entrada_agente }).to_string();
+    assert!(projeto.rodar(&["hook", "vigia-agente"], &lancamento(json!({ "subagent_type": "Explore" })), &[]).1.contains("haiku"));
+    assert!(projeto.rodar(&["hook", "vigia-agente"], &lancamento(json!({ "subagent_type": "Explore", "model": "haiku" })), &[]).1.is_empty());
+    assert!(projeto.rodar(&["hook", "vigia-agente"], &lancamento(json!({ "subagent_type": "general-purpose" })), &[]).1.is_empty());
+}
