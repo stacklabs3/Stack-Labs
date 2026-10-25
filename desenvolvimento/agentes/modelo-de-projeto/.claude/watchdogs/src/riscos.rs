@@ -19,6 +19,9 @@ static TESTE_JVM: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s*@(?:Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate)\b").expect("regex válida"));
 static TESTE_PYTHON: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\s*(?:async\s+)?def\s+test").expect("regex válida"));
 static TESTE_GO: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^func\s+(?:Test|Fuzz)\w*\(").expect("regex válida"));
+// package:test e flutter_test (test, testWidgets), alchemist (goldenTest) e patrol (patrolTest); o
+// group() que os contém é bloco, não teste.
+static TESTE_DART: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\s*(?:test|testWidgets|goldenTest|patrolTest)\s*\(").expect("regex válida"));
 
 pub const TESTES_PADRAO: [&str; 12] = [
     "**/*.test.*",
@@ -115,6 +118,7 @@ pub fn declaracao_padrao(caminho_relativo: &str) -> Option<&'static Regex> {
         "java" | "kt" => Some(&TESTE_JVM),
         "py" => Some(&TESTE_PYTHON),
         "go" => Some(&TESTE_GO),
+        "dart" => Some(&TESTE_DART),
         _ => None,
     }
 }
@@ -147,8 +151,8 @@ fn cabecalho_acima(linhas: &[&str], indice: usize) -> Vec<String> {
         .collect()
 }
 
-// Cada teste do arquivo, com os riscos que ele cita: na declaração, nas linhas de atributo até o nome
-// (Rust, Java), no cabeçalho logo acima e nas linhas que o contêm, achadas pelo recuo menor.
+// Cada teste do arquivo, com os riscos que ele cita: na declaração (e na linha de baixo, se ela termina
+// em "("), nas linhas de atributo até o nome (Rust, Java), no cabeçalho logo acima e nas linhas que o contêm, achadas pelo recuo menor.
 pub fn testes_do_arquivo(texto: &str, declaracao: &Regex) -> Vec<TesteDeclarado> {
     let linhas: Vec<&str> = texto.lines().collect();
     let mut testes = Vec::new();
@@ -158,6 +162,11 @@ pub fn testes_do_arquivo(texto: &str, declaracao: &Regex) -> Vec<TesteDeclarado>
         }
         let mut trechos: Vec<String> = vec![linha.to_string()];
         let mut abaixo = indice;
+        // Dart: test( sozinho na linha, com o nome na linha de baixo (o dart format quebra assim).
+        if linha.trim_end().ends_with('(') && abaixo + 1 < linhas.len() {
+            abaixo += 1;
+            trechos.push(linhas[abaixo].to_string());
+        }
         while eh_cabecalho(linhas[abaixo]) && abaixo + 1 < linhas.len() {
             abaixo += 1;
             trechos.push(linhas[abaixo].to_string());

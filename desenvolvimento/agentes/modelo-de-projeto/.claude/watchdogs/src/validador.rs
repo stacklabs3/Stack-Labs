@@ -31,8 +31,16 @@ static DECLARACAO_RUST: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"\b(?:const|let(?:\s+mut)?|static(?:\s+mut)?|fn|struct|enum|union|trait|type|mod|macro_rules!)\s+(?:r#)?([A-Za-zÀ-ÿ_][A-Za-z0-9_À-ÿ]*)")
         .expect("regex válida")
 });
-// ID de prática da linguagem, fora dos 22 princípios: TS (TypeScript), JV (Java), RS (Rust).
-static PRATICA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(?:TS|JV|RS)\d+$").expect("regex válida"));
+// Dart declara com final, late e o tipo antes do nome (final Usuario usuario), e tem mixin, extension e
+// typedef. O tipo opcional só vale depois de final/const/var/late, para "class A extends B" dar "A".
+static DECLARACAO_DART: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"\b(?:(?:class|mixin|enum|typedef|extension(?:\s+type)?)\s+|(?:final|const|var|late(?:\s+final)?)\s+(?:[A-Za-z_][\w.]*(?:<[^=;()]*>)?\??\s+)?)([A-Za-zÀ-ÿ_][A-Za-z0-9_À-ÿ]*)",
+    )
+    .expect("regex válida")
+});
+// ID de prática da linguagem, fora dos 22 princípios: TS (TypeScript), JV (Java), RS (Rust), DT (Dart).
+static PRATICA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(?:TS|JV|RS|DT)\d+$").expect("regex válida"));
 static ID_DE_REGRA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\bR\d+\b").expect("regex válida"));
 
 pub const PRINCIPIOS: [&str; 22] = [
@@ -189,7 +197,7 @@ fn ler_texto(raiz: &Path, caminho_relativo: &str) -> String {
 }
 
 // ---------- cobertura: os 22 princípios decididos no .md e ligados às regras do .json ----------
-// Regra de prática da linguagem (TS<n>, JV<n>, RS<n>) fica fora dos 22: mora numa tabela de práticas
+// Regra de prática da linguagem (TS<n>, JV<n>, RS<n>, DT<n>) fica fora dos 22: mora numa tabela de práticas
 // no mesmo formato (| RS1 | adotado | R12 |) e só a prática que tem regra no .json é exigida.
 
 pub struct LinhaDeCobertura {
@@ -603,6 +611,7 @@ fn cobertura_de_lint(caminho: &str, texto: &str, nome: &str) -> Cobertura {
         "toml" => cobertura_toml(texto, nome, nome_do_arquivo.ends_with("clippy.toml")),
         "xml" => cobertura_xml(texto, nome),
         "json" | "jsonc" => cobertura_json(texto, nome),
+        "yaml" | "yml" if nome_do_arquivo.starts_with("analysis_options") => cobertura_analysis_options(texto, nome),
         _ => cobertura_generica(texto, nome),
     }
 }
@@ -840,6 +849,66 @@ static VALOR_DESLIGADO: LazyLock<Regex> =
 // Outros arquivos (eslint.config.js, build.gradle): o nome inteiro fora de comentário (//, /* */, #),
 // sem um valor desligado logo depois dele na mesma linha. É compatibilidade: para o ESLint, o que
 // prova a regra ligada é o comando com eslint --print-config.
+fn sem_aspas(texto: &str) -> &str {
+    texto.trim().trim_matches(|letra| letra == '"' || letra == '\'')
+}
+
+// analysis_options.yaml do Dart: a regra está ligada em linter: rules: (lista "- x" ou mapa "x: true")
+// ou sobe para error/warning em analyzer: errors:; "x: false" e "x: ignore" a desligam. Opção de
+// analyzer: language: (strict-casts...) conta com true. Regra que vem só do include: (preset) não
+// aparece no arquivo e não conta: escreva-a, como no ESLint.
+fn cobertura_analysis_options(texto: &str, nome: &str) -> Cobertura {
+    let (codigo, comentarios) = separar_comentarios(texto, Comentarios::Toml);
+    let (mut na_lista, mut no_mapa, mut severidade, mut na_linguagem): (bool, Option<String>, Option<String>, Option<String>) = (false, None, None, None);
+    let mut caminho: Vec<(usize, String)> = Vec::new();
+    for linha in codigo.lines() {
+        let conteudo = linha.trim();
+        if conteudo.is_empty() {
+            continue;
+        }
+        let recuo_da_linha = linha.len() - linha.trim_start().len();
+        while caminho.last().is_some_and(|(recuo_da_chave, _)| *recuo_da_chave >= recuo_da_linha) {
+            caminho.pop();
+        }
+        let chaves: Vec<&str> = caminho.iter().map(|(_, chave)| chave.as_str()).collect();
+        if let Some(item) = conteudo.strip_prefix("- ") {
+            na_lista |= chaves == ["linter", "rules"] && sem_aspas(item) == nome;
+            continue;
+        }
+        let Some((chave, valor)) = conteudo.split_once(':') else { continue };
+        let (chave, valor) = (sem_aspas(chave), sem_aspas(valor).to_lowercase());
+        if valor.is_empty() {
+            caminho.push((recuo_da_linha, chave.to_string()));
+            continue;
+        }
+        if chave != nome {
+            continue;
+        }
+        match chaves.as_slice() {
+            ["linter", "rules"] => no_mapa = Some(valor),
+            ["analyzer", "errors"] => severidade = Some(valor),
+            ["analyzer", "language"] => na_linguagem = Some(valor),
+            _ => {}
+        }
+    }
+    let desligada = [&no_mapa, &severidade, &na_linguagem]
+        .into_iter()
+        .flatten()
+        .find(|valor| matches!(valor.as_str(), "false" | "ignore"));
+    if let Some(valor) = desligada {
+        return Cobertura::Desligada(format!("\"{valor}\""));
+    }
+    let ligada =
+        na_lista || no_mapa.as_deref() == Some("true") || na_linguagem.as_deref() == Some("true") || matches!(severidade.as_deref(), Some("error" | "warning"));
+    if ligada {
+        return Cobertura::Coberta;
+    }
+    if let Some(valor) = severidade.or(no_mapa).or(na_linguagem) {
+        return Cobertura::Desligada(format!("\"{valor}\""));
+    }
+    comentada_ou_ausente(&comentarios, nome)
+}
+
 fn cobertura_generica(texto: &str, nome: &str) -> Cobertura {
     let (codigo, comentarios) = separar_comentarios(texto, Comentarios::Generico);
     let mut melhor = Cobertura::Ausente;
@@ -884,7 +953,13 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
                     .map(|nome| nome.to_string_lossy().to_string())
                     .unwrap_or_default();
                 let mut nomes: Vec<(String, Option<u64>)> = vec![(nome_do_arquivo, None)];
-                let declaracao: &Regex = if caminho_relativo.ends_with(".rs") { &DECLARACAO_RUST } else { &DECLARACAO };
+                let declaracao: &Regex = if caminho_relativo.ends_with(".rs") {
+                    &DECLARACAO_RUST
+                } else if caminho_relativo.ends_with(".dart") {
+                    &DECLARACAO_DART
+                } else {
+                    &DECLARACAO
+                };
                 for (indice, texto_da_linha) in ler_texto(&raiz, &caminho_relativo).split('\n').enumerate() {
                     for declarado in declaracao.captures_iter(texto_da_linha) {
                         nomes.push((declarado[1].to_string(), Some(indice as u64 + 1)));
@@ -1274,7 +1349,7 @@ pub fn ler_regras(config: &Value) -> Result<Vec<Regra>, ErroDeConfiguracao> {
         let principio = regra["principio"].as_str().unwrap_or("");
         if !PRINCIPIOS.contains(&principio) && !eh_pratica(principio) {
             return erro(format!(
-                "{id}: princípio \"{}\" não existe (use um dos 22 princípios, {}, ou uma prática da linguagem: TS<n>, JV<n> ou RS<n>)",
+                "{id}: princípio \"{}\" não existe (use um dos 22 princípios, {}, ou uma prática da linguagem: TS<n>, JV<n>, RS<n> ou DT<n>)",
                 if regra["principio"].is_null() { "undefined" } else { principio },
                 PRINCIPIOS.join(", ")
             ));

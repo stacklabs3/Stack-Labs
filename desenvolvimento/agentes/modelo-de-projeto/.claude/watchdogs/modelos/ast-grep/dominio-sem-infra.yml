@@ -4,6 +4,7 @@
 #   Java: src/main/java/br/com/loja/dominio · org\.springframework|jakarta\.persistence|org\.hibernate|
 #         com\.fasterxml\.jackson|java\.sql|software\.amazon (pontos escapados)
 #   Rust: src/dominio · sqlx|reqwest|tokio|aws_sdk_s3|crate::infra (nome do crate no código: hífen vira _)
+#   Dart: lib/dominio · http|dio|flutter|shared_preferences|sqflite (dart:io, dart:html e dart:ui já entram)
 # Um documento por linguagem; apague os que o projeto não usa e, para outra linguagem, copie um
 # documento e troque `language` e o `kind` do import dela.
 id: dominio-sem-infra
@@ -108,3 +109,13 @@ rule:
         inside:
           stopBy: end
           any: [{ kind: use_declaration }, { kind: scoped_identifier }, { kind: scoped_type_identifier }]
+
+---
+id: dominio-sem-infra-dart
+language: Dart
+message: "D/P3: o domínio usa infraestrutura. Defina a interface (port) no domínio; o adapter vive fora."
+severity: error
+files: ["<PASTA_DO_DOMINIO>/**"]
+rule:
+  kind: import_or_export
+  regex: "['\"](package:(<PACOTES_DE_INFRA>)/|dart:(io|html|ui)['\"])"

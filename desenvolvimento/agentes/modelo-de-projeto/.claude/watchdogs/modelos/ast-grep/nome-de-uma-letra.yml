@@ -1,0 +1,31 @@
+# Princípio E1 (regra 20 da constituição) em Dart: nenhum nome declarado de uma letra, nem em laço,
+# lambda, catch ou genérico; só _ (que a regex não pega). O linter do Dart não tem id-length; em
+# TypeScript e Rust o E1 fica no lint. Copie para docs/regras-de-codigo/ast-grep/. Sem marcador a trocar.
+id: nome-de-uma-letra
+language: Dart
+severity: error
+# Código gerado (json_serializable, freezed) não é escrito por gente.
+ignores: ["**/*.g.dart", "**/*.freezed.dart"]
+message: "E1: nome de uma letra não diz o que guarda. Dê o nome do que ele é (só _ fica curto)."
+rule:
+  regex: '^[A-Za-z]$'
+  any:
+    - kind: identifier
+      inside:
+        field: name
+        any:
+          - kind: initialized_variable_definition
+          - kind: initialized_identifier
+          - kind: static_final_declaration
+          - kind: formal_parameter
+          - kind: for_statement
+          - kind: function_signature
+          - kind: class_declaration
+    - kind: identifier
+      inside: { kind: formal_parameter }
+    - kind: identifier
+      inside: { kind: catch_clause, field: exception }
+    - kind: identifier
+      inside: { kind: catch_clause, field: stack_trace }
+    - kind: type_identifier
+      inside: { kind: type_parameter, field: name }

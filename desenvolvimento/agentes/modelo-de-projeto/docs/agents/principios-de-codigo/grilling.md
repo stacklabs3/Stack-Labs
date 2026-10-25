@@ -5,7 +5,7 @@ princípios de cada um, estão em [mapas-iniciais/regras-de-codigo.md](../mapas-
 
 ## Num ticket de grupo
 
-1. **Leia o arquivo do grupo**, o arquivo da linguagem do projeto (TypeScript, Java ou Rust, em
+1. **Leia o arquivo do grupo**, o arquivo da linguagem do projeto (TypeScript, Java, Rust ou Dart, em
    [principios-de-codigo.md](../principios-de-codigo.md)) e, em projeto com código, o resultado do
    ticket *Atrito do código existente*. Pronto quando cada princípio do grupo tem a sua pergunta-guia
    **No grilling**, a linha da linguagem e, se houver, o atrito que o quebra.
@@ -84,5 +84,5 @@ Exemplo: <trecho do próprio projeto>
 | RS5 | afastado | <o porquê> |
 ```
 
-Regra que nasce de prática leva o ID dela (`TS<n>`, `JV<n>`, `RS<n>`) em `principio` no `.json`; a
+Regra que nasce de prática leva o ID dela (`TS<n>`, `JV<n>`, `RS<n>`, `DT<n>`) em `principio` no `.json`; a
 `cobertura` confere que a tabela de práticas a cita.

@@ -1,6 +1,6 @@
 # Princípio E4: erro nunca é engolido. Copie para docs/regras-de-codigo/ast-grep/. Pega o catch vazio
 # e o catch que só loga e segue. Um documento por linguagem (TypeScript, Tsx, JavaScript, Python, Java,
-# Rust); apague os que o projeto não usa. Sem marcador a trocar, exceto o nome do logger no documento
+# Rust, Dart); apague os que o projeto não usa. Sem marcador a trocar, exceto o nome do logger no documento
 # Java (`log|logger|LOG|LOGGER` na regex), se o projeto usa outro.
 id: catch-vazio
 language: TypeScript
@@ -90,3 +90,17 @@ rule:
               - { kind: unit_expression }
               - { kind: block, regex: '^\{\s*(std::)?(e?print(ln)?|log::\w+|tracing::\w+|warn|error|info|debug)!\([^;]*\);?\s*\}$' }
               - { kind: macro_invocation, regex: '^(std::)?(e?print(ln)?|log::\w+|tracing::\w+|warn|error|info|debug)!' }
+
+---
+id: catch-vazio-dart
+language: Dart
+message: "E4: o erro é engolido. Trate o caso esperado ou deixe o erro subir até a borda."
+severity: error
+rule:
+  kind: block
+  follows:
+    any: [{ kind: catch_clause }, { kind: type }]
+  inside: { kind: try_statement }
+  any:
+    - regex: '^\{\s*\}$'
+    - regex: '^\{\s*(print|debugPrint|log|developer\.log|logger\.\w+)\([^;]*\);\s*\}$'
