@@ -90,3 +90,5 @@ Ao dar com um destes, entregue o comando ao usuário:
 - O `rodar contexto` acha a definição por expressão regular (a palavra que declara e o nome), não
   por tree-sitter: um símbolo gerado por macro ou declarado de forma incomum não aparece. Termo do
   glossário casa pelos 5 primeiros caracteres de cada palavra, o que puxa vizinho de grafia parecida.
+  O "muda junto" usa os últimos 2.000 commits, ignora commit com mais de 50 arquivos e some quando
+  há mais de 10 arquivos em foco (uma issue larga muda junto com tudo).

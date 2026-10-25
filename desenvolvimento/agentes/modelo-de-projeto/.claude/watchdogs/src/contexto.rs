@@ -13,8 +13,15 @@ use std::process::{Command, Stdio};
 
 const LIMITE_PADRAO_POR_SECAO: usize = 5;
 
-// Commits olhados para "muda junto" e "issues": o bastante para o padrão, rápido em repositório grande.
+// Commits olhados para as issues dos arquivos em foco.
 const COMMITS_DE_HISTORICO: &str = "300";
+
+// Janela do "muda junto": os últimos commits do repositório inteiro, para comparar arquivos na mesma base.
+const COMMITS_DA_JANELA_DE_MUDANCA: &str = "2000";
+const MAXIMO_ARQUIVOS_POR_COMMIT: usize = 50;
+
+// Arquivos em foco mostrados na resposta; os demais entram na conta e aparecem só no total.
+const ARQUIVOS_EM_FOCO_MOSTRADOS: usize = 10;
 
 // Extensões de documento: entram como glossário, ADR e risco, nunca como definição ou chamada.
 const EXTENSOES_DE_DOCUMENTO: [&str; 4] = ["md", "txt", "csv", "json"];
@@ -278,30 +285,53 @@ fn chamadas(raiz: &Path, simbolo: &str, definicoes: &[Ligacao]) -> Vec<Ligacao> 
     chamadas_encontradas
 }
 
-// Arquivos que mudaram nos mesmos commits que os arquivos em foco, do mais frequente ao menos.
+// Arquivos que mudam junto com os arquivos em foco, pelo índice de Jaccard sobre a mesma janela de
+// commits do repositório: commits juntos ÷ commits de qualquer um dos dois. Assim, arquivo que muda
+// em todo commit (CLAUDE.md, openapi.json) não sobe só por ser frequente. Commit com mais de
+// MAXIMO_ARQUIVOS_POR_COMMIT arquivos é mudança em massa e fica de fora.
 fn mudam_junto(raiz: &Path, arquivos_em_foco: &[String]) -> Vec<Ligacao> {
-    if arquivos_em_foco.is_empty() {
+    // Foco largo (a issue que mexeu em 200 arquivos) muda junto com o repositório inteiro: não diz nada.
+    if arquivos_em_foco.is_empty() || arquivos_em_foco.len() > ARQUIVOS_EM_FOCO_MOSTRADOS {
         return Vec::new();
     }
-    let mut argumentos = vec!["log", "-n", COMMITS_DE_HISTORICO, "--full-diff", "--name-only", "--format=format:@@commit"];
-    argumentos.push("--");
-    argumentos.extend(arquivos_em_foco.iter().map(String::as_str));
-    let saida = git(raiz, &argumentos).unwrap_or_default();
+    let saida = git(raiz, &["log", "-n", COMMITS_DA_JANELA_DE_MUDANCA, "--name-only", "--format=format:@@commit"]).unwrap_or_default();
     let mut commits_por_arquivo: HashMap<String, usize> = HashMap::new();
-    let mut total_de_commits = 0;
-    for bloco_do_commit in saida.split("@@commit").filter(|bloco| !bloco.trim().is_empty()) {
-        total_de_commits += 1;
-        for caminho in bloco_do_commit.lines().filter(|caminho| !caminho.is_empty()) {
-            if !arquivos_em_foco.iter().any(|em_foco| em_foco == caminho) && raiz.join(caminho).is_file() {
-                *commits_por_arquivo.entry(caminho.to_string()).or_default() += 1;
+    let mut commits_juntos_por_arquivo: HashMap<String, usize> = HashMap::new();
+    let mut commits_do_foco = 0;
+    for bloco_do_commit in saida.split("@@commit") {
+        let arquivos_do_commit: BTreeSet<&str> = bloco_do_commit.lines().filter(|caminho| !caminho.is_empty()).collect();
+        if arquivos_do_commit.is_empty() || arquivos_do_commit.len() > MAXIMO_ARQUIVOS_POR_COMMIT {
+            continue;
+        }
+        let toca_o_foco = arquivos_em_foco.iter().any(|em_foco| arquivos_do_commit.contains(em_foco.as_str()));
+        if toca_o_foco {
+            commits_do_foco += 1;
+        }
+        for caminho in arquivos_do_commit {
+            *commits_por_arquivo.entry(caminho.to_string()).or_default() += 1;
+            if toca_o_foco {
+                *commits_juntos_por_arquivo.entry(caminho.to_string()).or_default() += 1;
             }
         }
     }
-    let mut ordenados: Vec<(String, usize)> = commits_por_arquivo.into_iter().filter(|(_, commits)| *commits >= 2).collect();
-    ordenados.sort_by(|primeiro, segundo| segundo.1.cmp(&primeiro.1).then(primeiro.0.cmp(&segundo.0)));
-    ordenados
+    let mut pontuados: Vec<(String, usize, f64)> = commits_juntos_por_arquivo
         .into_iter()
-        .map(|(caminho, commits)| Ligacao { rotulo: format!("{commits} de {total_de_commits} commits"), local: caminho })
+        .filter(|(caminho, commits_juntos)| {
+            *commits_juntos >= 2 && !arquivos_em_foco.iter().any(|em_foco| em_foco == caminho) && raiz.join(caminho).is_file()
+        })
+        .map(|(caminho, commits_juntos)| {
+            let commits_do_outro = commits_por_arquivo.get(&caminho).copied().unwrap_or(commits_juntos);
+            let jaccard = commits_juntos as f64 / (commits_do_foco + commits_do_outro - commits_juntos) as f64;
+            (caminho, commits_juntos, jaccard)
+        })
+        .collect();
+    pontuados.sort_by(|primeiro, segundo| segundo.2.total_cmp(&primeiro.2).then(primeiro.0.cmp(&segundo.0)));
+    pontuados
+        .into_iter()
+        .map(|(caminho, commits_juntos, jaccard)| Ligacao {
+            rotulo: format!("{commits_juntos} de {commits_do_foco} commits, {:.0}% dos commits de qualquer um dos dois", jaccard * 100.0),
+            local: caminho,
+        })
         .collect()
 }
 
@@ -330,7 +360,11 @@ fn issues_dos_arquivos(raiz: &Path, arquivos_em_foco: &[String]) -> Vec<Ligacao>
 pub fn formatar(contexto_montado: &Contexto) -> String {
     let mut linhas = vec![format!("contexto de {}", contexto_montado.consulta)];
     if !contexto_montado.arquivos_em_foco.is_empty() {
-        linhas.push(format!("  arquivos: {}", contexto_montado.arquivos_em_foco.join(", ")));
+        let quantidade_em_foco = contexto_montado.arquivos_em_foco.len();
+        let mostrados = contexto_montado.arquivos_em_foco.iter().take(ARQUIVOS_EM_FOCO_MOSTRADOS).cloned().collect::<Vec<_>>().join(", ");
+        let restantes = quantidade_em_foco.saturating_sub(ARQUIVOS_EM_FOCO_MOSTRADOS);
+        let sufixo = if restantes > 0 { format!(" (+{restantes}, {quantidade_em_foco} no total)") } else { String::new() };
+        linhas.push(format!("  arquivos: {mostrados}{sufixo}"));
     }
     for secao in contexto_montado.secoes.iter().filter(|secao| !secao.ligacoes.is_empty()) {
         linhas.push(format!("  {}:", secao.titulo));

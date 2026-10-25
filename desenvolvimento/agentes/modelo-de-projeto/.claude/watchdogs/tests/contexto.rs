@@ -75,7 +75,7 @@ fn simbolo_traz_definicao_termo_decisao_risco_chamada_e_historico() {
         "docs/adr/0003-cupom.md · Cupom não acumula",
         "tests/cupom.rs:2 · RK2 Cupom vencido aceito (docs/riscos.md:3)",
         "src/pedido.rs:2 · aplicar_cupom(100) + 0",
-        "src/pedido.rs · 2 de 2 commits",
+        "src/pedido.rs · 2 de 2 commits, 100% dos commits de qualquer um dos dois",
         "#9 · Cupom não fica negativo (#9)",
         "#7 · Cupom por pedido (#7)",
     ] {
