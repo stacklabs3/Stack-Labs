@@ -1,8 +1,8 @@
 // Ponto de entrada único: .claude/watchdogs/rodar <subcomando> [argumentos].
 
-use watchdogs::{ativar_issue, ci, custo, hooks, pre_push, validador};
+use watchdogs::{ativar_issue, ci, contexto, custo, hooks, pre_push, validador};
 
-const USO: &str = "uso: rodar hook <nome> | ativar-issue <n> | pre-push <remoto> <url> | validar [opções] | ci [--base <ref>] | custo [<n>] | --version";
+const USO: &str = "uso: rodar hook <nome> | ativar-issue <n> | pre-push <remoto> <url> | validar [opções] | ci [--base <ref>] | custo [<n>] | contexto <consulta> | --version";
 
 fn main() {
     let argumentos: Vec<String> = std::env::args().skip(1).collect();
@@ -14,6 +14,7 @@ fn main() {
         Some("validar") => validador::rodar(resto),
         Some("ci") => ci::rodar(resto),
         Some("custo") => custo::rodar(resto),
+        Some("contexto") => contexto::rodar(resto),
         Some("--version") => {
             println!("watchdogs {}", env!("CARGO_PKG_VERSION"));
             0

@@ -3,6 +3,7 @@
 pub mod ativar_issue;
 pub mod ci;
 pub mod comum;
+pub mod contexto;
 pub mod custo;
 pub mod hooks;
 pub mod pre_push;

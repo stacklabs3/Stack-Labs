@@ -31,6 +31,16 @@ instala o Rust (https://rustup.rs). Testes: `cargo test --release --manifest-pat
 Num projeto em adoção, a etapa de `.claude/metodo.json` decide quais destes bloqueios valem
 ([adocao.md](adocao.md)). Sem o arquivo, vale tudo.
 
+## Consultar o contexto
+
+`sh .claude/watchdogs/rodar contexto <símbolo | termo | caminho | #issue>` liga a consulta ao que o
+projeto já escreveu sobre ela e devolve cada ligação com `caminho:linha`: onde o símbolo é definido,
+os termos do `GLOSSARY.md`, as ADRs que o citam, os riscos `RK<n>` dos testes que o tocam, quem o
+chama, os arquivos que mudam junto e as issues do histórico. Uma `#issue` traz os arquivos dos
+commits que a citam. Tudo sai do repositório e do git a cada chamada, sem modelo e sem índice
+guardado, então não envelhece (ADR 0018). Leia a resposta antes de abrir arquivos e abra só os
+trechos citados; `--limite <n>` muda as 5 ligações por seção.
+
 ## Ativar uma issue
 
 `sh .claude/watchdogs/rodar ativar-issue <n>`. O `guarda-bash` intercepta o comando antes de ele rodar e
@@ -77,3 +87,6 @@ Ao dar com um destes, entregue o comando ao usuário:
   Conta só turnos com issue ativa; planejamento, grilling e revisões por `claude -p` ficam de fora.
   O orçamento padrão é 3M; o humano o calibra em `.claude/metodo.json` (`"orcamentoPorIssue"`)
   olhando as issues já medidas.
+- O `rodar contexto` acha a definição por expressão regular (a palavra que declara e o nome), não
+  por tree-sitter: um símbolo gerado por macro ou declarado de forma incomum não aparece. Termo do
+  glossário casa pelos 5 primeiros caracteres de cada palavra, o que puxa vizinho de grafia parecida.
