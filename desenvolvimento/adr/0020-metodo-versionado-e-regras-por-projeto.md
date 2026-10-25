@@ -13,7 +13,11 @@ tag. O `AGENTS.md` do modelo termina na seção `## Regras deste projeto`, com `
 (IDs `RP<n>`) e `### Afastadas` (pelo título da regra, com motivo e link). Ela é do projeto: na
 atualização o instalador troca o resto do arquivo pelo modelo novo e mantém a seção (`MESCLADO`).
 P5, E1 e as regras dos watchdogs não se afastam; afastar regra **[W]** não desliga o watchdog. Regra
-de código continua no `docs/regras-de-codigo.json` do projeto.
+de código continua no `docs/regras-de-codigo.json` do projeto. O que a máquina bloqueia o projeto
+ajusta no campo `ajustes` do `.claude/metodo.json` (caminhos livres, branches descartáveis, limites
+da smart zone), sem mudar o código dos watchdogs. O agente não abre PR no Stack-Labs para levar uma
+regra do projeto ao método: as docs antigas mandavam "propor ao Stack-Labs" e cada projeto acabava
+abrindo PR aqui com regra que só servia a ele. Levar algo ao método é decisão do humano.
 
 **Consequências:** editar o `AGENTS.md` fora da seção do projeto se perde na atualização. O
 `AGENTS.md` sem a seção (projeto anterior à 1.0.0) ainda cai em `MESCLAR` uma vez; depois da

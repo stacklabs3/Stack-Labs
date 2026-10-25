@@ -54,7 +54,8 @@ ideia grande demais para uma sessão
    (`sh .claude/watchdogs/rodar ativar-issue <n>`): aberta, com `ready-for-agent` ou `ready-for-human`,
    e que não seja ticket do wayfinder. Ficam livres `AGENTS.md`, `CLAUDE.md`, `GLOSSARY*.md`,
    `README.md`, `HANDOFF-*.md` (na raiz), `docs/`, `.scratch/`, `prototipos/`, `.claude/` (fora os
-   watchdogs) e as branches `prototype/*` e `research/*`.
+   watchdogs) e as branches `prototype/*` e `research/*`, mais o que o projeto soma em
+   `ajustes` do `.claude/metodo.json`.
 4. Ideia nova grande começa no `/wayfinder`. A vontade de "só ir fazendo" é o sinal de que o mapa
    acabou e chegou a hora do `/to-spec`.
 
@@ -82,7 +83,7 @@ ideia grande demais para uma sessão
     novo, fase nova ou continuação abre **janela nova** com o kickoff do `/nova-sessao`. Assunto
     paralelo vai para uma **sessão satélite**, fechada pelo `/voltar-a-principal`.
 13. **[W]** **Smart zone:** passou do limite, a próxima ação é o `/nova-sessao` (sem humano para colar
-    o kickoff, o `/handoff` do Matt). O orquestrador passa a rodada adiante já no aviso (450k).
+    o kickoff, o `/handoff` do Matt). O orquestrador passa a rodada adiante já no aviso (450k, ou o de `ajustes`).
 14. **[W]** **Uma issue por sessão de `/implement`**; na orquestração, uma issue por subagente implementador.
 
 ### 7. Implementação
@@ -129,8 +130,13 @@ ideia grande demais para uma sessão
 
 O que este projeto muda nas regras acima. Esta seção é **do projeto**: a atualização do método
 (`/setup-stacklabs`) troca o resto do arquivo pela versão nova e mantém esta seção como está. Fora
-dela, não edite: a mudança se perderia na próxima atualização. Regra que serve a todo projeto vai
-por PR no Stack-Labs. Mudança aqui se combina com o humano, por escrito, e vale como regra dura.
+dela, não edite: a mudança se perderia na próxima atualização. Mudança aqui se combina com o
+humano, por escrito, e vale como regra dura.
+
+**Regra específica fica no projeto.** Você não abre PR, issue nem proposta no Stack-Labs para levar
+uma regra deste projeto ao método, nem sugere isso: o lugar dela é esta seção, o
+`.claude/metodo.json` (o que a máquina bloqueia) ou o `docs/regras-de-codigo.json` (o que o
+validador confere). Levar algo ao método é decisão do humano, quando ele pedir.
 
 ### Acrescentadas
 
@@ -144,8 +150,9 @@ Regra própria do projeto, com ID `RP<n>` que nunca se reusa:
 
 Regra do método que não vale aqui, pelo **título em negrito** (o número muda entre versões), com o
 motivo e o link da decisão. Não se afastam **Todo teste cobre um risco** (P5), **Todo nome diz
-o que é** (E1) nem as da seção *Os watchdogs*. Afastar uma regra **[W]** não desliga o watchdog: só
-o humano ajusta `.claude/metodo.json`. Regra de código se acrescenta ou afasta em `docs/regras-de-codigo.json`
+o que é** (E1) nem as da seção *Os watchdogs*. Afastar uma regra **[W]** não desliga o watchdog: o
+humano ajusta o que ele bloqueia em `.claude/metodo.json`, campo `ajustes`
+([docs/agents/watchdogs.md](docs/agents/watchdogs.md#ajustes-do-projeto)). Regra de código se acrescenta ou afasta em `docs/regras-de-codigo.json`
 ([docs/agents/validador.md](docs/agents/validador.md)), não aqui.
 
 - (nenhuma)

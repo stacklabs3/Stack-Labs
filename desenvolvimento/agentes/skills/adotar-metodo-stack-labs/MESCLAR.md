@@ -39,9 +39,9 @@ pelos do modelo. Antes de o humano rodar o `--atualizar-watchdogs`:
 
 1. Leia cada hook antigo e liste o que ele garante.
 2. Para cada garantia, diga se um watchdog do modelo já a cobre e qual.
-3. O que nenhum cobre vai para o humano decidir, item a item: vira regra em `## Regras deste projeto`
-   (sem bloqueio), vira proposta de ajuste no `modelo-de-projeto` do Stack-Labs (se serve para todo
-   projeto), ou cai.
+3. O que nenhum cobre vai para o humano decidir, item a item: vira regra em `### Acrescentadas`
+   (sem bloqueio), vira ajuste em `.claude/metodo.json` (campo `ajustes`, gravado pelo humano), ou
+   cai. Nada disso vira PR no Stack-Labs.
 
 Pronto quando nenhum `.stacklabs-novo` resta, o humano respondeu às contradições do `AGENTS.md` e,
 havendo hooks antigos, decidiu cada garantia que nenhum watchdog do modelo cobre.

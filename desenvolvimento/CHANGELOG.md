@@ -24,3 +24,7 @@ Primeira versão marcada: o método como estava no commit `c7c1fa1`, mais:
 - Instalação: label que o `gh` não cria (sem login ou sem `origin`) vira `FALHA` no relatório em vez
   de abortar no fim com o projeto já copiado; fora de um repositório git, o erro diz o que fazer; o
   `cp` das skills de entrada não depende de `{a,b}` do shell, e a pasta `.claude/skills` é criada.
+- Watchdogs configuráveis por projeto: campo `ajustes` de `.claude/metodo.json` com
+  `caminhosLivres`, `branchesDescartaveis` e `contexto` (limites da smart zone).
+- O agente não abre mais PR no Stack-Labs com regra específica de um projeto: a regra fica no projeto
+  (`AGENTS.md`, `metodo.json` ou `regras-de-codigo.json`); levar ao método só a pedido do humano.

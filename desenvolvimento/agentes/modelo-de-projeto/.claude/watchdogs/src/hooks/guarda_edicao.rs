@@ -32,18 +32,19 @@ pub fn rodar() -> i32 {
     }
 
     // W2 — passou da smart zone: nada de seguir editando com o raciocínio degradado.
+    let ajustes = ler_ajustes_do_projeto(&diretorio_projeto);
     let tokens_de_contexto = medir_tokens_de_contexto(texto(&entrada_hook["transcript_path"]));
-    if tokens_de_contexto >= LIMITE_DURO_CONTEXTO {
+    if tokens_de_contexto >= ajustes.limite_duro_contexto {
         let milhares_de_tokens = (tokens_de_contexto as f64 / 1000.0).round() as u64;
-        bloquear_ferramenta(NOME_WATCHDOG, &format!("contexto em ~{milhares_de_tokens}k tokens, acima da smart zone ({}k). Rode /nova-sessao (se precisar de documento, ele vai para o tmp do SO, fora do repositório) e continue numa janela nova com o kickoff.", LIMITE_DURO_CONTEXTO / 1000));
+        bloquear_ferramenta(NOME_WATCHDOG, &format!("contexto em ~{milhares_de_tokens}k tokens, acima da smart zone ({}k). Rode /nova-sessao (se precisar de documento, ele vai para o tmp do SO, fora do repositório) e continue numa janela nova com o kickoff.", ajustes.limite_duro_contexto / 1000));
     }
 
     // Na adoção do método, código sem issue ativa só passa a ser barrado na etapa "completo".
-    if etapa_de_adocao(&diretorio_projeto) != "completo" || caminho_eh_livre_sem_issue(&caminho_relativo) {
+    if etapa_de_adocao(&diretorio_projeto) != "completo" || caminho_eh_livre_sem_issue(&caminho_relativo, &ajustes) {
         return 0;
     }
     let nome_branch = branch_atual(&diretorio_projeto);
-    if branch_eh_descartavel(nome_branch.as_deref()) {
+    if branch_eh_descartavel(nome_branch.as_deref(), &ajustes) {
         return 0; // prototype/* e research/* são descartáveis
     }
 

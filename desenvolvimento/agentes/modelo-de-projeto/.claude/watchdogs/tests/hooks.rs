@@ -452,7 +452,10 @@ fn custo_sem_issue_ativa_nao_grava_nada() {
 fn saida_grande_pede_filtro_e_pequena_passa_calada() {
     let projeto = Projeto::novo("main");
     let saida_ferramenta = |tamanho: usize| json!({ "session_id": "s1", "tool_name": "Bash", "tool_response": { "stdout": "x".repeat(tamanho) } }).to_string();
-    assert!(projeto.rodar(&["hook", "vigia-saida"], &saida_ferramenta(25_000), &[]).1.contains("filtre a saída com grep"));
+    assert!(projeto
+        .rodar(&["hook", "vigia-saida"], &saida_ferramenta(25_000), &[])
+        .1
+        .contains("filtre a saída com grep"));
     assert!(projeto.rodar(&["hook", "vigia-saida"], &saida_ferramenta(500), &[]).1.is_empty());
 }
 
@@ -460,7 +463,55 @@ fn saida_grande_pede_filtro_e_pequena_passa_calada() {
 fn subagente_de_busca_sem_modelo_recebe_lembrete() {
     let projeto = Projeto::novo("main");
     let lancamento = |entrada_agente: Value| json!({ "session_id": "s1", "tool_name": "Agent", "tool_input": entrada_agente }).to_string();
-    assert!(projeto.rodar(&["hook", "vigia-agente"], &lancamento(json!({ "subagent_type": "Explore" })), &[]).1.contains("haiku"));
-    assert!(projeto.rodar(&["hook", "vigia-agente"], &lancamento(json!({ "subagent_type": "Explore", "model": "haiku" })), &[]).1.is_empty());
-    assert!(projeto.rodar(&["hook", "vigia-agente"], &lancamento(json!({ "subagent_type": "general-purpose" })), &[]).1.is_empty());
+    assert!(projeto
+        .rodar(&["hook", "vigia-agente"], &lancamento(json!({ "subagent_type": "Explore" })), &[])
+        .1
+        .contains("haiku"));
+    assert!(projeto
+        .rodar(
+            &["hook", "vigia-agente"],
+            &lancamento(json!({ "subagent_type": "Explore", "model": "haiku" })),
+            &[]
+        )
+        .1
+        .is_empty());
+    assert!(projeto
+        .rodar(&["hook", "vigia-agente"], &lancamento(json!({ "subagent_type": "general-purpose" })), &[])
+        .1
+        .is_empty());
+}
+
+#[test]
+fn ajustes_do_projeto_liberam_caminho_e_branch_e_mudam_a_smart_zone() {
+    let projeto = Projeto::novo("spike/teste");
+    fs::create_dir_all(projeto.raiz.join(".claude")).unwrap();
+    fs::write(
+        projeto.raiz.join(".claude/metodo.json"),
+        json!({ "ajustes": { "caminhosLivres": ["infra/"], "branchesDescartaveis": ["spike/"], "contexto": { "aviso": 100_000, "duro": 200_000 } } })
+            .to_string(),
+    )
+    .unwrap();
+    assert_eq!(projeto.edicao("src/a.ts").0, 0, "branch spike/ é descartável no projeto");
+    assert!(projeto.edicao(".claude/watchdogs/src/main.rs").2.contains("infraestrutura dos watchdogs"));
+
+    let transcript = projeto.raiz.join("t.jsonl");
+    fs::write(&transcript, format!("{}\n", json!({ "message": { "usage": { "input_tokens": 250_000 } } }))).unwrap();
+    let entrada = json!({ "session_id": "s1", "transcript_path": transcript, "prompt": "x" }).to_string();
+    assert!(projeto
+        .rodar(&["hook", "vigia-prompt"], &entrada, &[])
+        .1
+        .contains("passou da smart zone (200k)"));
+}
+
+#[test]
+fn caminho_livre_do_projeto_dispensa_issue_ativa() {
+    let projeto = Projeto::novo("issue/7-x");
+    fs::create_dir_all(projeto.raiz.join(".claude")).unwrap();
+    fs::write(
+        projeto.raiz.join(".claude/metodo.json"),
+        json!({ "ajustes": { "caminhosLivres": ["infra/"] } }).to_string(),
+    )
+    .unwrap();
+    assert_eq!(projeto.edicao("infra/main.tf").0, 0);
+    assert_eq!(projeto.edicao("src/a.ts").0, 2);
 }

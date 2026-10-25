@@ -110,6 +110,48 @@ pub fn ler_metodo_do_projeto(diretorio_projeto: &Path) -> MetodoDoProjeto {
     }
 }
 
+// Ajustes do projeto aos watchdogs, em .claude/metodo.json ("ajustes"; docs/agents/watchdogs.md).
+// Só o humano grava o arquivo. Valor ausente ou inválido fica no padrão do método.
+pub struct AjustesDoProjeto {
+    pub caminhos_livres: Vec<String>,
+    pub branches_descartaveis: Vec<String>,
+    pub limite_aviso_contexto: u64,
+    pub limite_duro_contexto: u64,
+}
+
+pub fn ler_ajustes_do_projeto(diretorio_projeto: &Path) -> AjustesDoProjeto {
+    let metodo: Value = fs::read_to_string(diretorio_projeto.join(".claude").join("metodo.json"))
+        .ok()
+        .and_then(|texto_metodo| serde_json::from_str(&texto_metodo).ok())
+        .unwrap_or(Value::Null);
+    let ajustes = &metodo["ajustes"];
+    let lista = |campo: &str| -> Vec<String> {
+        ajustes[campo]
+            .as_array()
+            .map(|itens| {
+                itens
+                    .iter()
+                    .filter_map(Value::as_str)
+                    .filter(|item| !item.is_empty())
+                    .map(String::from)
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let aviso_lido = ajustes["contexto"]["aviso"].as_u64();
+    let duro_lido = ajustes["contexto"]["duro"].as_u64();
+    let (limite_aviso_contexto, limite_duro_contexto) = match (aviso_lido, duro_lido) {
+        (Some(aviso), Some(duro)) if aviso > 0 && aviso < duro => (aviso, duro),
+        _ => (LIMITE_AVISO_CONTEXTO, LIMITE_DURO_CONTEXTO),
+    };
+    AjustesDoProjeto {
+        caminhos_livres: lista("caminhosLivres"),
+        branches_descartaveis: lista("branchesDescartaveis"),
+        limite_aviso_contexto,
+        limite_duro_contexto,
+    }
+}
+
 pub fn etapa_de_adocao(diretorio_projeto: &Path) -> String {
     ler_metodo_do_projeto(diretorio_projeto).etapa_de_adocao
 }
@@ -232,8 +274,11 @@ pub fn branch_eh_principal(nome_branch: Option<&str>) -> bool {
     matches!(nome_branch, Some("main") | Some("master"))
 }
 
-pub fn branch_eh_descartavel(nome_branch: Option<&str>) -> bool {
-    nome_branch.is_some_and(|nome| PREFIXOS_BRANCH_DESCARTAVEL.iter().any(|prefixo| nome.starts_with(prefixo)))
+pub fn branch_eh_descartavel(nome_branch: Option<&str>, ajustes: &AjustesDoProjeto) -> bool {
+    nome_branch.is_some_and(|nome| {
+        PREFIXOS_BRANCH_DESCARTAVEL.iter().any(|prefixo| nome.starts_with(prefixo))
+            || ajustes.branches_descartaveis.iter().any(|prefixo| nome.starts_with(prefixo.as_str()))
+    })
 }
 
 // ---------- GitHub ----------
@@ -427,20 +472,24 @@ pub fn caminho_eh_protegido(caminho_relativo: &str) -> bool {
         .any(|protegido| caminho_relativo == protegido.trim_end_matches('/') || caminho_relativo.starts_with(protegido))
 }
 
-pub fn caminho_eh_livre_sem_issue(caminho_relativo: &str) -> bool {
+pub fn caminho_eh_livre_sem_issue(caminho_relativo: &str, ajustes: &AjustesDoProjeto) -> bool {
     // Handoffs de sessão satélite (/voltar-a-principal): HANDOFF-<projeto>.md na raiz do repositório.
     let handoff_na_raiz = caminho_relativo.starts_with("HANDOFF-")
         && caminho_relativo.ends_with(".md")
         && !caminho_relativo.contains('/')
         && caminho_relativo.len() > "HANDOFF-.md".len();
     handoff_na_raiz
-        || CAMINHOS_LIVRES_SEM_ISSUE.iter().any(|livre| {
-            if livre.ends_with('/') {
-                caminho_relativo.starts_with(livre)
-            } else {
-                caminho_relativo == *livre
-            }
-        })
+        || CAMINHOS_LIVRES_SEM_ISSUE
+            .iter()
+            .copied()
+            .chain(ajustes.caminhos_livres.iter().map(String::as_str))
+            .any(|livre| {
+                if livre.ends_with('/') {
+                    caminho_relativo.starts_with(livre)
+                } else {
+                    caminho_relativo == livre
+                }
+            })
 }
 
 // ---------- contexto ----------

@@ -122,8 +122,8 @@ As regras de cada linguagem e o porquê estão no arquivo dela, em
    `kind` (`ast-grep run --debug-query=cst -p '<trecho>' -l <linguagem>` mostra os nomes). Cada regra
    nova ganha um exemplo que deve pegar e um que deve passar, rodados uma vez com
    `npx -y -p @ast-grep/cli@0.51.0 ast-grep scan --rule <arquivo> <pasta-de-exemplo>`.
-4. **Nada no catálogo serve?** Use `comando` com a ferramenta da stack. Checagem que valeria para
-   outros projetos vira proposta de PR no Stack-Labs, para entrar no motor.
+4. **Nada no catálogo serve?** Use `comando` com a ferramenta da stack. A checagem fica no
+   projeto; não abra PR no Stack-Labs por ela (só o humano leva algo ao método).
 
 Pronto quando `sh .claude/watchdogs/rodar validar` termina em `VALIDADOR: APROVADO` no código atual,
 ou as violações listadas viraram tickets.
