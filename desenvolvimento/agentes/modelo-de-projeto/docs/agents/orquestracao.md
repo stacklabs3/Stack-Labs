@@ -41,10 +41,13 @@ O desenvolvedor escolhe o nome da **branch de integração** e a base. No fim da
 uma PR só da integração para a base, ou uma PR por issue, empilhadas na ordem. O merge na base é
 sempre do desenvolvedor.
 
-## Esforço
+## Esforço e modelo
 
 O primeiro ciclo roda barato; o diagnosticador e os ciclos de correção sobem o esforço. O esforço vai
-em cada chamada, para subir sem editar os papéis.
+em cada chamada, para subir sem editar os papéis. O modelo segue a mesma ideia (ADR 0016): a 1ª
+implementação e a conferência rodam em Sonnet para poupar o limite semanal, e o julgamento (revisor,
+diagnosticador) e as correções ficam em Opus. O `implementador` traz `sonnet` no arquivo, e o
+orquestrador o chama com `opus` nos ciclos de correção.
 
 ## Watchdogs na orquestração
 

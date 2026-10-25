@@ -1,7 +1,7 @@
 ---
 name: implementador
 description: Implementa uma issue ready-for-agent na branch dela, com TDD, ou aplica o plano de correção do diagnosticador. Usado pelo /orquestrar-issues.
-model: opus
+model: sonnet
 effort: low
 skills: tdd
 disallowedTools: Agent

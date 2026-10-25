@@ -13,14 +13,16 @@ branches, o plano); o conteúdo eles mesmos leem. O porquê de cada peça está 
 
 ## Esforço por ciclo
 
-Todos os papéis rodam no modelo `opus`. O esforço vai na chamada de cada subagente:
+O modelo e o esforço vão na chamada de cada subagente (ADR 0016). O `implementador` e o `conferente`
+têm `model: sonnet` no arquivo; o `revisor` e o `diagnosticador`, `model: opus`. O `implementador` só
+fica em Sonnet na 1ª implementação: **nos ciclos de correção, chame-o com `model: "opus"`**.
 
 | Papel | Ciclo 1 | Ciclos de correção |
 |---|---|---|
-| `implementador` | `low` | `medium` |
-| `revisor` | `low` | `medium` |
-| `conferente` | `low` | `medium` |
-| `diagnosticador` | `medium`, já no primeiro diagnóstico | `medium` |
+| `implementador` | `sonnet`, `low` | `opus`, `medium` |
+| `revisor` | `opus`, `low` | `opus`, `medium` |
+| `conferente` | `sonnet`, `low` | `sonnet`, `medium` |
+| `diagnosticador` | `opus`, `medium`, já no primeiro diagnóstico | `opus`, `medium` |
 
 ## Estado da rodada
 
