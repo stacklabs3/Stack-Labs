@@ -37,7 +37,7 @@ checagem `cobertura` roda sempre e confere os dois juntos: os 22 princípios com
 princípio adotado ou adaptado citando um `R<n>` que existe no `.json` com o mesmo princípio, e nenhuma
 regra do `.json` sem linha na tabela (fora a `revisao-por-modelo`, consultiva). O E1 e o P5 nunca são `afastado` (regras 20 e 15 da
 constituição), e a linha do P5 cita uma regra com a checagem `teste-cobre-risco`. Regra que nasce de prática da linguagem leva o ID dela em
-`principio` (`TS<n>`, `JV<n>`, `RS<n>`) e é citada na tabela *Práticas da linguagem* do `.md`, fora
+`principio` (`TS<n>`, `JV<n>`, `RS<n>`, `DT<n>`) e é citada na tabela *Práticas da linguagem* do `.md`, fora
 dos 22.
 
 ## Catálogo
@@ -50,7 +50,7 @@ dos 22.
 | `teste-de-contrato-por-port` | `ports` (glob), `contrato` (`{dir}`, `{dir_de_teste}`, `{nome}`), `ignorar` | Port sem o teste de contrato; `{dir_de_teste}` é o `{dir}` com `src/main/` trocado por `src/test/` (Maven e Gradle) |
 | `lint-cobre` | `config` (arquivo ou lista), `regras` | A configuração do lint tem as regras delegadas a ele |
 | `mensagem-de-commit` | `padrao` (regex), `base` | Título dos commits desde a base (padrão `origin/main`) |
-| `ast-grep` | `regras` (arquivo ou lista), `alvos`, `binario` | Padrões de código (TypeScript, JavaScript, Python, Go, Java, Rust e outras) |
+| `ast-grep` | `regras` (arquivo ou lista), `alvos`, `binario` | Padrões de código (TypeScript, JavaScript, Python, Go, Java, Rust, Dart e outras) |
 | `comando` | `executar` (aceita `{arquivos}`) | Qualquer ferramenta: saída diferente de 0 é violação |
 | `revisor` | | Nada: marca a regra como julgamento do revisor |
 | `revisao-por-modelo` | `consultivo` (obrigatório, `true`), `modelo` (padrão `claude-haiku-5-5`), `testes`, `declaracao`, `riscos`, `ignorar`, `tetoUsd` (padrão 0.05), `limiteSegundos` (padrão 120) | Nada no validador. O `ci` pergunta ao modelo, teste a teste, se cada teste alterado desde a base exercita o risco que cita, e lista os suspeitos com o motivo. Consultiva, fora da `cobertura` e não substitui o `teste-cobre-risco` (ADR 0015) |
@@ -77,6 +77,7 @@ inválido. O nome casa inteiro (`panic` não casa com `panic_in_result_fn`).
 | `.toml` (`Cargo.toml`, `clippy.toml`) | Chave em `[lints.<grupo>]` ou `[workspace.lints.<grupo>]` com `"deny"` ou `"forbid"` (texto ou `{ level, priority }`); `clippy::x` só em `[lints.clippy]`; um grupo (`pedantic`) pela chave dele. No `clippy.toml`, o limite de primeiro nível que não é `false` |
 | `.xml` | Checkstyle `<module name="X">` sem `severity` `ignore`; PMD `<rule ref=".../X">` sem `<exclude name="X"/>`; Error Prone só `-Xep:X:ERROR`. Comentário `<!-- -->` não conta |
 | `.json`, `.jsonc` (`tsconfig.json`) | Chave em qualquer nível com valor que não é `false`, `"off"` nem `0` |
+| `analysis_options*.yaml` (Dart) | Em `linter: rules:` como item (`- x`) ou `x: true`; ou `error`/`warning` em `analyzer: errors:`; opção de `analyzer: language:` com `true`. `x: false` e `x: ignore` desligam; `info` sozinho não basta. Comentário `#` não conta |
 | Outras (`eslint.config.js`, `build.gradle`) | O nome fora de comentário, sem `"off"`, `"allow"`, `false` ou `0` logo depois. Para o ESLint, prefira o `comando` com o próprio lint |
 
 Regra ligada só por preset, por grupo ou por padrão da ferramenta não aparece no arquivo: liste-a
@@ -99,6 +100,8 @@ regra reprovar tudo (pesquisas em `desenvolvimento/research/` do Stack-Labs):
 | Arquitetura em Java (P3, P4, D) | `mvn -B test -Dtest='*ArquiteturaTest'` (ArchUnit) |
 | Lint e formatador em Rust | `cargo clippy --all-targets --locked -- -D warnings` e `cargo fmt --all -- --check` |
 | Dependências em Rust (P7, P8, RS3) | `cargo machete` e `cargo deny check` |
+| Lint e formatador em Dart e Flutter | `dart analyze --fatal-infos` (ou `flutter analyze --fatal-infos`) e `dart format --output=none --set-exit-if-changed .`; lint é `info` por padrão e só reprova com `--fatal-infos` |
+| Dependências em Dart (P7, DT4) | `dart pub get --enforce-lockfile`, `dart run dependency_validator` e `osv-scanner scan --lockfile pubspec.lock` |
 | Mutação no diff em TS/JS (P5) | `npx stryker run --mutate <fontes alterados, separados por vírgula> --incremental`, com `@stryker-mutator/core@10.0.0` e `thresholds.break` no `stryker.config.json` (não há flag para o limite) |
 | Mutação no diff em Rust (P5) | `git diff origin/main...HEAD > alteracoes.diff && cargo mutants --in-diff alteracoes.diff`, com `cargo-mutants@27.1.0`; sai com 2 se um mutante sobrevive |
 | Mutação no diff em Java (P5) | `mvn test-compile org.pitest:pitest-maven:1.30.0:mutationCoverage -DtargetClasses=<classes do diff> -DmutationThreshold=80 -DwithHistory` (o modo por git do PIT é pago; monte `targetClasses` do diff) |

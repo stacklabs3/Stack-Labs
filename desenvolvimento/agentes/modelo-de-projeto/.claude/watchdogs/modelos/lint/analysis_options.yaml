@@ -1,0 +1,60 @@
+# Modelo de analysis_options.yaml para app Dart/Flutter (docs/agents/principios-de-codigo/dart.md).
+# Copie só o que o grilling decidiu. O preset liga as regras, mas o lint-cobre só conta o que está
+# escrito aqui: toda regra delegada pelo regras-de-codigo.json fica listada em linter: rules:.
+# A prova de que o código cumpre é o comando: dart analyze --fatal-infos (lint é info e info não reprova).
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+  # E3: o preset já liga os três; ficam escritos para o lint-cobre.
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  # Regras duras sobem para error, para o editor mostrar em vermelho.
+  errors:
+    empty_catches: error
+    avoid_catches_without_on_clauses: error
+    unawaited_futures: error
+    discarded_futures: error
+    use_build_context_synchronously: error
+
+linter:
+  rules:
+    # E3
+    avoid_dynamic_calls: true
+    unnecessary_null_checks: true
+    cast_nullable_to_non_nullable: true
+    avoid_positional_boolean_parameters: true
+    # E4
+    avoid_catches_without_on_clauses: true
+    avoid_catching_errors: true
+    empty_catches: true
+    only_throw_errors: true
+    use_rethrow_when_possible: true
+    unawaited_futures: true
+    discarded_futures: true
+    document_ignores: true
+    # E5
+    prefer_final_locals: true
+    prefer_final_in_for_each: true
+    prefer_final_fields: true
+    # E6
+    avoid_print: true
+    # P4, P7, P8
+    avoid_relative_lib_imports: true
+    depend_on_referenced_packages: true
+    always_declare_return_types: true
+    annotate_overrides: true
+    # O
+    exhaustive_cases: true
+    no_default_cases: true
+    # DT1, DT2, DT3
+    use_build_context_synchronously: true
+    prefer_const_constructors: true
+    prefer_const_constructors_in_immutables: true
+    cancel_subscriptions: true
+    # App, não pacote publicado: doc de todo membro público choca com E6.
+    public_member_api_docs: false

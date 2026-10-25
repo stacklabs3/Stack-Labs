@@ -92,3 +92,17 @@ rule:
             stopBy: end
             kind: identifier
             regex: '^(assert|verify|expect|fail|conferir)'
+
+---
+id: teste-sem-afirmacao-dart
+language: Dart
+message: "P5: teste sem afirmação passa sem conferir nada. Afirme o que o risco muda (RK<n>) ou apague o teste."
+severity: error
+rule:
+  kind: call_expression
+  has: { field: function, kind: identifier, regex: '^(test|testWidgets|patrolTest)$' }
+  not:
+    has:
+      stopBy: end
+      kind: identifier
+      regex: '^(expect|assert|verify|conferir)'

@@ -50,3 +50,18 @@ rule:
   any:
     - { kind: marker_annotation, regex: '^@(Disabled\w*|Ignore)$' }
     - { kind: annotation, regex: '^@(Disabled\w*|Ignore)\b' }
+
+---
+id: teste-desligado-dart
+language: Dart
+message: "P5: teste desligado ou focado tira testes da suíte sem ninguém ver. Conserte ou apague; risco que ainda não tem teste fica pendente em docs/riscos.md."
+severity: error
+rule:
+  kind: named_argument
+  regex: '^(skip|solo)\s*:'
+  not: { regex: ':\s*false$' }
+  inside:
+    kind: arguments
+    inside:
+      kind: call_expression
+      has: { field: function, kind: identifier, regex: '^(test|testWidgets|group|goldenTest|patrolTest)$' }

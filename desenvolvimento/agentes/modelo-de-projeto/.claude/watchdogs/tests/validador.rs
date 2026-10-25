@@ -274,7 +274,12 @@ fn configuracao_invalida_e_erro_de_configuracao() {
 
 #[test]
 fn modelos_de_regras_de_codigo_json_sao_validos() {
-    for nome in ["regras-de-codigo.json", "regras-de-codigo.java.json", "regras-de-codigo.rust.json"] {
+    for nome in [
+        "regras-de-codigo.json",
+        "regras-de-codigo.java.json",
+        "regras-de-codigo.rust.json",
+        "regras-de-codigo.dart.json",
+    ] {
         let modelo: Value = serde_json::from_str(&fs::read_to_string(pasta_do_crate().join("modelos").join(nome)).unwrap()).unwrap();
         let repositorio = Repositorio::novo(&[]);
         // Uma linha por princípio ou prática, citando todas as regras que nascem dele.
@@ -316,6 +321,25 @@ fn modelos_de_regras_de_codigo_json_sao_validos() {
     }
 }
 
+#[test]
+fn modelo_analysis_options_liga_toda_regra_do_modelo_dart() {
+    let modelo: Value = serde_json::from_str(&fs::read_to_string(pasta_do_crate().join("modelos/regras-de-codigo.dart.json")).unwrap()).unwrap();
+    let analysis_options = fs::read_to_string(pasta_do_crate().join("modelos/lint/analysis_options.yaml")).unwrap();
+    let regras_delegadas: Vec<&str> = modelo["regras"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|regra| regra["verificacao"]["tipo"] == "lint-cobre")
+        .flat_map(|regra| regra["verificacao"]["regras"].as_array().unwrap().iter().map(|nome| nome.as_str().unwrap()))
+        .collect();
+    let motivos = motivos_do_lint(
+        &[("analysis_options.yaml", &analysis_options)],
+        json!("analysis_options.yaml"),
+        &regras_delegadas,
+    );
+    assert!(motivos.is_empty(), "{motivos:?}");
+}
+
 fn preencher_modelo(nome: &str, trocas: &[(&str, &str)]) -> String {
     trocas.iter().fold(
         fs::read_to_string(pasta_do_crate().join("modelos/ast-grep").join(nome)).unwrap(),
@@ -334,7 +358,7 @@ fn ast_grep_os_modelos_acham_o_que_devem() {
             "regras/dominio.yml",
             &preencher_modelo(
                 "dominio-sem-infra.yml",
-                &[("<PASTA_DO_DOMINIO>", "src/dominio"), ("<PACOTES_DE_INFRA>", "prisma|@prisma/|express")],
+                &[("<PASTA_DO_DOMINIO>", "src/dominio"), ("<PACOTES_DE_INFRA>", "prisma|@prisma/|express|http")],
             ),
         ),
         ("regras/catch.yml", &preencher_modelo("catch-vazio.yml", &[])),
@@ -353,21 +377,36 @@ fn ast_grep_os_modelos_acham_o_que_devem() {
         ("src/montagem/index.ts", "export const chave = process.env.CHAVE;\n"),
         ("src/dominio/config.ts", "export const chave = process.env.CHAVE;\n"),
         ("py/dominio/servico.py", "try:\n    x()\nexcept Exception:\n    pass\n"),
+        ("regras/nome.yml", &preencher_modelo("nome-de-uma-letra.yml", &[])),
+        (
+            "src/dominio/viagem.dart",
+            "import 'package:http/http.dart';\nimport 'dart:async';\nvoid a() { try { g(); } catch (erro) {} }\n\
+             final lista = valores.map((v) => v * 2);\nfinal total = lista.length;\n",
+        ),
     ]);
     let config = json!({ "versao": 1, "regras": [
         { "id": "R1", "principio": "D", "verificacao": { "tipo": "ast-grep", "regras": "regras/dominio.yml" } },
         { "id": "R2", "principio": "E4", "verificacao": { "tipo": "ast-grep", "regras": "regras/catch.yml" } },
-        { "id": "R3", "principio": "P3", "verificacao": { "tipo": "ast-grep", "regras": "regras/ambiente.yml" } }
+        { "id": "R3", "principio": "P3", "verificacao": { "tipo": "ast-grep", "regras": "regras/ambiente.yml" } },
+        { "id": "R4", "principio": "E1", "verificacao": { "tipo": "ast-grep", "regras": "regras/nome.yml" } }
     ] });
-    let texto_md = tabela_com(&[("D", "adotado | R1"), ("E4", "adotado | R2"), ("P3", "adotado | R3")]);
+    let texto_md = tabela_com(&[("D", "adotado | R1"), ("E4", "adotado | R2"), ("P3", "adotado | R3"), ("E1", "adotado | R4")]);
     let achados = |id: &str| {
         violacoes_da(&repositorio.raiz, &config, &texto_md, None, id)
             .into_iter()
             .map(|violacao| format!("{}:{}", violacao.0.unwrap(), violacao.1.unwrap()))
             .collect::<Vec<_>>()
     };
-    assert_eq!(achados("R1"), vec!["src/dominio/pedido.ts:1", "src/dominio/pedido.ts:3"]);
-    assert_eq!(achados("R2"), vec!["py/dominio/servico.py:3", "src/infra/repo.js:1"]);
+    assert_eq!(
+        achados("R1"),
+        vec!["src/dominio/pedido.ts:1", "src/dominio/pedido.ts:3", "src/dominio/viagem.dart:1"]
+    );
+    assert_eq!(
+        achados("R2"),
+        vec!["py/dominio/servico.py:3", "src/dominio/viagem.dart:3", "src/infra/repo.js:1"]
+    );
+    // "void a()" e "(v) =>": função e lambda contam; o uso de "v" e "valores" não.
+    assert_eq!(achados("R4"), vec!["src/dominio/viagem.dart:3", "src/dominio/viagem.dart:4"]);
     assert_eq!(achados("R3"), vec!["src/dominio/config.ts:1"]);
 }
 
@@ -520,6 +559,46 @@ fn lint_cobre_workspace_lints_e_limite_do_clippy_toml() {
         vec![
             "a regra de lint \"allow-unwrap-in-tests\" está configurada como false, que não bloqueia",
             "a regra de lint \"excessive-nesting-threshold\" não está configurada",
+        ]
+    );
+}
+
+#[test]
+fn lint_cobre_analysis_options_le_lista_mapa_severidade_e_linguagem() {
+    let analysis_options = "include: package:very_good_analysis/analysis_options.yaml\n\nanalyzer:\n  language:\n    strict-casts: true\n\
+        \x20   strict-inference: false\n  errors:\n    empty_catches: error\n    discarded_futures: ignore\n    unawaited_futures: info\n\n\
+        linter:\n  rules:\n    - avoid_print\n    # - prefer_final_locals\n    - \"use_build_context_synchronously\"\n";
+    let analysis_options_em_mapa = "linter:\n  rules:\n    prefer_const_constructors: true\n    public_member_api_docs: false\n";
+    let motivos = motivos_do_lint(
+        &[
+            ("analysis_options.yaml", analysis_options),
+            ("pacote/analysis_options.yaml", analysis_options_em_mapa),
+        ],
+        json!(["analysis_options.yaml", "pacote/analysis_options.yaml"]),
+        &[
+            "strict-casts",
+            "strict-inference",
+            "empty_catches",
+            "discarded_futures",
+            "unawaited_futures",
+            "avoid_print",
+            "prefer_final_locals",
+            "use_build_context_synchronously",
+            "prefer_const_constructors",
+            "public_member_api_docs",
+            "avoid_dynamic_calls",
+        ],
+    );
+    assert_eq!(
+        motivos,
+        vec![
+            "a regra de lint \"strict-inference\" está configurada como \"false\", que não bloqueia",
+            "a regra de lint \"discarded_futures\" está configurada como \"ignore\", que não bloqueia",
+            "a regra de lint \"unawaited_futures\" está configurada como \"info\", que não bloqueia",
+            "a regra de lint \"prefer_final_locals\" só aparece comentada",
+            "a regra de lint \"public_member_api_docs\" está configurada como \"false\", que não bloqueia",
+            // Só o preset do include: liga, e o preset não aparece no arquivo.
+            "a regra de lint \"avoid_dynamic_calls\" não está configurada",
         ]
     );
 }
@@ -802,6 +881,25 @@ fn termo_evitado_em_rust_ve_mut_static_mod_e_as_outras_declaracoes() {
 }
 
 #[test]
+fn termo_evitado_em_dart_ve_final_tipado_late_mixin_e_extension() {
+    let violacoes = rodar_uma_regra(
+        &[
+            ("GLOSSARY.md", "_Evitar_: Usuario\n"),
+            (
+                "src/a.dart",
+                "class Conta extends UsuarioBase {}\nfinal usuarioAtivo = 1;\nfinal Map<String, int> usuarioPorId = {};\n\
+                 late final String nomeDoUsuario;\nmixin UsuarioMixin {}\nextension type UsuarioId(int valor) {}\nconst limite = 3;\n",
+            ),
+        ],
+        json!({ "tipo": "termo-evitado" }),
+        "E1",
+    );
+    let linhas: Vec<u64> = violacoes.into_iter().map(|violacao| violacao.1.unwrap()).collect();
+    // "class Conta extends UsuarioBase" declara Conta: o tipo opcional só vale depois de final/const/var/late.
+    assert_eq!(linhas, vec![2, 3, 4, 5, 6]);
+}
+
+#[test]
 fn termo_evitado_em_ts_java_e_python_segue_igual() {
     let violacoes = rodar_uma_regra(
         &[
@@ -895,7 +993,7 @@ fn id_de_pratica_invalido_e_erro_de_configuracao() {
         let Err(erro) = validar(&repositorio.raiz, &config, "", &opcoes(None)) else {
             panic!("{principio} deveria ser erro de configuração")
         };
-        assert!(erro.0.contains("TS<n>, JV<n> ou RS<n>"), "{}", erro.0);
+        assert!(erro.0.contains("TS<n>, JV<n>, RS<n> ou DT<n>"), "{}", erro.0);
     }
 }
 
@@ -948,6 +1046,24 @@ fn teste_cobre_risco_aceita_risco_no_nome_no_comentario_e_no_bloco() {
         ),
     ]);
     assert!(violacoes.is_empty(), "{violacoes:?}");
+}
+
+#[test]
+fn teste_cobre_risco_le_test_e_testwidgets_de_dart() {
+    let violacoes = riscos_cobertos(&[
+        ("docs/riscos.md", REGISTRO),
+        (
+            "test/cupom_test.dart",
+            "void main() {\n  group('RK2: cupom vencido', () {\n    test('recusa', () {\n      expect(aplicar(), isFalse);\n    });\n  });\n  \
+             // RK1\n  testWidgets('cobra uma vez', (tester) async {\n    expect(find.text('1'), findsOneWidget);\n  });\n  \
+             testWidgets('mostra o total', (tester) async {\n    expect(find.text('2'), findsOneWidget);\n  });\n  \
+             goldenTest(\n    'RK1 recibo',\n    fileName: 'recibo',\n    builder: () => const Recibo(),\n  );\n}\n",
+        ),
+    ]);
+    assert_eq!(
+        violacoes,
+        vec!["test/cupom_test.dart:11 o teste não cita o risco que cobre (RK<n> de docs/riscos.md); sem risco, o teste não entra"]
+    );
 }
 
 #[test]

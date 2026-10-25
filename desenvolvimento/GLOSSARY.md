@@ -34,9 +34,9 @@ são regras da constituição e nunca se afastam.
 _Evitar_: Boas práticas, clean code, style guide
 
 **Prática da linguagem**:
-Como um princípio de código aparece numa linguagem da casa (TypeScript, Java, Rust), com a regra de
+Como um princípio de código aparece numa linguagem da casa (TypeScript, Java, Rust, Dart), com a regra de
 máquina que o confere, ou uma prática que só aquela linguagem tem e nenhum dos 22 cobre (`TS<n>`,
-`JV<n>`, `RS<n>`), em `docs/agents/principios-de-codigo/<linguagem>.md`. O grilling decide cada uma
+`JV<n>`, `RS<n>`, `DT<n>`), em `docs/agents/principios-de-codigo/<linguagem>.md`. O grilling decide cada uma
 como regra do projeto, fora da tabela dos 22.
 _Evitar_: Boa prática, style guide, princípio da linguagem
 
