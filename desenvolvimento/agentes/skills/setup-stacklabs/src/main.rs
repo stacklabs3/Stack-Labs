@@ -35,6 +35,12 @@ const CAMINHOS_DOS_WATCHDOGS: [&str; 5] = [
 /// Watchdogs antigos (em node), que a versão em Rust de `.claude/watchdogs/` substitui.
 const WATCHDOGS_ANTIGOS: [&str; 2] = [".claude/hooks", ".claude/validador"];
 /// Pasta de artefatos de compilação do cargo: nunca é copiada, em nenhum nível.
+/// Skills do Matt que o método libera para o agente rodar a cadeia sozinho: sai a linha `disable-model-invocation`.
+const SKILLS_SEM_TRAVA: [&str; 5] = ["wayfinder", "handoff", "to-spec", "to-tickets", "implement"];
+/// Âncora do `implement-spec` do Matt: o remendo entra logo depois do parágrafo que a começa.
+const ANCORA_DO_IMPLEMENT_SPEC: &str = "Communication to and from subagents should be sparse.";
+const REMENDO_DO_IMPLEMENT_SPEC: &str = "**Implementer subagents** run **one at a time**, never in parallel: this machine has no swap, and two builds at once kill every process, the agent's shell included. (Remendo do método StackLabs sobre o upstream, aplicado pelo `/setup-stacklabs`.)";
+
 const PASTA_DE_COMPILACAO: &str = "target";
 const LABELS_DO_METODO: [&str; 17] = [
     "wayfinder:map",
@@ -195,6 +201,45 @@ fn pastas_iguais(pasta_a: &Path, pasta_b: &Path) -> Resultado<bool> {
                 &pasta_b.join(caminho_relativo),
             )
         }))
+}
+
+/// Aplica no `SKILL.md` copiado os remendos do método às skills do Matt (nada a fazer nas demais).
+fn remendar_skill_do_matt(pasta_da_skill: &Path) -> Resultado<()> {
+    let nome = nome_da_pasta(pasta_da_skill);
+    let arquivo = pasta_da_skill.join("SKILL.md");
+    if SKILLS_SEM_TRAVA.contains(&nome.as_str()) {
+        let conteudo =
+            fs::read_to_string(&arquivo).map_err(|erro| format!("{}: {erro}", texto(&arquivo)))?;
+        let sem_trava: String = conteudo
+            .split_inclusive('\n')
+            .filter(|linha| !linha.starts_with("disable-model-invocation:"))
+            .collect();
+        fs::write(&arquivo, sem_trava).map_err(|erro| format!("{}: {erro}", texto(&arquivo)))?;
+    } else if nome == "implement-spec" {
+        let conteudo =
+            fs::read_to_string(&arquivo).map_err(|erro| format!("{}: {erro}", texto(&arquivo)))?;
+        if conteudo.contains(REMENDO_DO_IMPLEMENT_SPEC) {
+            return Ok(());
+        }
+        let Some(inicio) = conteudo.find(ANCORA_DO_IMPLEMENT_SPEC) else {
+            return Err(format!(
+                "{}: a âncora do remendo (\"{ANCORA_DO_IMPLEMENT_SPEC}\") sumiu do upstream; atualize o remendo em main.rs",
+                texto(&arquivo)
+            ));
+        };
+        let fim_do_paragrafo = conteudo[inicio..]
+            .find("\n\n")
+            .map_or(conteudo.len(), |posicao| inicio + posicao + 2);
+        let mut remendado = conteudo[..fim_do_paragrafo].to_string();
+        if !remendado.ends_with("\n\n") {
+            remendado.push_str("\n\n");
+        }
+        remendado.push_str(REMENDO_DO_IMPLEMENT_SPEC);
+        remendado.push_str("\n\n");
+        remendado.push_str(&conteudo[fim_do_paragrafo..]);
+        fs::write(&arquivo, remendado).map_err(|erro| format!("{}: {erro}", texto(&arquivo)))?;
+    }
+    Ok(())
 }
 
 fn caminho_eh_watchdog(caminho_relativo: &str) -> bool {
@@ -602,15 +647,27 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
         }
     }
 
+    let pasta_de_preparo =
+        std::env::temp_dir().join(format!("stacklabs-skills-{}", std::process::id()));
     let mut copiar_skill = |pasta_de_origem: &Path, rotulo: &str| -> Resultado<()> {
         let nome = nome_da_pasta(pasta_de_origem);
         let pasta_do_destino = pasta_das_skills_do_projeto.join(&nome);
-        if pastas_iguais(pasta_de_origem, &pasta_do_destino)? {
+        // A skill do Matt passa pelos remendos do método antes de ser comparada e instalada.
+        let pasta_pronta = if rotulo == "Matt" {
+            let pasta_remendada = pasta_de_preparo.join(&nome);
+            remover_pasta(&pasta_remendada)?;
+            copiar_pasta(pasta_de_origem, &pasta_remendada)?;
+            remendar_skill_do_matt(&pasta_remendada)?;
+            pasta_remendada
+        } else {
+            pasta_de_origem.to_path_buf()
+        };
+        if pastas_iguais(&pasta_pronta, &pasta_do_destino)? {
             return Ok(());
         }
         if !simular {
             remover_pasta(&pasta_do_destino)?;
-            copiar_pasta(pasta_de_origem, &pasta_do_destino)?;
+            copiar_pasta(&pasta_pronta, &pasta_do_destino)?;
         }
         relatorio.push(format!("SKILL     {nome} ({rotulo})"));
         Ok(())
@@ -621,6 +678,8 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
     for pasta_skill in &pastas_da_casa {
         copiar_skill(pasta_skill, "casa")?;
     }
+
+    remover_pasta(&pasta_de_preparo)?;
 
     let commit_stacklabs = git_ou_nulo(&[
         "-C",

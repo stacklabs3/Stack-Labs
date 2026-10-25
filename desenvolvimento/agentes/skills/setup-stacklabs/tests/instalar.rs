@@ -88,10 +88,18 @@ impl Cenario {
 
         escrever(
             &matt.join(".claude-plugin/plugin.json"),
-            r#"{ "version": "1.2.3", "skills": ["./skills/grill-me", "./skills/tdd"] }"#,
+            r#"{ "version": "1.2.3", "skills": ["./skills/grill-me", "./skills/tdd", "./skills/wayfinder", "./skills/implement-spec"] }"#,
         );
         escrever(&matt.join("skills/grill-me/SKILL.md"), "grill-me\n");
         escrever(&matt.join("skills/tdd/SKILL.md"), "tdd\n");
+        escrever(
+            &matt.join("skills/wayfinder/SKILL.md"),
+            "---\nname: wayfinder\ndisable-model-invocation: true\n---\ncorpo\n",
+        );
+        escrever(
+            &matt.join("skills/implement-spec/SKILL.md"),
+            "---\nname: implement-spec\ndisable-model-invocation: true\n---\n\nIntro.\n\nCommunication to and from subagents should be sparse. Pointers.\n\n## Steps\n",
+        );
 
         fs::create_dir_all(&projeto).unwrap();
         let iniciar = Command::new("git")
@@ -211,6 +219,8 @@ fn instalacao_copia_o_modelo_as_skills_e_ativa_o_pre_push() {
         [
             "SKILL     grill-me (Matt)",
             "SKILL     tdd (Matt)",
+            "SKILL     wayfinder (Matt)",
+            "SKILL     implement-spec (Matt)",
             "SKILL     nova-sessao (casa)",
             "SKILL     auditar-metodo (casa)",
             "SKILL     setup-stacklabs (casa)",
@@ -233,7 +243,7 @@ fn instalacao_copia_o_modelo_as_skills_e_ativa_o_pre_push() {
     assert_eq!(origem["matt"]["versao"], "1.2.3");
     assert_eq!(
         origem["skillsDoMatt"],
-        serde_json::json!(["grill-me", "tdd"])
+        serde_json::json!(["grill-me", "tdd", "wayfinder", "implement-spec"])
     );
     assert_eq!(
         origem["skillsDaCasa"],
@@ -416,5 +426,37 @@ fn opcao_desconhecida_sai_com_erro() {
     assert_eq!(
         String::from_utf8_lossy(&saida.stderr),
         "opção desconhecida: --outra\n"
+    );
+}
+
+#[test]
+fn skills_do_matt_chegam_com_os_remendos_do_metodo() {
+    let cenario = Cenario::novo();
+    cenario.relatorio(&[]);
+    let skills = cenario.projeto.join(".claude/skills");
+
+    let wayfinder = fs::read_to_string(skills.join("wayfinder/SKILL.md")).unwrap();
+    assert!(
+        !wayfinder.contains("disable-model-invocation"),
+        "{wayfinder}"
+    );
+    assert!(wayfinder.contains("name: wayfinder"));
+
+    let implement_spec = fs::read_to_string(skills.join("implement-spec/SKILL.md")).unwrap();
+    assert!(
+        implement_spec.contains("disable-model-invocation: true"),
+        "a trava do implement-spec fica"
+    );
+    let remendo = implement_spec
+        .find("run **one at a time**")
+        .expect("remendo ausente");
+    assert!(implement_spec.find("Communication to and from").unwrap() < remendo);
+    assert!(remendo < implement_spec.find("## Steps").unwrap());
+    assert_eq!(implement_spec.matches("one at a time").count(), 1);
+
+    let segunda_vez = cenario.relatorio(&[]);
+    assert!(
+        segunda_vez.ends_with("Nada a fazer: o projeto já está em dia.\n"),
+        "{segunda_vez}"
     );
 }
