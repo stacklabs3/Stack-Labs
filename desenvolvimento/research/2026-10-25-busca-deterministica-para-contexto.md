@@ -134,7 +134,7 @@ grafos e memória persistente ("segundo cérebro") ajudam o agente a entender o 
 
 ## 5. Medição
 
-- Unidade: a issue, com o `rodar custo` (ADR 0016) comparando tokens de entrada/saída e custo por
+- Unidade: a issue, com o `rodar custo` (ADR 0017) comparando tokens de entrada/saída e custo por
   issue com e sem a camada, em issues reais pareadas por tamanho.
 - Qualidade da recuperação, offline: para issues já fechadas, o conjunto de arquivos do diff do
   merge é o gabarito; medir revocação@k dos candidatos (etapa 1) e do dossiê (etapa 2), como o

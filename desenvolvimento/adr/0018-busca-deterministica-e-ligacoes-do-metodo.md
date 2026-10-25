@@ -1,6 +1,6 @@
 # Contexto do agente por busca determinística e pelas ligações do método, sem grafo feito por modelo
 
-O agente gasta boa parte de cada issue procurando contexto, e a ADR 0016 passou a medir esse gasto.
+O agente gasta boa parte de cada issue procurando contexto, e a ADR 0017 passou a medir esse gasto.
 A pesquisa `desenvolvimento/research/2026-10-25-busca-deterministica-para-contexto.md` comparou
 quatro caminhos: busca lexical e grafo de código feitos por parser (probe, codanna, repo map do
 Aider), embeddings, grafo de entidades extraído por modelo (GraphRAG, LightRAG) e memória escrita
