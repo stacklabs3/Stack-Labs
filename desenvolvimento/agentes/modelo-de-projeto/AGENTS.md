@@ -33,6 +33,8 @@ ideia grande demais para uma sessão
 - **Arquitetura do código existente:** `/improve-codebase-architecture`, com o vocabulário do `/codebase-design`.
 - **Fechamento:** `/pr` para o corpo da PR e `/retro` para os ajustes do ambiente.
 - **Documento que outro agente vai ler** (`AGENTS.md`, `docs/`, `docs/regras-de-codigo.md`, skill): `/writing-for-agents`.
+- **Contexto de um símbolo, termo, arquivo ou issue:** `sh .claude/watchdogs/rodar contexto <consulta>`
+  antes de abrir arquivos ([docs/agents/watchdogs.md](docs/agents/watchdogs.md#consultar-o-contexto)).
 - **Dúvida sobre qual skill usar:** `/ask-matt`.
 
 ## Regras duras
