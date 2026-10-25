@@ -14,11 +14,14 @@ instala o Rust (https://rustup.rs). Testes: `cargo test --release --manifest-pat
 | Watchdog | Onde | O que garante | Ação |
 |---|---|---|---|
 | `sessao-inicio` | SessionStart | Confere o setup e o pre-push, mostra a branch, a etapa de adoção, a issue ativa, a situação dos **mapas iniciais** e os mapas abertos, e reancora a constituição | Injeta contexto |
-| `vigia-prompt` | UserPromptSubmit | Mede o contexto: avisa em 450k e exige `/nova-sessao` a partir de 550k. Em sessão de grilling, relembra a **linguagem simples** a cada resposta do humano | Injeta alerta |
+| `vigia-prompt` | UserPromptSubmit | Mede o contexto: avisa em 450k e exige `/nova-sessao` a partir de 550k. Em sessão de grilling, relembra a **linguagem simples** a cada resposta do humano. Com a issue ativa acima do orçamento, relembra o custo | Injeta alerta |
 | `vigia-skill` | PostToolUse `Skill` | Quando uma skill de grilling carrega, marca o grilling na sessão e injeta a regra de linguagem simples (regra 10) | Injeta contexto |
 | `guarda-edicao` | PreToolUse `Write\|Edit\|NotebookEdit` | Protege os watchdogs, aplica a smart zone e só libera código de produção com issue ativa e fora da `main` (os caminhos livres da regra 3 passam) | **Bloqueia** |
 | `guarda-bash` | PreToolUse `Bash` | Protege os watchdogs; ativa issue (uma por sessão ou por subagente, e uma por comando) só com os **cinco mapas iniciais** criados e Protótipo, Arquitetura, Fases e Regras de código fechados, e nunca um `spec`; exige claim antes de comentar ou fechar ticket; exige comentário de resolução **com `## Fontes`** em grilling, tarefa e pesquisa; um ticket de decisão por sessão; barra commit na `main`, push forçado, `--no-verify`, mudança no `core.hooksPath`, `STACKLABS_PERMITIR_PUSH_MAIN` e `--atualizar-watchdogs` | **Bloqueia** |
 | `vigia-teste` | PostToolUse `Write\|Edit\|MultiEdit` | No teste que acabou de ser editado, roda as regras do P5 de `docs/regras-de-codigo.json`: teste sem `RK<n>` ou com risco fora do registro, sem afirmação, com afirmação trivial, desligado ou focado ([riscos.md](riscos.md)). Projeto sem `docs/regras-de-codigo.json` passa; na etapa de observação, só avisa | **Devolve ao agente para corrigir** |
+| `vigia-saida` | PostToolUse `Bash\|Read\|Grep\|Glob\|WebFetch` | Saída de ferramenta acima de 20k caracteres (uns 5k tokens) pede filtro da próxima vez: trecho com `offset`/`limit`, `grep`/`tail`, padrão mais estreito ou subagente | Injeta alerta |
+| `vigia-agente` | PreToolUse `Agent\|Task` | Subagente de busca (`Explore`, `claude-code-guide`) lançado sem `model` recebe o lembrete de usar haiku ou sonnet | Injeta alerta |
+| `vigia-custo` | Stop e SubagentStop | Soma o uso de tokens de cada turno, da sessão e dos subagentes, na issue ativa, em `.claude/state/custos/issue-<n>.json`. Ao cruzar o **orçamento por issue**, avisa o humano; dali em diante o `vigia-prompt` relembra o agente a cada prompt. Relatório: `sh .claude/watchdogs/rodar custo [<n>]`, que vai na Evidence da PR | Avisa o humano |
 | `vigia-parada` | Stop | O turno só termina com o ponteiro do ticket resolvido em *Decisions so far* | **Bloqueia o fim do turno** |
 | `orquestrar-issues` | Sessão do orquestrador, com os papéis de `.claude/agents/` | Ciclo e limites da [orquestração](orquestracao.md); nunca faz merge na base | **Devolve a issue / para a rodada** |
 | `validador` | CI local (`ci`), CI do projeto, implementador e revisor | As regras de `docs/regras-de-codigo.json` e a cobertura dos 22 princípios e das práticas da linguagem e o registro de riscos contra os testes ([validador.md](validador.md)); o motor é o mesmo binário dos watchdogs, protegido como eles | **Reprova a fatia / o CI** |
@@ -69,3 +72,8 @@ Ao dar com um destes, entregue o comando ao usuário:
   PATH, sem rede ou sem login, o `ci` avisa e segue. Ela lê só o trecho do teste e a linha do risco,
   não o código de produção, e erra nos dois sentidos; por isso não reprova. Os hooks nunca chamam o
   modelo, pela latência a cada edição.
+- O custo por issue mede em **tokens equivalentes de entrada**: entrada 1x, escrita de cache 1,25x
+  (5 min) ou 2x (1 h), leitura de cache 0,1x e saída 5x, os pesos da tabela de preços da Anthropic.
+  Conta só turnos com issue ativa; planejamento, grilling e revisões por `claude -p` ficam de fora.
+  O orçamento padrão é 3M; o humano o calibra em `.claude/metodo.json` (`"orcamentoPorIssue"`)
+  olhando as issues já medidas.

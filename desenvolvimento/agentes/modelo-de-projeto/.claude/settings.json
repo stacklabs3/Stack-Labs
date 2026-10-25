@@ -42,6 +42,16 @@
             "timeout": 60
           }
         ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/watchdogs/rodar\" hook vigia-agente",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -64,6 +74,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Bash|Read|Grep|Glob|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/watchdogs/rodar\" hook vigia-saida",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "Stop": [
@@ -73,6 +93,26 @@
             "type": "command",
             "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/watchdogs/rodar\" hook vigia-parada",
             "timeout": 60
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/watchdogs/rodar\" hook vigia-custo",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/watchdogs/rodar\" hook vigia-custo",
+            "timeout": 30
           }
         ]
       }
