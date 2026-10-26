@@ -93,6 +93,17 @@ Leia o motivo: ele diz o que falta e qual é a rota certa. Watchdog errado se co
 por PR com a label `altera-watchdogs`, nunca na conversa. Mensagens e escapes:
 [watchdogs.md](watchdogs.md).
 
+## Versão do método e regras do projeto
+
+O método é um **template versionado**: cada projeto guarda a versão que instalou em
+`.claude/skills/ORIGEM.json`, e o que mudou entre versões está no [CHANGELOG](../CHANGELOG.md).
+Atualizar é rodar `/setup-stacklabs` de novo; para ficar numa versão conhecida, `--versao <x.y.z>`.
+
+Cada projeto ajusta as regras na seção `## Regras deste projeto` do `AGENTS.md`: regra nova em
+**Acrescentadas**, regra do método que não vale ali em **Afastadas**, sempre com o motivo e o link da
+sua decisão. A atualização mantém essa seção e troca o resto. Regra que serve a todo projeto vai por
+PR no Stack-Labs ([ADR 0020](../adr/0020-metodo-versionado-e-regras-por-projeto.md)).
+
 ## Começar um projeto
 
 Siga o [checklist](iniciar-um-projeto.md).

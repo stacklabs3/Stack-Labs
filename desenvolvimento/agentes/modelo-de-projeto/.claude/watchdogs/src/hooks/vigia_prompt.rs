@@ -13,12 +13,13 @@ pub fn rodar() -> i32 {
     }
     let mut avisos_do_prompt: Vec<String> = Vec::new();
 
+    let ajustes = ler_ajustes_do_projeto(&diretorio_do_projeto(&entrada_hook));
     let tokens_de_contexto = medir_tokens_de_contexto(texto(&entrada_hook["transcript_path"]));
     let milhares_de_tokens = (tokens_de_contexto as f64 / 1000.0).round() as u64;
-    let limite_em_milhares = LIMITE_DURO_CONTEXTO / 1000;
-    if tokens_de_contexto >= LIMITE_DURO_CONTEXTO {
+    let limite_em_milhares = ajustes.limite_duro_contexto / 1000;
+    if tokens_de_contexto >= ajustes.limite_duro_contexto {
         avisos_do_prompt.push(format!("🛑 [watchdog vigia-prompt] Contexto em ~{milhares_de_tokens}k tokens: passou da smart zone ({limite_em_milhares}k). REGRA DURA: a próxima ação é /nova-sessao, e o trabalho continua numa janela nova com o kickoff. Edições no repositório estão bloqueadas. Avise o usuário."));
-    } else if tokens_de_contexto >= LIMITE_AVISO_CONTEXTO {
+    } else if tokens_de_contexto >= ajustes.limite_aviso_contexto {
         avisos_do_prompt.push(format!("⚠️ [watchdog vigia-prompt] Contexto em ~{milhares_de_tokens}k tokens, perto da smart zone ({limite_em_milhares}k). Feche a etapa atual e planeje o /nova-sessao. Não comece uma fase nova nesta sessão."));
     }
 

@@ -46,7 +46,8 @@ Uma vez por máquina, instale as skills de entrada:
 
 ```bash
 git clone https://github.com/stacklabs1/Stack-Labs
-cp -R Stack-Labs/desenvolvimento/agentes/skills/{setup-stacklabs,adotar-metodo-stack-labs,auditar-metodo} ~/.claude/skills/
+mkdir -p ~/.claude/skills
+cp -R Stack-Labs/desenvolvimento/agentes/skills/setup-stacklabs Stack-Labs/desenvolvimento/agentes/skills/adotar-metodo-stack-labs Stack-Labs/desenvolvimento/agentes/skills/auditar-metodo ~/.claude/skills/
 ```
 
 Depois, numa sessão do Claude Code dentro do projeto:
@@ -58,7 +59,9 @@ Depois, numa sessão do Claude Code dentro do projeto:
   **`/adotar-metodo-stack-labs`**. Ela diagnostica, instala com os watchdogs em observação e leva o
   projeto às etapas seguintes ([docs/agents/adocao.md](modelo-de-projeto/docs/agents/adocao.md)).
 
-**Atualizar** um projeto é rodar `/setup-stacklabs` de novo. Watchdog desatualizado num projeto que
+**Atualizar** um projeto é rodar `/setup-stacklabs` de novo. O método tem versão
+([../VERSAO](../VERSAO), o que mudou em [../CHANGELOG.md](../CHANGELOG.md)); o projeto guarda a dele
+em `.claude/skills/ORIGEM.json`, e `--versao <x.y.z>` instala uma versão marcada em vez da mais nova. Watchdog desatualizado num projeto que
 já tem watchdogs só um humano atualiza:
 `sh ~/.claude/skills/setup-stacklabs/rodar --atualizar-watchdogs`.
 
@@ -71,7 +74,10 @@ os watchdogs são compilados na máquina pelo `cargo` na primeira vez que rodam.
 ## Mudar o método
 
 O `modelo-de-projeto` é a fonte única. Mude aqui primeiro, por PR no Stack-Labs, e propague para os
-projetos. Mudança só num projeto é exceção dele e fica na seção `## Regras deste projeto`.
+projetos: a PR sobe a [VERSAO](../VERSAO) e acrescenta a entrada no [CHANGELOG](../CHANGELOG.md)
+(ADR 0020). Mudança só num projeto é exceção dele e fica na seção `## Regras deste projeto` do
+`AGENTS.md`: regra nova em `### Acrescentadas`, regra do método que não vale ali em `### Afastadas`.
+A atualização mantém essa seção e troca o resto do arquivo.
 
 Todo documento do método se escreve com o `/writing-for-agents` (ADR 0009). Cada significado tem um
 dono; os outros lugares apontam para ele:
@@ -81,6 +87,7 @@ dono; os outros lugares apontam para ele:
 | Definição de um termo | [GLOSSARY.md](../GLOSSARY.md) |
 | O porquê de uma decisão do método | [adr/](../adr/) |
 | Regra dura do agente | `modelo-de-projeto/AGENTS.md`, uma linha por regra e o ponteiro |
+| Versão do método e o que mudou em cada uma | [../VERSAO](../VERSAO) e [../CHANGELOG.md](../CHANGELOG.md) |
 | Mecânica do agente: passos, critério de pronto, comandos | `modelo-de-projeto/docs/agents/` |
 | O que a pessoa faz, decide e aprova | [humanos/](../humanos/README.md) |
 | Procedimento de uma skill | o `SKILL.md` dela |

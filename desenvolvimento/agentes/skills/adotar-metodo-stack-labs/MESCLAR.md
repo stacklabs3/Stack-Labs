@@ -9,7 +9,9 @@ O modelo é a base; o que o projeto tinha de próprio entra no fim, numa seção
 `## Regras deste projeto`.
 
 1. Copie o `.stacklabs-novo` inteiro como novo `AGENTS.md`.
-2. Leve para `## Regras deste projeto` cada regra antiga que o modelo não cobre.
+2. Leve para `### Acrescentadas` (em `## Regras deste projeto`) cada regra antiga que o modelo não
+   cobre, com ID `RP<n>`, e para `### Afastadas` cada regra do modelo que o humano decidiu não seguir
+   ali, com o motivo. É a única seção que as atualizações seguintes preservam.
 3. Regra antiga que **contradiz** o modelo não entra: liste-a para o humano, com a regra do modelo
    que ela contradiz, e pergunte se vira exceção registrada ou se cai.
 4. Decisão antiga que não é regra de agente (escolha de stack, de arquitetura) vira ADR em
@@ -37,9 +39,9 @@ pelos do modelo. Antes de o humano rodar o `--atualizar-watchdogs`:
 
 1. Leia cada hook antigo e liste o que ele garante.
 2. Para cada garantia, diga se um watchdog do modelo já a cobre e qual.
-3. O que nenhum cobre vai para o humano decidir, item a item: vira regra em `## Regras deste projeto`
-   (sem bloqueio), vira proposta de ajuste no `modelo-de-projeto` do Stack-Labs (se serve para todo
-   projeto), ou cai.
+3. O que nenhum cobre vai para o humano decidir, item a item: vira regra em `### Acrescentadas`
+   (sem bloqueio), vira ajuste em `.claude/metodo.json` (campo `ajustes`, gravado pelo humano), ou
+   cai. Nada disso vira PR no Stack-Labs.
 
 Pronto quando nenhum `.stacklabs-novo` resta, o humano respondeu às contradições do `AGENTS.md` e,
 havendo hooks antigos, decidiu cada garantia que nenhum watchdog do modelo cobre.

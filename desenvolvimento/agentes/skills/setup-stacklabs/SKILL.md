@@ -39,7 +39,8 @@ falta e pare.
 
 ### 2. Simulação
 
-Rode `sh <pasta desta skill>/rodar --simular` e mostre o relatório ao humano, agrupado por
+Rode `sh <pasta desta skill>/rodar --simular` (com `--versao <x.y.z>` se o humano quer uma versão
+marcada em vez da mais nova) e mostre o relatório ao humano, agrupado por
 tipo de linha. Se o clone do Stack-Labs falhar, peça o caminho de um clone local e rode com
 `STACKLABS_ORIGEM=<caminho>`.
 
@@ -47,23 +48,31 @@ Pronto quando o humano disse **sim** à lista. Ela inclui criar labels no GitHub
 
 ### 3. Instalação
 
-Rode `sh <pasta desta skill>/rodar` sem `--simular`. O
+Rode `sh <pasta desta skill>/rodar` sem `--simular`, com o mesmo `--versao` da simulação. O
 `--atualizar-watchdogs` é do humano (o `guarda-bash` barra): ele entra no passo 4.
 
 Pronto quando o script terminou sem erro e imprimiu o relatório.
 
 ### 4. Pendências do relatório
 
+A linha `VERSÃO` diz de qual versão do método para qual o projeto foi: leia as entradas do
+`desenvolvimento/CHANGELOG.md` entre as duas e trate o que elas mandam fazer à mão. `MESCLADO`
+(o `AGENTS.md` recebeu o modelo novo com a seção do projeto mantida) só se confere no diff.
+
 Trate as linhas `MESCLAR`, `PULADO`, `PRE-PUSH inativo` e `FALHA`; as demais são informativas.
 
 - **`MESCLAR`**: o modelo novo está em `<arquivo>.stacklabs-novo`; junte e apague o `.stacklabs-novo`.
-  No `.gitignore`, acrescente as linhas que faltam. No `AGENTS.md` e no `CLAUDE.md`, o modelo novo é
-  a base, e a seção `## Regras deste projeto` do arquivo antigo volta inteira no fim. No
+  No `.gitignore`, acrescente as linhas que faltam. No `AGENTS.md` (só chega aqui o que ainda não
+  tem a seção `## Regras deste projeto`) e no `CLAUDE.md`, o modelo novo é a base. Cada regra própria
+  do arquivo antigo vai para `### Acrescentadas`, e cada regra do modelo que o projeto não segue, para
+  `### Afastadas`, no formato da seção; o que não couber, pergunte ao humano. No
   `.claude/settings.json`, que é protegido, entregue o JSON junto ao humano.
 - **`PULADO`** (watchdog ausente ou desatualizado) e **`PRE-PUSH inativo`**: entregue ao humano o
   comando exato e espere que ele rode:
   `sh <pasta desta skill>/rodar --atualizar-watchdogs`. Com essa opção, os watchdogs antigos em
   node (`.claude/hooks/` e `.claude/validador/`) saem do projeto (linhas `REMOVIDA`).
+- **`FALHA` das labels** (sem `origin` no GitHub ou `gh` sem login): o resto já foi instalado.
+  Peça ao humano o `gh auth login` ou o `origin` e rode o script de novo; ele só refaz o que falta.
 - **`FALHA`** (os watchdogs não compilaram): rode `sh .claude/watchdogs/rodar --version` e
   mostre o erro do cargo ao humano: o passo 5 só passa com os watchdogs compilados.
 
@@ -76,7 +85,8 @@ arquivos de watchdog entregues ao humano.
 - `sh -n .claude/githooks/pre-push` passa;
 - `.claude/hooks/` e `.claude/validador/` não existem;
 - `git config core.hooksPath` responde `.claude/githooks`;
-- toda pasta em `.claude/skills/` tem `SKILL.md`, e `ORIGEM.json` lista as skills do Matt e as da casa;
+- toda pasta em `.claude/skills/` tem `SKILL.md` (fora `prototipo-html/`, que guarda o modelo e os
+  scripts da família `*-prototipo`), e `ORIGEM.json` lista as skills do Matt e as da casa;
 - com `docs/regras-de-codigo.json`, `sh .claude/watchdogs/rodar validar` termina em
   `VALIDADOR: APROVADO`, ou cada violação virou ajuste no `.json` ou ticket. Depois da ADR 0012, o
   `lint-cobre` reprova regra desligada, comentada ou ligada só por preset, que antes passava; depois
@@ -89,7 +99,7 @@ Pronto quando os seis passam. Falha é defeito da instalação: corrija antes de
 ### 6. Commit e PR
 
 Numa branch `chore/setup-metodo` (ou `chore/atualizar-metodo`), um commit com tudo o que o script e
-a mesclagem mudaram, push e PR. O corpo da PR traz os commits de origem de `ORIGEM.json` e o que foi
+a mesclagem mudaram, push e PR. O corpo da PR traz a versão do método e os commits de origem de `ORIGEM.json` e o que foi
 mesclado à mão. Num repositório sem `main`, diga ao humano que a PR depende de ele criar a `main`.
 
 Pronto quando a PR existe, ou o humano sabe exatamente o que a impede.

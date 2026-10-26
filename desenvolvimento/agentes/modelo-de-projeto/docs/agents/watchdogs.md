@@ -62,7 +62,33 @@ Ao dar com um destes, entregue o comando ao usuário:
   processo do Claude Code; um comando Bash do agente não a define.
 - **Instalar ou atualizar:** `/setup-stacklabs`. Constantes (mapas iniciais, tipos que exigem fontes,
   skills de grilling, limites da smart zone, caminhos livres) ficam em `.claude/watchdogs/src/comum.rs`.
-  Mudança que vale para todos os projetos vai primeiro para o `modelo-de-projeto` do repositório Stack-Labs.
+  O projeto ajusta o que precisa sem mudar o código: veja *Ajustes do projeto*.
+
+## Ajustes do projeto
+
+O que um projeto muda nos watchdogs fica no campo `ajustes` de `.claude/metodo.json`, que só o
+humano grava (o arquivo é protegido). A atualização do método não toca nele. Campo ausente ou
+inválido fica no padrão.
+
+```json
+{
+  "ajustes": {
+    "caminhosLivres": ["infra/", "scripts/deploy.sh"],
+    "branchesDescartaveis": ["spike/"],
+    "contexto": { "aviso": 300000, "duro": 400000 }
+  }
+}
+```
+
+- **`caminhosLivres`**: soma aos caminhos editáveis sem issue ativa. Pasta termina em `/`. Não
+  libera a infraestrutura dos watchdogs.
+- **`branchesDescartaveis`**: soma prefixos aos `prototype/` e `research/`, onde se edita sem issue.
+- **`contexto`**: os limites da smart zone em tokens (`aviso` menor que `duro`); padrão 450k e 550k.
+- **`orcamentoPorIssue`** (na raiz do arquivo, não em `ajustes`): veja o `vigia-custo`.
+
+Regra específica do projeto não vira PR no Stack-Labs: ela fica aqui, na seção
+`## Regras deste projeto` do `AGENTS.md` ou no `docs/regras-de-codigo.json`. Mudança no método só
+quando o humano pede.
 
 ## Limites conhecidos
 

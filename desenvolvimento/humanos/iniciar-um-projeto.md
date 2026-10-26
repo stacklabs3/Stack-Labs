@@ -44,4 +44,4 @@ pesquisas; você responde. O que cada mapa decide e de qual depende:
 - [ ] Com issues `ready-for-agent`, abra a [orquestração](orquestracao.md) e revise as PRs do fim
       da fila.
 - [ ] `/auditar-metodo` a cada marco e antes de entregar ao cliente.
-- [ ] `/retro` ao fim de cada fase: o que ajustar no método vira PR no Stack-Labs.
+- [ ] `/retro` ao fim de cada fase: o ajuste fica no projeto (`## Regras deste projeto` do `AGENTS.md` ou `ajustes` do `.claude/metodo.json`). Mudar o método para todos é decisão sua, por PR no Stack-Labs.
