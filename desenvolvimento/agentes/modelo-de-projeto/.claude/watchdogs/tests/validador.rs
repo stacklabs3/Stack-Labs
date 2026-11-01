@@ -321,6 +321,47 @@ fn modelos_de_regras_de_codigo_json_sao_validos() {
     }
 }
 
+// Risco: o guia de Dart promete uma regra que quem copia o modelo não recebe.
+#[test]
+fn modelo_dart_tem_o_que_o_guia_cita() {
+    let modelo: Value = serde_json::from_str(&fs::read_to_string(pasta_do_crate().join("modelos/regras-de-codigo.dart.json")).unwrap()).unwrap();
+    let regras = modelo["regras"].as_array().unwrap();
+    let delegadas: Vec<&str> = regras
+        .iter()
+        .filter(|regra| regra["verificacao"]["tipo"] == "lint-cobre")
+        .flat_map(|regra| regra["verificacao"]["regras"].as_array().unwrap().iter().map(|nome| nome.as_str().unwrap()))
+        .collect();
+    for lint_do_guia in [
+        "camel_case_types",
+        "non_constant_identifier_names",
+        "constant_identifier_names",
+        "file_names",
+        "avoid_positional_boolean_parameters",
+        "use_rethrow_when_possible",
+        "prefer_final_in_for_each",
+        "avoid_print",
+        "implementation_imports",
+        "depend_on_referenced_packages",
+        "always_declare_return_types",
+        "annotate_overrides",
+    ] {
+        assert!(delegadas.contains(&lint_do_guia), "falta {lint_do_guia} no modelo de regras");
+    }
+    for pratica_do_revisor in ["DT5", "DT6"] {
+        assert!(
+            regras.iter().any(|regra| regra["principio"] == pratica_do_revisor && regra["verificacao"]["tipo"] == "revisor"),
+            "{pratica_do_revisor} fica com o revisor"
+        );
+    }
+    let gerado_de_mock = "**/*.mocks.dart";
+    assert!(modelo["projeto"]["ignorar"].as_array().unwrap().iter().any(|padrao| padrao == gerado_de_mock));
+    let analysis_options = fs::read_to_string(pasta_do_crate().join("modelos/lint/analysis_options.yaml")).unwrap();
+    assert!(analysis_options.contains(&format!("- \"{gerado_de_mock}\"")));
+    assert!(regras.iter().any(|regra| regra["texto"].as_str().unwrap().contains("flutter analyze --fatal-infos")));
+    let sem_afirmacao = fs::read_to_string(pasta_do_crate().join("modelos/ast-grep/teste-sem-afirmacao.yml")).unwrap();
+    assert!(sem_afirmacao.contains("goldenTest fica fora"));
+}
+
 #[test]
 fn modelo_analysis_options_liga_toda_regra_do_modelo_dart() {
     let modelo: Value = serde_json::from_str(&fs::read_to_string(pasta_do_crate().join("modelos/regras-de-codigo.dart.json")).unwrap()).unwrap();

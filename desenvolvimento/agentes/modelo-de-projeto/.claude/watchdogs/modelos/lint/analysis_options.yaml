@@ -2,12 +2,15 @@
 # Copie só o que o grilling decidiu. O preset liga as regras, mas o lint-cobre só conta o que está
 # escrito aqui: toda regra delegada pelo regras-de-codigo.json fica listada em linter: rules:.
 # A prova de que o código cumpre é o comando: dart analyze --fatal-infos (lint é info e info não reprova).
+# Projeto Flutter troca por flutter analyze --fatal-infos, com a geração no próprio comando
+# (tool/gerar.sh && flutter analyze --fatal-infos).
 include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+    - "**/*.mocks.dart"
   # E3: o preset já liga os três; ficam escritos para o lint-cobre.
   language:
     strict-casts: true
@@ -23,6 +26,11 @@ analyzer:
 
 linter:
   rules:
+    # E1
+    camel_case_types: true
+    non_constant_identifier_names: true
+    constant_identifier_names: true
+    file_names: true
     # E3
     avoid_dynamic_calls: true
     unnecessary_null_checks: true
@@ -43,7 +51,8 @@ linter:
     prefer_final_fields: true
     # E6
     avoid_print: true
-    # P4, P7, P8
+    # P1, P4, P7, P8
+    implementation_imports: true
     avoid_relative_lib_imports: true
     depend_on_referenced_packages: true
     always_declare_return_types: true

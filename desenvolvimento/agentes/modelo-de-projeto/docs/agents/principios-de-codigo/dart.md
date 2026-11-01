@@ -69,7 +69,7 @@ duras (E4, DT1) sobem também para `error` em `analyzer: errors:`, para o editor
 - **Keys** (`use_key_in_widget_constructors`) já vêm no preset; `Key` em lista que muda de ordem é do
   revisor.
 - **`close_sinks` o preset desliga** por falso positivo; DT3 fica com `cancel_subscriptions` e o revisor.
-- **Código gerado** (`*.g.dart`, `*.freezed.dart`) sai em `analyzer: exclude:` e no `ignorar` do `.json`.
+- **Código gerado** (`*.g.dart`, `*.freezed.dart`, `*.mocks.dart`) sai em `analyzer: exclude:` e no `ignorar` do `.json`.
 - **Mutação fora do CI de PR.** `dart run mutation_test <arquivos>` é lento; rode à mão no domínio.
 
 ## Só desta linguagem
@@ -83,7 +83,7 @@ com `"principio": "DT<n>"` no `.json` e uma linha na tabela *Práticas da lingua
 | DT1 | **`BuildContext` não atravessa `await`** sem conferir `context.mounted` | `use_build_context_synchronously` |
 | DT2 | **Construtor `const` onde der:** o Flutter pula o rebuild da subárvore `const` | `prefer_const_constructors`, `prefer_const_constructors_in_immutables` |
 | DT3 | **Recurso com ciclo de vida é liberado:** `dispose()` do controller, `cancel()` da `StreamSubscription` | `cancel_subscriptions`; o `dispose` é do revisor |
-| DT4 | **Build reprodutível e dependências auditadas:** `pubspec.lock` no git em app (não em pacote), `--enforce-lockfile` no CI, vulnerabilidade pelo OSV | `dart pub get --enforce-lockfile`; `osv-scanner scan --lockfile pubspec.lock` |
+| DT4 | **Build reprodutível e dependências auditadas:** `pubspec.lock` no git em app (não em pacote), `--enforce-lockfile` no CI, vulnerabilidade pelo OSV | `dart pub get --enforce-lockfile`; `osv-scanner scan source --lockfile pubspec.lock` |
 | DT5 | **Pedaço de UI reutilizável é classe de widget**, não método que devolve `Widget` | Revisor |
 | DT6 | **Acessibilidade testada:** cada tela tem teste com `meetsGuideline` (alvo de toque, contraste, rótulo) | Revisor |
 
