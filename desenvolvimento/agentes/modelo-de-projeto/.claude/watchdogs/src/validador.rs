@@ -348,6 +348,8 @@ pub struct Contexto {
     pub alterados: Option<Vec<String>>,
     // Falso no hook vigia-teste, que confere só o arquivo editado: risco sem teste é do validador.
     pub conferir_o_registro_inteiro: bool,
+    // Cada analysis_options.yaml por pasta reprova uma vez só, mesmo com várias regras lint-cobre.
+    pub analysis_options_ja_mostrados: HashSet<String>,
 }
 
 fn lista_de_texto(valor: &Value) -> Vec<String> {
@@ -1139,6 +1141,10 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
             }
             let configs: Vec<(&String, String)> = existentes.iter().map(|caminho| (*caminho, ler_texto(&raiz, caminho))).collect();
             let mut violacoes = analysis_options_por_pasta(&raiz, &caminhos_de_config);
+            violacoes.retain(|violacao| {
+                let caminho_do_arquivo = violacao.arquivo.clone().unwrap_or_default();
+                contexto.analysis_options_ja_mostrados.insert(caminho_do_arquivo)
+            });
             for nome_da_regra in lista_de_texto(&parametros["regras"]) {
                 // Coberta em qualquer arquivo basta; senão, vale o motivo mais informativo entre eles.
                 let mut melhor = (Cobertura::Ausente, existentes[0]);
@@ -1413,6 +1419,7 @@ pub fn validar(raiz: &Path, config: &Value, texto_md: &str, opcoes: &Opcoes) -> 
         },
         alterados: None,
         conferir_o_registro_inteiro: true,
+        analysis_options_ja_mostrados: HashSet::new(),
     };
     if let (Some(base), false, false) = (opcoes.base, opcoes.completo, opcoes.so_cobertura) {
         contexto.alterados = arquivos_alterados_desde(raiz, base);
@@ -1467,6 +1474,7 @@ pub fn conferir_arquivo_editado(raiz: &Path, config: &Value, caminho_relativo: &
         arquivos: Vec::new(),
         alterados: Some(vec![caminho_relativo.to_string()]),
         conferir_o_registro_inteiro: false,
+        analysis_options_ja_mostrados: HashSet::new(),
     };
     let mut violacoes = Vec::new();
     for regra in regras.iter().filter(|regra| regra.principio == "P5") {

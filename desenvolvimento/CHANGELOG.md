@@ -11,6 +11,11 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 2.1.2 (2026-11-01)
+
+- O `lint-cobre` mostra uma vez por execução o `analysis_options.yaml` por pasta, em vez de repeti-lo
+  em cada regra.
+
 ## 2.1.1 (2026-11-01)
 
 - Quem configura e quem audita acham o Dart: requisito e versão do preset no `dart.md`, Flutter e
