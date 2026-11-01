@@ -605,7 +605,14 @@ fn lint_cobre_analysis_options_le_lista_mapa_severidade_e_linguagem() {
 
 // Roda o binário num projeto que delega avoid_print ao lint, com a config declarada dada.
 fn validar_lint_dart(arquivos: &[(&str, &str)], config: Value) -> (i32, String) {
+    validar_lint_dart_com_nao_versionados(arquivos, &[], config)
+}
+
+fn validar_lint_dart_com_nao_versionados(arquivos: &[(&str, &str)], nao_versionados: &[(&str, &str)], config: Value) -> (i32, String) {
     let repositorio = Repositorio::novo(arquivos);
+    for (caminho, conteudo) in nao_versionados {
+        repositorio.escrever(caminho, conteudo);
+    }
     let regras = json!({ "versao": 1, "regras": [{ "id": "R1", "principio": "E4", "verificacao": { "tipo": "lint-cobre", "config": config, "regras": ["avoid_print"] } },
         { "id": "R2", "principio": "E1", "verificacao": { "tipo": "revisor" } },
         { "id": "R90", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco" } }
@@ -668,6 +675,17 @@ fn lint_cobre_nao_dispara_com_analysis_options_ignorado_pelo_git() {
             ("analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO),
             ("contrato_gerado/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO),
         ],
+        json!("analysis_options.yaml"),
+    );
+    assert_eq!(codigo, 0, "{saida}");
+}
+
+// Risco: reprovar antes do commit um arquivo que o projeto ainda não versionou (a regra é sobre o versionado).
+#[test]
+fn lint_cobre_nao_dispara_com_analysis_options_ainda_sem_commit() {
+    let (codigo, saida) = validar_lint_dart_com_nao_versionados(
+        &[("analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO)],
+        &[("lib/sub/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO)],
         json!("analysis_options.yaml"),
     );
     assert_eq!(codigo, 0, "{saida}");
