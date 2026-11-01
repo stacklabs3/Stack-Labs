@@ -42,8 +42,9 @@ caminho).
 - `docs/riscos.md` existe, cada risco tem origem com a aprovação do humano, e o P5 da tabela de
   cobertura cita a regra com `teste-cobre-risco`. Amostra de 3 PRs mergeadas: cada teste novo exercita
   o risco que cita. Projeto anterior à ADR 0014 sem o registro: ⚠️ e o ticket que o escreve.
-- `sh .claude/watchdogs/rodar validar` (o repositório inteiro) termina em `VALIDADOR: APROVADO` e roda no CI do projeto. Quem audita precisa das ferramentas do projeto na máquina: saída 127 é ferramenta ausente, não violação.
+- `sh .claude/watchdogs/rodar validar` (o repositório inteiro) termina em `VALIDADOR: APROVADO` e roda no CI do projeto.
   Projeto anterior à ADR 0010 sem `docs/regras-de-codigo.json`: ⚠️ e o ticket que o escreve.
+  Quem audita precisa das ferramentas do projeto na máquina: saída 127 é ferramenta ausente, não violação.
 
 **Pesquisa antes de recomendar**
 - Todo ticket fechado de grilling, tarefa e pesquisa tem `## Fontes` com link no comentário de resolução.

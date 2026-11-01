@@ -14,7 +14,7 @@ Todas BSD-3-Clause, MIT ou Apache-2.0, sem plano pago. Fixe a versão no `pubspe
 
 | Ferramenta | Versão | Papel |
 |---|---|---|
-| Dart SDK (analyzer, linter, `dart format`) | 3.13 | Lint e formatador; regras no `analysis_options.yaml` |
+| Dart SDK (analyzer, linter, `dart format`) | 3.13 (3.12 com o preset 10.3.0) | Lint e formatador; regras no `analysis_options.yaml` |
 | Flutter SDK (`flutter analyze`, `flutter test`) | 3.47 | O mesmo analyzer, mais `flutter_test` |
 | `very_good_analysis` | 11.0.0 com Dart 3.13 ou mais novo; 10.3.0 com Dart 3.12 | Preset base: 216 regras (na 11.0.0) e os três `strict-*` |
 | `mocktail` | 1.0.5 | Mock sem geração de código, quando o fake à mão não basta |
