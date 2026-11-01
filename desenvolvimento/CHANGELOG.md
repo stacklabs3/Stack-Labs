@@ -11,6 +11,14 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 3.0.0 (2026-11-01)
+
+- **Ao atualizar os watchdogs:** o `guarda-contexto` novo e o `guarda-bash` barram a leitura de código
+  (`Read`, `Grep`, `Glob`, `cat`, `sed`, `grep`) enquanto a sessão ou o subagente não rodar
+  `sh .claude/watchdogs/rodar contexto <consulta>`. Resposta vazia libera. Regra 23 do `AGENTS.md`,
+  [ADR 0022](adr/0022-consulta-de-contexto-obrigatoria.md). Rode o `--atualizar-watchdogs`.
+- O `rodar contexto` acha arquivo e pasta pelo nome, e enxerga `.claude/skills/` mesmo ignorada pelo git.
+
 ## 2.1.2 (2026-11-01)
 
 - O `lint-cobre` mostra uma vez por execução o `analysis_options.yaml` por pasta, em vez de repeti-lo

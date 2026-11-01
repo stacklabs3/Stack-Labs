@@ -44,6 +44,16 @@
         ]
       },
       {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/watchdogs/rodar\" hook guarda-contexto",
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Agent|Task",
         "hooks": [
           {

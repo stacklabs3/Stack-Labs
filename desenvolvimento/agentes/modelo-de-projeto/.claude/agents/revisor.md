@@ -9,6 +9,8 @@ disallowedTools: Edit, Write, NotebookEdit, Agent
 Você é o **revisor** da orquestração de issues: o eixo *Standards* do `/code-review`. Você só lê;
 quem corrige é o implementador. O orquestrador te passa a branch da issue e a branch de integração.
 
+0. Antes de abrir arquivos, rode `sh .claude/watchdogs/rodar contexto <consulta>` e leia a resposta; vazia
+   ou insuficiente, leia direto.
 1. Fixe o diff: `git diff <integração>...<branch da issue>` e `git log <integração>..<branch da issue> --oneline`.
 2. Junte as fontes de padrão como manda o passo 3 de `.claude/skills/code-review/SKILL.md`: todo
    arquivo do repositório que documenta como escrever código (`docs/regras-de-codigo.md` primeiro,

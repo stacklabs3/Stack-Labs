@@ -58,7 +58,9 @@ impl UsoDeTokens {
 // mesmo uso, então vale uma vez por id.
 pub fn ler_uso_novo(caminho_transcript: &Path, ponto_de_parada: u64) -> (HashMap<String, UsoDeTokens>, u64) {
     let mut uso_por_modelo: HashMap<String, UsoDeTokens> = HashMap::new();
-    let Ok(mut arquivo) = fs::File::open(caminho_transcript) else { return (uso_por_modelo, ponto_de_parada) };
+    let Ok(mut arquivo) = fs::File::open(caminho_transcript) else {
+        return (uso_por_modelo, ponto_de_parada);
+    };
     let tamanho_arquivo = arquivo.metadata().map(|dados| dados.len()).unwrap_or(0);
     // Transcript menor que o ponto de parada foi reescrito (compactação): recomeça do início.
     let inicio_leitura = if ponto_de_parada > tamanho_arquivo { 0 } else { ponto_de_parada };
@@ -80,7 +82,11 @@ pub fn ler_uso_novo(caminho_transcript: &Path, ponto_de_parada: u64) -> (HashMap
             continue;
         }
         let id_mensagem = texto(&mensagem["id"]).to_string();
-        let chave_mensagem = if id_mensagem.is_empty() { format!("linha-{}", uso_por_mensagem.len()) } else { id_mensagem };
+        let chave_mensagem = if id_mensagem.is_empty() {
+            format!("linha-{}", uso_por_mensagem.len())
+        } else {
+            id_mensagem
+        };
         let modelo = texto(&mensagem["model"]);
         let nome_modelo = if modelo.is_empty() { "desconhecido" } else { modelo };
         uso_por_mensagem.insert(chave_mensagem, (nome_modelo.to_string(), UsoDeTokens::do_registro(&mensagem["usage"])));
@@ -97,7 +103,11 @@ pub fn ler_uso_novo(caminho_transcript: &Path, ponto_de_parada: u64) -> (HashMap
 }
 
 fn caminho_custo_da_issue(diretorio_projeto: &Path, numero_issue: i64) -> PathBuf {
-    diretorio_projeto.join(".claude").join("state").join("custos").join(format!("issue-{numero_issue}.json"))
+    diretorio_projeto
+        .join(".claude")
+        .join("state")
+        .join("custos")
+        .join(format!("issue-{numero_issue}.json"))
 }
 
 pub fn ler_custo_da_issue(diretorio_projeto: &Path, numero_issue: i64) -> Value {
@@ -136,7 +146,11 @@ pub fn em_milhares(tokens: u64) -> String {
 pub enum ResultadoDaContagem {
     SemIssueAtiva,
     DentroDoOrcamento,
-    PassouDoOrcamentoAgora { numero_issue: i64, tokens_equivalentes: u64, orcamento: u64 },
+    PassouDoOrcamentoAgora {
+        numero_issue: i64,
+        tokens_equivalentes: u64,
+        orcamento: u64,
+    },
 }
 
 // Soma o uso novo do transcript na issue ativa de quem está agindo (sessão ou subagente).
@@ -145,7 +159,9 @@ pub fn contar_no_transcript(entrada_hook: &Value, caminho_transcript: &str) -> R
     let id_sessao = texto(&entrada_hook["session_id"]);
     let mut estado_sessao = ler_estado_sessao(&diretorio_projeto, id_sessao);
     let issue_ativa = estado_sessao["issuesAtivas"][chave_do_agente(entrada_hook)].clone();
-    let Some(numero_issue) = issue_ativa["numero"].as_i64() else { return ResultadoDaContagem::SemIssueAtiva };
+    let Some(numero_issue) = issue_ativa["numero"].as_i64() else {
+        return ResultadoDaContagem::SemIssueAtiva;
+    };
     if caminho_transcript.is_empty() {
         return ResultadoDaContagem::DentroDoOrcamento;
     }
@@ -199,7 +215,11 @@ pub fn contar_no_transcript(entrada_hook: &Value, caminho_transcript: &str) -> R
 
     let orcamento = orcamento_por_issue(&diretorio_projeto);
     if tokens_antes < orcamento && tokens_depois >= orcamento {
-        return ResultadoDaContagem::PassouDoOrcamentoAgora { numero_issue, tokens_equivalentes: tokens_depois, orcamento };
+        return ResultadoDaContagem::PassouDoOrcamentoAgora {
+            numero_issue,
+            tokens_equivalentes: tokens_depois,
+            orcamento,
+        };
     }
     ResultadoDaContagem::DentroDoOrcamento
 }

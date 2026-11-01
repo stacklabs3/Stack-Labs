@@ -349,7 +349,9 @@ fn modelo_dart_tem_o_que_o_guia_cita() {
     }
     for pratica_do_revisor in ["DT5", "DT6"] {
         assert!(
-            regras.iter().any(|regra| regra["principio"] == pratica_do_revisor && regra["verificacao"]["tipo"] == "revisor"),
+            regras
+                .iter()
+                .any(|regra| regra["principio"] == pratica_do_revisor && regra["verificacao"]["tipo"] == "revisor"),
             "{pratica_do_revisor} fica com o revisor"
         );
     }
@@ -357,7 +359,9 @@ fn modelo_dart_tem_o_que_o_guia_cita() {
     assert!(modelo["projeto"]["ignorar"].as_array().unwrap().iter().any(|padrao| padrao == gerado_de_mock));
     let analysis_options = fs::read_to_string(pasta_do_crate().join("modelos/lint/analysis_options.yaml")).unwrap();
     assert!(analysis_options.contains(&format!("- \"{gerado_de_mock}\"")));
-    assert!(regras.iter().any(|regra| regra["texto"].as_str().unwrap().contains("flutter analyze --fatal-infos")));
+    assert!(regras
+        .iter()
+        .any(|regra| regra["texto"].as_str().unwrap().contains("flutter analyze --fatal-infos")));
     let sem_afirmacao = fs::read_to_string(pasta_do_crate().join("modelos/ast-grep/teste-sem-afirmacao.yml")).unwrap();
     assert!(sem_afirmacao.contains("goldenTest fica fora"));
 }
@@ -658,7 +662,10 @@ fn validar_lint_dart_com_nao_versionados(arquivos: &[(&str, &str)], nao_versiona
         { "id": "R2", "principio": "E1", "verificacao": { "tipo": "revisor" } },
         { "id": "R90", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco" } }
     ] });
-    repositorio.escrever("docs/riscos.md", "| Risco | O que dá errado | Dano | Onde | Origem | Situação |\n|---|---|---|---|---|---|\n");
+    repositorio.escrever(
+        "docs/riscos.md",
+        "| Risco | O que dá errado | Dano | Onde | Origem | Situação |\n|---|---|---|---|---|---|\n",
+    );
     repositorio.escrever("docs/regras-de-codigo.json", &regras.to_string());
     repositorio.escrever("docs/regras-de-codigo.md", &tabela_com(&[("E4", "adotado | R1"), ("E1", "adotado | R2")]));
     let saida = Command::new(env!("CARGO_BIN_EXE_watchdogs"))
@@ -676,7 +683,10 @@ const ANALYSIS_OPTIONS_DESLIGADO: &str = "linter:\n  rules:\n    avoid_print: fa
 #[test]
 fn lint_cobre_reprova_analysis_options_aninhado_fora_da_lista() {
     let (codigo, saida) = validar_lint_dart(
-        &[("analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO), ("lib/sub/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO)],
+        &[
+            ("analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO),
+            ("lib/sub/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO),
+        ],
         json!("analysis_options.yaml"),
     );
     assert_eq!(codigo, 1, "{saida}");
@@ -684,7 +694,10 @@ fn lint_cobre_reprova_analysis_options_aninhado_fora_da_lista() {
 
     // Subpasta com regras próprias: a pasta da config é a do app, e o aninhado nela reprova.
     let (codigo, saida) = validar_lint_dart(
-        &[("app/analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO), ("app/lib/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO)],
+        &[
+            ("app/analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO),
+            ("app/lib/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO),
+        ],
         json!("app/analysis_options.yaml"),
     );
     assert_eq!(codigo, 1, "{saida}");
@@ -695,13 +708,19 @@ fn lint_cobre_reprova_analysis_options_aninhado_fora_da_lista() {
 #[test]
 fn lint_cobre_aceita_analysis_options_listado_ou_fora_da_pasta() {
     let (codigo, saida) = validar_lint_dart(
-        &[("analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO), ("pacote/analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO)],
+        &[
+            ("analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO),
+            ("pacote/analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO),
+        ],
         json!(["analysis_options.yaml", "pacote/analysis_options.yaml"]),
     );
     assert_eq!(codigo, 0, "{saida}");
 
     let (codigo, saida) = validar_lint_dart(
-        &[("app/analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO), ("outro/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO)],
+        &[
+            ("app/analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO),
+            ("outro/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO),
+        ],
         json!("app/analysis_options.yaml"),
     );
     assert_eq!(codigo, 0, "{saida}");
@@ -738,7 +757,10 @@ fn lint_cobre_mostra_o_analysis_options_aninhado_uma_vez_por_execucao() {
     let repositorio = Repositorio::novo(&[
         ("analysis_options.yaml", "linter:\n  rules:\n    - avoid_print\n    - empty_catches\n"),
         ("lib/sub/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO),
-        ("docs/riscos.md", "| Risco | O que dá errado | Dano | Onde | Origem | Situação |\n|---|---|---|---|---|---|\n"),
+        (
+            "docs/riscos.md",
+            "| Risco | O que dá errado | Dano | Onde | Origem | Situação |\n|---|---|---|---|---|---|\n",
+        ),
     ]);
     let regras = json!({ "versao": 1, "regras": [
         { "id": "R1", "principio": "E4", "verificacao": { "tipo": "lint-cobre", "config": "analysis_options.yaml", "regras": ["empty_catches"] } },
@@ -747,8 +769,15 @@ fn lint_cobre_mostra_o_analysis_options_aninhado_uma_vez_por_execucao() {
         { "id": "R90", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco" } }
     ] });
     repositorio.escrever("docs/regras-de-codigo.json", &regras.to_string());
-    repositorio.escrever("docs/regras-de-codigo.md", &tabela_com(&[("E4", "adotado | R1"), ("E6", "adotado | R3"), ("E1", "adotado | R2")]));
-    let saida = Command::new(env!("CARGO_BIN_EXE_watchdogs")).arg("validar").current_dir(&repositorio.raiz).output().unwrap();
+    repositorio.escrever(
+        "docs/regras-de-codigo.md",
+        &tabela_com(&[("E4", "adotado | R1"), ("E6", "adotado | R3"), ("E1", "adotado | R2")]),
+    );
+    let saida = Command::new(env!("CARGO_BIN_EXE_watchdogs"))
+        .arg("validar")
+        .current_dir(&repositorio.raiz)
+        .output()
+        .unwrap();
     let texto = String::from_utf8_lossy(&saida.stdout);
     assert_eq!(saida.status.code(), Some(1), "{texto}");
     assert_eq!(texto.matches("lib/sub/analysis_options.yaml").count(), 1, "{texto}");

@@ -1,7 +1,9 @@
 // Watchdog PreToolUse (Bash).
 // W1 protege os watchdogs · W4 ativação de issue (com os mapas iniciais) · W5/W6 regras do /wayfinder
-// · W7 nada de commit na main · W9 resolução cita as fontes (pesquisa antes de recomendar).
+// · W7 nada de commit na main · W9 resolução cita as fontes (pesquisa antes de recomendar)
+// · W10 registra `rodar contexto` e barra cat, sed e grep em código antes dele (ADR 0022).
 
+use super::guarda_contexto::{agente_ja_consultou, caminho_exige_consulta, motivo_sem_consulta, registrar_consulta};
 use crate::comum::*;
 use regex::Regex;
 use serde_json::{json, Value};
@@ -50,6 +52,69 @@ fn caminho_entre_aspas(partes: &regex::Captures) -> String {
         .or_else(|| partes.get(4))
         .map(|parte| parte.as_str().to_string())
         .unwrap_or_default()
+}
+
+// A consulta de um trecho que chama o `rodar contexto`, sem aspas, sem --limite e sem o resto do cano.
+fn consulta_do_trecho(trecho: &str) -> Option<String> {
+    let partes = regex(r#"^\s*(?:sh\s+)?(?:"[^"]*|\S*)\.claude/watchdogs/rodar"?\s+contexto\s+([^|]+)"#).captures(trecho)?;
+    let mut palavras = Vec::new();
+    let mut proxima_eh_limite = false;
+    for palavra in partes[1].split_whitespace() {
+        if palavra.contains('>') {
+            break;
+        }
+        if proxima_eh_limite {
+            proxima_eh_limite = false;
+        } else if palavra == "--limite" {
+            proxima_eh_limite = true;
+        } else {
+            palavras.push(palavra.trim_matches(['"', '\'']));
+        }
+    }
+    let consulta = palavras.join(" ");
+    (!consulta.is_empty()).then_some(consulta)
+}
+
+// O primeiro caminho que exige consulta entre os que um cat, sed ou grep do trecho lê. Só conta palavra
+// que existe no disco: o padrão do grep e o script do sed não existem, e `git log | grep x` lê do cano.
+fn codigo_lido_no_trecho(trecho: &str, pasta_base: &Path, diretorio_projeto: &Path, ajustes: &AjustesDoProjeto) -> Option<String> {
+    let verbo_de_leitura = regex(r"^(cat|head|tail|less|sed|e?grep|rg)$");
+    for (posicao_no_cano, comando_do_cano) in trecho.split('|').enumerate() {
+        let mut palavras = comando_do_cano.split_whitespace();
+        let Some(verbo) = palavras.next().filter(|verbo| verbo_de_leitura.is_match(verbo)) else {
+            continue;
+        };
+        let argumentos: Vec<&str> = palavras.take_while(|palavra| !palavra.contains('>') && !palavra.starts_with("<<")).collect();
+        let eh_recursivo = verbo == "rg"
+            || argumentos
+                .iter()
+                .any(|argumento| regex(r"^(-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)$").is_match(argumento));
+        let mut caminhos_lidos: Vec<PathBuf> = argumentos
+            .iter()
+            .filter(|argumento| !argumento.starts_with('-'))
+            .map(|argumento| argumento.trim_matches(['"', '\'']).split('*').next().unwrap_or(""))
+            .filter(|caminho| !caminho.is_empty())
+            .map(|caminho| pasta_base.join(caminho))
+            .filter(|caminho| caminho.exists())
+            .collect();
+        if caminhos_lidos.is_empty() && eh_recursivo && posicao_no_cano == 0 {
+            caminhos_lidos.push(pasta_base.to_path_buf());
+        }
+        for caminho_lido in caminhos_lidos {
+            let Some(caminho_relativo) = caminho_relativo_ao_projeto(diretorio_projeto, &caminho_lido.to_string_lossy()) else {
+                continue;
+            };
+            let caminho_com_barra = if caminho_lido.is_dir() && !caminho_relativo.is_empty() {
+                format!("{caminho_relativo}/")
+            } else {
+                caminho_relativo
+            };
+            if caminho_exige_consulta(&caminho_com_barra, ajustes) {
+                return Some(caminho_com_barra);
+            }
+        }
+    }
+    None
 }
 
 pub fn rodar() -> i32 {
@@ -101,6 +166,24 @@ pub fn rodar() -> i32 {
     // Em observação (adoção do método num projeto existente), daqui para baixo só se avisa: nada bloqueia.
     if etapa_de_adocao(&diretorio_projeto) == "observacao" {
         return 0;
+    }
+
+    // ---------- W10: consulta de contexto antes de ler código ----------
+    // Cada trecho vale na ordem: `rodar contexto x && cat x` passa, `cat x && rodar contexto x` não.
+    let chave_do_leitor = chave_do_agente(&entrada_hook);
+    let ajustes_do_projeto = ler_ajustes_do_projeto(&diretorio_projeto);
+    let cd_inicial = regex(r#"^\s*cd\s+("([^"]+)"|'([^']+)'|(\S+))\s*$"#);
+    let mut pasta_do_trecho = pasta_de_trabalho.clone();
+    for trecho in &trechos_do_comando {
+        if let Some(partes) = cd_inicial.captures(trecho) {
+            pasta_do_trecho = pasta_do_trecho.join(caminho_entre_aspas(&partes));
+        } else if let Some(consulta) = consulta_do_trecho(trecho) {
+            registrar_consulta(&diretorio_projeto, &id_sessao, &chave_do_leitor, &consulta);
+        } else if !agente_ja_consultou(&ler_estado_sessao(&diretorio_projeto, &id_sessao), &chave_do_leitor) {
+            if let Some(codigo_lido) = codigo_lido_no_trecho(trecho, &pasta_do_trecho, &diretorio_projeto, &ajustes_do_projeto) {
+                bloquear(&motivo_sem_consulta(&codigo_lido));
+            }
+        }
     }
 
     // ---------- W4: ativação de issue (uma issue por sessão) ----------

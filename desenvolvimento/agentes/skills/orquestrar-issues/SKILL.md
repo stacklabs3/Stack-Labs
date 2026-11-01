@@ -79,6 +79,8 @@ rm -rf "$TRAVA"; trap - EXIT INT TERM
   (os pareceres, a branch da issue, o commit na integração), grave o estado e siga.
 - **O merge** na integração é do orquestrador, um por vez, depois da conferência.
 - O brief traz a regra da trava da máquina (seção acima), com a frase pronta.
+- O brief e o prompt de **todo** subagente trazem a frase: "antes de abrir arquivos, rode
+  `sh .claude/watchdogs/rodar contexto <consulta>` e leia a resposta; vazia ou insuficiente, leia direto".
 
 ## Passos
 

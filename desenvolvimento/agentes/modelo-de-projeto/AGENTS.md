@@ -33,8 +33,6 @@ ideia grande demais para uma sessão
 - **Arquitetura do código existente:** `/improve-codebase-architecture`, com o vocabulário do `/codebase-design`.
 - **Fechamento:** `/pr` para o corpo da PR e `/retro` para os ajustes do ambiente.
 - **Documento que outro agente vai ler** (`AGENTS.md`, `docs/`, `docs/regras-de-codigo.md`, skill): `/writing-for-agents`.
-- **Contexto de um símbolo, termo, arquivo ou issue:** `sh .claude/watchdogs/rodar contexto <consulta>`
-  antes de abrir arquivos ([docs/agents/watchdogs.md](docs/agents/watchdogs.md#consultar-o-contexto)).
 - **Dúvida sobre qual skill usar:** `/ask-matt`.
 
 ## Regras duras
@@ -118,6 +116,11 @@ ideia grande demais para uma sessão
 22. Em projeto que está adotando o método, a etapa de `.claude/metodo.json` decide só o que a máquina
     bloqueia; as regras desta constituição valem inteiras desde o primeiro dia
     ([docs/agents/adocao.md](docs/agents/adocao.md)).
+
+### 9. Contexto antes de ler
+23. **[W]** **Antes de abrir arquivos de código, rode `sh .claude/watchdogs/rodar contexto <consulta>`**
+    e leia a resposta: uma vez por sessão e por subagente. Vazia ou insuficiente, leia direto
+    ([docs/agents/watchdogs.md](docs/agents/watchdogs.md#consultar-o-contexto)).
 
 ## Agent skills
 

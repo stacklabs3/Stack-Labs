@@ -92,6 +92,13 @@ impl Projeto {
             &[],
         )
     }
+    fn leitura(&self, ferramenta: &str, parametros: Value) -> (i32, String, String) {
+        self.rodar(
+            &["hook", "guarda-contexto"],
+            &json!({ "session_id": "s1", "tool_name": ferramenta, "tool_input": parametros }).to_string(),
+            &[],
+        )
+    }
     fn edicao(&self, caminho: &str) -> (i32, String, String) {
         self.rodar(
             &["hook", "guarda-edicao"],
@@ -514,4 +521,107 @@ fn caminho_livre_do_projeto_dispensa_issue_ativa() {
     .unwrap();
     assert_eq!(projeto.edicao("infra/main.tf").0, 0);
     assert_eq!(projeto.edicao("src/a.ts").0, 2);
+}
+
+fn projeto_com_codigo() -> Projeto {
+    let projeto = Projeto::novo("issue/1-x");
+    fs::create_dir_all(projeto.raiz.join("src")).unwrap();
+    fs::write(projeto.raiz.join("src/cupom.rs"), "pub fn aplicar_cupom() {}\n").unwrap();
+    fs::write(projeto.raiz.join("src/pedido.rs"), "pub fn finalizar_pedido() {}\n").unwrap();
+    projeto
+}
+
+const CONSULTA_DO_CUPOM: &str = "sh .claude/watchdogs/rodar contexto aplicar_cupom";
+
+#[test]
+fn leitura_de_codigo_sem_consulta_bloqueia_e_mostra_o_comando() {
+    let projeto = projeto_com_codigo();
+    for (ferramenta, parametros) in [
+        ("Read", json!({ "file_path": "src/cupom.rs" })),
+        ("Grep", json!({ "pattern": "cupom" })),
+        ("Grep", json!({ "pattern": "cupom", "path": "src" })),
+        ("Glob", json!({ "pattern": "**/*.rs" })),
+    ] {
+        let (codigo_saida, _, motivo) = projeto.leitura(ferramenta, parametros);
+        assert_eq!(codigo_saida, 2, "{ferramenta} passou sem consulta");
+        assert!(motivo.contains("rodar contexto"), "sem o comando: {motivo}");
+    }
+}
+
+#[test]
+fn consulta_libera_a_leitura_e_avisa_uma_vez_fora_dos_citados() {
+    let projeto = projeto_com_codigo();
+    assert_eq!(projeto.bash(CONSULTA_DO_CUPOM).0, 0);
+    let (codigo_citado, aviso_citado, _) = projeto.leitura("Read", json!({ "file_path": "src/cupom.rs" }));
+    assert_eq!((codigo_citado, aviso_citado.as_str()), (0, ""));
+    let (codigo_fora, aviso_fora, _) = projeto.leitura("Read", json!({ "file_path": "src/pedido.rs" }));
+    assert_eq!(codigo_fora, 0);
+    assert!(aviso_fora.contains("fora do que a consulta citou"), "sem aviso: {aviso_fora}");
+    assert_eq!(projeto.leitura("Read", json!({ "file_path": "src/pedido.rs" })).1, "");
+}
+
+#[test]
+fn resposta_vazia_libera_a_leitura_sem_aviso() {
+    let projeto = projeto_com_codigo();
+    assert_eq!(projeto.bash("sh .claude/watchdogs/rodar contexto reembolso_parcial").0, 0);
+    let (codigo_saida, aviso, _) = projeto.leitura("Read", json!({ "file_path": "src/cupom.rs" }));
+    assert_eq!((codigo_saida, aviso.as_str()), (0, ""));
+}
+
+#[test]
+fn caminhos_livres_passam_sem_consulta() {
+    let projeto = projeto_com_codigo();
+    fs::create_dir_all(projeto.raiz.join("docs")).unwrap();
+    for parametros in [
+        json!({ "file_path": "AGENTS.md" }),
+        json!({ "file_path": "CLAUDE.md" }),
+        json!({ "file_path": "docs/agents/watchdogs.md" }),
+        json!({ "file_path": ".scratch/nota.ts" }),
+        json!({ "file_path": ".claude/skills/pr/SKILL.md" }),
+        json!({ "file_path": "package.json" }),
+        json!({ "file_path": "vite.config.ts" }),
+        json!({ "file_path": "/tmp/fora-do-projeto.rs" }),
+    ] {
+        assert_eq!(projeto.leitura("Read", parametros.clone()).0, 0, "barrou {parametros}");
+    }
+    assert_eq!(projeto.leitura("Glob", json!({ "pattern": "docs/**/*" })).0, 0);
+    assert_eq!(projeto.leitura("Grep", json!({ "pattern": "x", "path": "docs" })).0, 0);
+}
+
+#[test]
+fn subagente_precisa_da_propria_consulta() {
+    let projeto = projeto_com_codigo();
+    assert_eq!(projeto.bash(CONSULTA_DO_CUPOM).0, 0);
+    let entrada = json!({ "session_id": "s1", "agent_id": "a1", "tool_name": "Read", "tool_input": { "file_path": "src/cupom.rs" } });
+    assert_eq!(projeto.rodar(&["hook", "guarda-contexto"], &entrada.to_string(), &[]).0, 2);
+}
+
+#[test]
+fn bash_trata_cat_sed_e_grep_em_codigo_como_leitura() {
+    let projeto = projeto_com_codigo();
+    for comando in [
+        "cat src/cupom.rs",
+        "sed -n 1,5p src/cupom.rs",
+        "grep -n cupom src/cupom.rs",
+        "grep -rn cupom",
+        "git status && cat src/*.rs",
+    ] {
+        let (codigo_saida, _, motivo) = projeto.bash(comando);
+        assert_eq!(codigo_saida, 2, "passou sem consulta: {comando}");
+        assert!(motivo.contains("rodar contexto"), "sem o comando: {motivo}");
+    }
+    for comando in ["cat AGENTS.md", "git log | grep cupom", "grep -n cupom docs/a.md", "cat > src/novo.rs <<FIM"] {
+        assert_eq!(projeto.bash(comando).0, 0, "barrou: {comando}");
+    }
+    assert_eq!(projeto.bash(&format!("{CONSULTA_DO_CUPOM} && cat src/cupom.rs")).0, 0);
+    assert_eq!(projeto.bash("cat src/pedido.rs").0, 0);
+}
+
+#[test]
+fn etapa_de_observacao_nao_exige_consulta() {
+    let projeto = projeto_com_codigo();
+    fs::create_dir_all(projeto.raiz.join(".claude")).unwrap();
+    fs::write(projeto.raiz.join(".claude/metodo.json"), json!({ "etapaDeAdocao": "observacao" }).to_string()).unwrap();
+    assert_eq!(projeto.leitura("Read", json!({ "file_path": "src/cupom.rs" })).0, 0);
+    assert_eq!(projeto.bash("cat src/cupom.rs").0, 0);
 }

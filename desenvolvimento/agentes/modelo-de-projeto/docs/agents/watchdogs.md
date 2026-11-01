@@ -18,6 +18,7 @@ instala o Rust (https://rustup.rs). Testes: `cargo test --release --manifest-pat
 | `vigia-skill` | PostToolUse `Skill` | Quando uma skill de grilling carrega, marca o grilling na sessão e injeta a regra de linguagem simples (regra 10) | Injeta contexto |
 | `guarda-edicao` | PreToolUse `Write\|Edit\|NotebookEdit` | Protege os watchdogs, aplica a smart zone e só libera código de produção com issue ativa e fora da `main` (os caminhos livres da regra 3 passam) | **Bloqueia** |
 | `guarda-bash` | PreToolUse `Bash` | Protege os watchdogs; ativa issue (uma por sessão ou por subagente, e uma por comando) só com os **cinco mapas iniciais** criados e Protótipo, Arquitetura, Fases e Regras de código fechados, e nunca um `spec`; exige claim antes de comentar ou fechar ticket; exige comentário de resolução **com `## Fontes`** em grilling, tarefa e pesquisa; um ticket de decisão por sessão; barra commit na `main`, push forçado, `--no-verify`, mudança no `core.hooksPath`, `STACKLABS_PERMITIR_PUSH_MAIN` e `--atualizar-watchdogs` | **Bloqueia** |
+| `guarda-contexto` | PreToolUse `Read\|Grep\|Glob`, e o `guarda-bash` para `cat`, `head`, `tail`, `less`, `sed`, `grep` e `rg` | Código só se lê depois de uma consulta `rodar contexto` da sessão ou do subagente; a primeira leitura fora dos citados recebe aviso. Passam livres os caminhos da regra 3, os de `caminhosLivres`, documento e configuração por extensão (`.md`, `.json`, `.yaml`, `.toml`...), `*.config.*` e arquivo oculto | **Bloqueia** |
 | `vigia-teste` | PostToolUse `Write\|Edit\|MultiEdit` | No teste que acabou de ser editado, roda as regras do P5 de `docs/regras-de-codigo.json`: teste sem `RK<n>` ou com risco fora do registro, sem afirmação, com afirmação trivial, desligado ou focado ([riscos.md](riscos.md)). Projeto sem `docs/regras-de-codigo.json` passa; na etapa de observação, só avisa | **Devolve ao agente para corrigir** |
 | `vigia-saida` | PostToolUse `Bash\|Read\|Grep\|Glob\|WebFetch` | Saída de ferramenta acima de 20k caracteres (uns 5k tokens) pede filtro da próxima vez: trecho com `offset`/`limit`, `grep`/`tail`, padrão mais estreito ou subagente | Injeta alerta |
 | `vigia-agente` | PreToolUse `Agent\|Task` | Subagente de busca (`Explore`, `claude-code-guide`) lançado sem `model` recebe o lembrete de usar haiku ou sonnet | Injeta alerta |
@@ -38,8 +39,10 @@ projeto já escreveu sobre ela e devolve cada ligação com `caminho:linha`: ond
 os termos do `GLOSSARY.md`, as ADRs que o citam, os riscos `RK<n>` dos testes que o tocam, quem o
 chama, os arquivos que mudam junto e as issues do histórico. Uma `#issue` traz os arquivos dos
 commits que a citam. Tudo sai do repositório e do git a cada chamada, sem modelo e sem índice
-guardado, então não envelhece (ADR 0018). Leia a resposta antes de abrir arquivos e abra só os
-trechos citados; `--limite <n>` muda as 5 ligações por seção.
+guardado, então não envelhece (ADR 0018). Uma consulta cujo texto é o nome de arquivo ou de pasta
+traz esses arquivos, inclusive em `.claude/skills/`. Leia a resposta antes de abrir arquivos e abra só
+os trechos citados; `--limite <n>` muda as 5 ligações por seção. A regra 23 torna a consulta
+obrigatória (ADR 0022): resposta vazia ou insuficiente libera a leitura direta.
 
 ## Ativar uma issue
 
@@ -97,6 +100,9 @@ quando o humano pede.
 - O `guarda-bash` lê o **texto** do comando (e os arquivos de `--body-file`). Um comando guardado num
   script e executado por ele não é visto. A regra 21 cobre esse caso: contornar um watchdog é
   contrariá-la.
+- O `guarda-contexto` confere que a consulta foi chamada, não que a resposta foi lida. O registro
+  acontece antes de o comando rodar. Leitura dentro de script, por `awk`, `git show` ou `python` não é
+  vista. A regra 23 cobre esse caso.
 - A regra de fontes confere que a seção e o link existem, não que a fonte sustenta a recomendação.
   Isso é do humano no grilling e do `/auditar-metodo`.
 - Grilling com o humano respondendo e TDD não dão para checar por máquina.

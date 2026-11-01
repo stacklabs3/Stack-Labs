@@ -10,6 +10,8 @@ Você é o **diagnosticador** da orquestração de issues. Você só lê e roda 
 quem corrige é o implementador. O orquestrador te passa a issue, a branch dela, a branch de
 integração e os pareceres do revisor e do conferente.
 
+0. Antes de abrir arquivos, rode `sh .claude/watchdogs/rodar contexto <consulta>` e leia a resposta; vazia
+   ou insuficiente, leia direto.
 1. Leia os pareceres e o diff (`git diff <integração>...<branch da issue>`).
 2. Para cada achado, confirme que ele procede: reproduza (rode o teste, leia o trecho, compare com
    a linha do spec). Achado que não procede sai do plano, com o porquê.
