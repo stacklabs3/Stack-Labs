@@ -11,6 +11,11 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 2.0.1 (2026-11-01)
+
+- A revisão por modelo mostra o nome certo de um `testWidgets`, também com a descrição na linha de
+  baixo.
+
 ## 1.0.0 (2026-10-25)
 
 Primeira versão marcada: o método como estava no commit `c7c1fa1`, mais:
