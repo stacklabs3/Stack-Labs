@@ -71,6 +71,8 @@ aberta: sem `claude` no PATH, sem rede ou sem login, o `ci` avisa e segue. Os ho
 **`lint-cobre` falha fechado:** a regra conta só se algum arquivo de `config` a liga com nível que
 bloqueia; senão, a violação diz se ela falta, está comentada, está desligada ou se o arquivo é
 inválido. O nome casa inteiro (`panic` não casa com `panic_in_result_fn`).
+`analysis_options.yaml` versionado dentro da pasta de um `config` e fora da lista também reprova,
+porque cala o lint daquela pasta (ADR 0021).
 
 | Arquivo | Conta como ligada |
 |---|---|
