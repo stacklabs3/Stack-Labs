@@ -249,3 +249,19 @@ fn revisao_mostra_o_nome_do_testwidgets_na_mesma_linha_e_na_de_baixo() {
     assert!(saida.contains("test/frete_test.dart:2 RK1 mostra frete grátis (RK1)"), "{saida}");
     assert!(saida.contains("test/frete_test.dart:6 RK2 recusa cupom vencido em tela de checkout bem comprida (RK2)"), "{saida}");
 }
+
+// Risco: sem o SDK na máquina, a regra que depende dele passa como aprovada.
+#[test]
+fn ferramenta_ausente_reprova_o_ci() {
+    let mut regras = regras_com_revisao();
+    regras
+        .as_array_mut()
+        .unwrap()
+        .push(json!({ "id": "R4", "principio": "E1", "verificacao": { "tipo": "comando", "executar": "dart_que_nao_existe analyze --fatal-infos" } }));
+    let projeto = Projeto::novo(regras);
+    projeto.escrever("docs/regras-de-codigo.md", &tabela_de_cobertura().replace("| E1 | adotado | R3 |", "| E1 | adotado | R3, R4 |"));
+    let (codigo, saida) = projeto.ci();
+    assert_eq!(codigo, 1, "{saida}");
+    assert!(saida.contains("❌ R4 (E1) comando") && saida.contains("não encontrada"), "{saida}");
+    assert!(saida.trim_end().ends_with("CI: REPROVADO"), "{saida}");
+}
