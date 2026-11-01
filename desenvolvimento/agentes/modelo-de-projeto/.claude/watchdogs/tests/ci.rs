@@ -230,3 +230,57 @@ fn validador_vermelho_reprova_o_ci_e_o_pre_push() {
     assert_eq!(codigo, 0, "na observação o ci só avisa: {saida}");
     assert!(saida.contains("CI: REPROVADO") && saida.contains("etapa de observação"), "{saida}");
 }
+
+// Risco: o veredito sai com o nome errado ou vazio, e o revisor confere o teste errado.
+#[test]
+fn revisao_mostra_o_nome_do_testwidgets_na_mesma_linha_e_na_de_baixo() {
+    let projeto = Projeto::novo(json!([
+        { "id": "R1", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco", "testes": ["test/**"] } },
+        { "id": "R2", "principio": "P5", "verificacao": { "tipo": "revisao-por-modelo", "modelo": "claude-haiku-5-5", "consultivo": true, "testes": ["test/**"] } },
+        { "id": "R3", "principio": "E1", "verificacao": { "tipo": "revisor" } }
+    ]));
+    projeto.escrever(
+        "test/frete_test.dart",
+        "void main() {\n  testWidgets('RK1 mostra frete grátis', (tester) async {\n    expect(1, 1);\n  });\n\n  testWidgets(\n    'RK2 recusa cupom vencido em tela de checkout bem comprida',\n    (tester) async {\n      expect(2, 2);\n    },\n  );\n}\n",
+    );
+    projeto.claude_falso("#!/bin/sh\necho '{\"type\":\"result\",\"is_error\":false,\"structured_output\":{\"exercita\":false,\"motivo\":\"nao afirma o risco\"}}'\n");
+    let (codigo, saida) = projeto.ci();
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("test/frete_test.dart:2 RK1 mostra frete grátis (RK1)"), "{saida}");
+    assert!(saida.contains("test/frete_test.dart:6 RK2 recusa cupom vencido em tela de checkout bem comprida (RK2)"), "{saida}");
+}
+
+// Risco: sem o SDK na máquina, a regra que depende dele passa como aprovada.
+#[test]
+fn ferramenta_ausente_reprova_o_ci() {
+    let mut regras = regras_com_revisao();
+    regras
+        .as_array_mut()
+        .unwrap()
+        .push(json!({ "id": "R4", "principio": "E1", "verificacao": { "tipo": "comando", "executar": "dart_que_nao_existe analyze --fatal-infos" } }));
+    let projeto = Projeto::novo(regras);
+    projeto.escrever("docs/regras-de-codigo.md", &tabela_de_cobertura().replace("| E1 | adotado | R3 |", "| E1 | adotado | R3, R4 |"));
+    let (codigo, saida) = projeto.ci();
+    assert_eq!(codigo, 1, "{saida}");
+    assert!(saida.contains("❌ R4 (E1) comando") && saida.contains("não encontrada"), "{saida}");
+    assert!(saida.trim_end().ends_with("CI: REPROVADO"), "{saida}");
+}
+
+// Risco: o veredito de um golden ou de um teste do patrol sai sem nome, e o revisor confere o teste errado.
+#[test]
+fn revisao_mostra_o_nome_de_goldentest_e_patroltest() {
+    let projeto = Projeto::novo(json!([
+        { "id": "R1", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco", "testes": ["test/**"] } },
+        { "id": "R2", "principio": "P5", "verificacao": { "tipo": "revisao-por-modelo", "modelo": "claude-haiku-5-5", "consultivo": true, "testes": ["test/**"] } },
+        { "id": "R3", "principio": "E1", "verificacao": { "tipo": "revisor" } }
+    ]));
+    projeto.escrever(
+        "test/tela_test.dart",
+        "void main() {\n  goldenTest(\n    'RK1 tela de frete',\n    fileName: 'frete',\n    builder: () {\n      return 1;\n    },\n  );\n\n  patrolTest('RK2 cupom vencido', (tester) async {\n    expect(2, 2);\n  });\n}\n",
+    );
+    projeto.claude_falso("#!/bin/sh\necho '{\"type\":\"result\",\"is_error\":false,\"structured_output\":{\"exercita\":false,\"motivo\":\"nao afirma o risco\"}}'\n");
+    let (codigo, saida) = projeto.ci();
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("test/tela_test.dart:2 RK1 tela de frete (RK1)"), "{saida}");
+    assert!(saida.contains("test/tela_test.dart:10 RK2 cupom vencido (RK2)"), "{saida}");
+}
