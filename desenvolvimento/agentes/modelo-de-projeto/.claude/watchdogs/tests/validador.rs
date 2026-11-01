@@ -732,6 +732,28 @@ fn lint_cobre_nao_dispara_com_analysis_options_ainda_sem_commit() {
     assert_eq!(codigo, 0, "{saida}");
 }
 
+// Risco: a mesma violação repetida em cada regra lint-cobre esconde as outras violações da saída.
+#[test]
+fn lint_cobre_mostra_o_analysis_options_aninhado_uma_vez_por_execucao() {
+    let repositorio = Repositorio::novo(&[
+        ("analysis_options.yaml", "linter:\n  rules:\n    - avoid_print\n    - empty_catches\n"),
+        ("lib/sub/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO),
+        ("docs/riscos.md", "| Risco | O que dá errado | Dano | Onde | Origem | Situação |\n|---|---|---|---|---|---|\n"),
+    ]);
+    let regras = json!({ "versao": 1, "regras": [
+        { "id": "R1", "principio": "E4", "verificacao": { "tipo": "lint-cobre", "config": "analysis_options.yaml", "regras": ["empty_catches"] } },
+        { "id": "R3", "principio": "E6", "verificacao": { "tipo": "lint-cobre", "config": "analysis_options.yaml", "regras": ["avoid_print"] } },
+        { "id": "R2", "principio": "E1", "verificacao": { "tipo": "revisor" } },
+        { "id": "R90", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco" } }
+    ] });
+    repositorio.escrever("docs/regras-de-codigo.json", &regras.to_string());
+    repositorio.escrever("docs/regras-de-codigo.md", &tabela_com(&[("E4", "adotado | R1"), ("E6", "adotado | R3"), ("E1", "adotado | R2")]));
+    let saida = Command::new(env!("CARGO_BIN_EXE_watchdogs")).arg("validar").current_dir(&repositorio.raiz).output().unwrap();
+    let texto = String::from_utf8_lossy(&saida.stdout);
+    assert_eq!(saida.status.code(), Some(1), "{texto}");
+    assert_eq!(texto.matches("lib/sub/analysis_options.yaml").count(), 1, "{texto}");
+}
+
 #[test]
 fn lint_cobre_toml_invalido_reprova() {
     let motivos = motivos_do_lint(
