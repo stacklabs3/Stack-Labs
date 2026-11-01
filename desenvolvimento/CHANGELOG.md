@@ -13,7 +13,7 @@ Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrad
 
 ## 2.0.1 (2026-11-01)
 
-- A revisão por modelo mostra o nome certo de um `testWidgets`, também com a descrição na linha de
+- A revisão por modelo mostra o nome certo de `testWidgets`, `goldenTest` e `patrolTest`, também com a descrição na linha de
   baixo.
 
 ## 1.0.0 (2026-10-25)

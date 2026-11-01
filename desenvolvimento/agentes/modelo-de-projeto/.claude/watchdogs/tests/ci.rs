@@ -265,3 +265,22 @@ fn ferramenta_ausente_reprova_o_ci() {
     assert!(saida.contains("❌ R4 (E1) comando") && saida.contains("não encontrada"), "{saida}");
     assert!(saida.trim_end().ends_with("CI: REPROVADO"), "{saida}");
 }
+
+// Risco: o veredito de um golden ou de um teste do patrol sai sem nome, e o revisor confere o teste errado.
+#[test]
+fn revisao_mostra_o_nome_de_goldentest_e_patroltest() {
+    let projeto = Projeto::novo(json!([
+        { "id": "R1", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco", "testes": ["test/**"] } },
+        { "id": "R2", "principio": "P5", "verificacao": { "tipo": "revisao-por-modelo", "modelo": "claude-haiku-5-5", "consultivo": true, "testes": ["test/**"] } },
+        { "id": "R3", "principio": "E1", "verificacao": { "tipo": "revisor" } }
+    ]));
+    projeto.escrever(
+        "test/tela_test.dart",
+        "void main() {\n  goldenTest(\n    'RK1 tela de frete',\n    fileName: 'frete',\n    builder: () {\n      return 1;\n    },\n  );\n\n  patrolTest('RK2 cupom vencido', (tester) async {\n    expect(2, 2);\n  });\n}\n",
+    );
+    projeto.claude_falso("#!/bin/sh\necho '{\"type\":\"result\",\"is_error\":false,\"structured_output\":{\"exercita\":false,\"motivo\":\"nao afirma o risco\"}}'\n");
+    let (codigo, saida) = projeto.ci();
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("test/tela_test.dart:2 RK1 tela de frete (RK1)"), "{saida}");
+    assert!(saida.contains("test/tela_test.dart:10 RK2 cupom vencido (RK2)"), "{saida}");
+}

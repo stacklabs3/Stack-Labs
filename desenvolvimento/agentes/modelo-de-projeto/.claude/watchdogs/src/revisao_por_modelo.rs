@@ -35,7 +35,7 @@ o valor que acabou de montar, uma chamada de mock) ou passaria mesmo com o risco
 trecho abaixo. Em motivo, uma ou duas frases em português que digam o que o teste afirma e o que faltaria.";
 
 static NOME_DO_TESTE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"\bfn\s+(\w+)|\b(?:it|test|testWidgets)\b[\w.]*\s*\(\s*["'`]([^"'`]*)|\bdef\s+(\w+)|\bfunc\s+(\w+)|\bvoid\s+(\w+)|\bfun\s+`?([^`(]+)"#)
+    Regex::new(r#"\bfn\s+(\w+)|\b(?:it|test|testWidgets|goldenTest|patrolTest)\b[\w.]*\s*\(\s*["'`]([^"'`]*)|\bdef\s+(\w+)|\bfunc\s+(\w+)|\bvoid\s+(\w+)|\bfun\s+`?([^`(]+)"#)
         .expect("regex válida")
 });
 
