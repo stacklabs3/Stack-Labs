@@ -11,6 +11,13 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 2.0.0 (2026-11-01)
+
+- **Ao atualizar os watchdogs:** o `lint-cobre` passa a reprovar `analysis_options.yaml` versionado
+  dentro da pasta de um `config` declarado e fora da lista de `config`, porque esse arquivo cala o
+  lint da pasta. Um arquivo por pasta que passava pode reprovar: apague-o ou declare-o em `config`.
+  Arquivo ignorado pelo git não dispara ([ADR 0021](adr/0021-dart-no-ci-local.md)).
+
 ## 1.0.0 (2026-10-25)
 
 Primeira versão marcada: o método como estava no commit `c7c1fa1`, mais:

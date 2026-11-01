@@ -597,6 +597,26 @@ fn comentada_ou_ausente(comentarios: &str, nome: &str) -> Cobertura {
     }
 }
 
+// Um analysis_options.yaml vale para a própria pasta e cala o lint dali (visto com Dart 3.12.2): dentro
+// da pasta de um config declarado e fora da lista, é falso aprovado (ADR 0021). Ignorado pelo git nem
+// chega aqui, porque os arquivos vêm do git ls-files.
+fn analysis_options_por_pasta(arquivos: &[String], caminhos_de_config: &[String]) -> Vec<Violacao> {
+    const NOME: &str = "analysis_options.yaml";
+    let sem_ponto = |caminho: &str| caminho.trim_start_matches("./").to_string();
+    let declarados: Vec<String> = caminhos_de_config.iter().map(|caminho| sem_ponto(caminho)).collect();
+    let pastas_declaradas: Vec<&str> = declarados
+        .iter()
+        .filter_map(|caminho| caminho.strip_suffix(NOME))
+        .filter(|pasta| pasta.is_empty() || pasta.ends_with('/'))
+        .collect();
+    arquivos
+        .iter()
+        .filter(|caminho| caminho.ends_with(&format!("/{NOME}")) && !declarados.contains(caminho))
+        .filter(|caminho| pastas_declaradas.iter().any(|pasta| caminho.starts_with(pasta)))
+        .map(|caminho| Violacao::em(caminho, None, format!("este {NOME} cala o lint da pasta dele: apague-o ou declare-o em \"config\"")))
+        .collect()
+}
+
 // Escolhe a leitura pela extensão do arquivo de configuração.
 fn cobertura_de_lint(caminho: &str, texto: &str, nome: &str) -> Cobertura {
     let nome_do_arquivo = Path::new(caminho)
@@ -1116,7 +1136,7 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
                 ))]);
             }
             let configs: Vec<(&String, String)> = existentes.iter().map(|caminho| (*caminho, ler_texto(&raiz, caminho))).collect();
-            let mut violacoes = Vec::new();
+            let mut violacoes = analysis_options_por_pasta(&contexto.arquivos, &caminhos_de_config);
             for nome_da_regra in lista_de_texto(&parametros["regras"]) {
                 // Coberta em qualquer arquivo basta; senão, vale o motivo mais informativo entre eles.
                 let mut melhor = (Cobertura::Ausente, existentes[0]);
