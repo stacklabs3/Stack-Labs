@@ -603,6 +603,94 @@ fn lint_cobre_analysis_options_le_lista_mapa_severidade_e_linguagem() {
     );
 }
 
+// Roda o binário num projeto que delega avoid_print ao lint, com a config declarada dada.
+fn validar_lint_dart(arquivos: &[(&str, &str)], config: Value) -> (i32, String) {
+    validar_lint_dart_com_nao_versionados(arquivos, &[], config)
+}
+
+fn validar_lint_dart_com_nao_versionados(arquivos: &[(&str, &str)], nao_versionados: &[(&str, &str)], config: Value) -> (i32, String) {
+    let repositorio = Repositorio::novo(arquivos);
+    for (caminho, conteudo) in nao_versionados {
+        repositorio.escrever(caminho, conteudo);
+    }
+    let regras = json!({ "versao": 1, "regras": [{ "id": "R1", "principio": "E4", "verificacao": { "tipo": "lint-cobre", "config": config, "regras": ["avoid_print"] } },
+        { "id": "R2", "principio": "E1", "verificacao": { "tipo": "revisor" } },
+        { "id": "R90", "principio": "P5", "verificacao": { "tipo": "teste-cobre-risco" } }
+    ] });
+    repositorio.escrever("docs/riscos.md", "| Risco | O que dá errado | Dano | Onde | Origem | Situação |\n|---|---|---|---|---|---|\n");
+    repositorio.escrever("docs/regras-de-codigo.json", &regras.to_string());
+    repositorio.escrever("docs/regras-de-codigo.md", &tabela_com(&[("E4", "adotado | R1"), ("E1", "adotado | R2")]));
+    let saida = Command::new(env!("CARGO_BIN_EXE_watchdogs"))
+        .arg("validar")
+        .current_dir(&repositorio.raiz)
+        .output()
+        .unwrap();
+    (saida.status.code().unwrap_or(-1), String::from_utf8_lossy(&saida.stdout).into_owned())
+}
+
+const ANALYSIS_OPTIONS_LIGADO: &str = "linter:\n  rules:\n    - avoid_print\n";
+const ANALYSIS_OPTIONS_DESLIGADO: &str = "linter:\n  rules:\n    avoid_print: false\n";
+
+// Risco: um analysis_options.yaml numa subpasta cala o lint daquela pasta e o lint-cobre aprova.
+#[test]
+fn lint_cobre_reprova_analysis_options_aninhado_fora_da_lista() {
+    let (codigo, saida) = validar_lint_dart(
+        &[("analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO), ("lib/sub/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO)],
+        json!("analysis_options.yaml"),
+    );
+    assert_eq!(codigo, 1, "{saida}");
+    assert!(saida.contains("lib/sub/analysis_options.yaml"), "{saida}");
+
+    // Subpasta com regras próprias: a pasta da config é a do app, e o aninhado nela reprova.
+    let (codigo, saida) = validar_lint_dart(
+        &[("app/analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO), ("app/lib/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO)],
+        json!("app/analysis_options.yaml"),
+    );
+    assert_eq!(codigo, 1, "{saida}");
+    assert!(saida.contains("app/lib/analysis_options.yaml"), "{saida}");
+}
+
+// Risco: reprovar o que o projeto já declarou, ou o que está fora da pasta da config.
+#[test]
+fn lint_cobre_aceita_analysis_options_listado_ou_fora_da_pasta() {
+    let (codigo, saida) = validar_lint_dart(
+        &[("analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO), ("pacote/analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO)],
+        json!(["analysis_options.yaml", "pacote/analysis_options.yaml"]),
+    );
+    assert_eq!(codigo, 0, "{saida}");
+
+    let (codigo, saida) = validar_lint_dart(
+        &[("app/analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO), ("outro/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO)],
+        json!("app/analysis_options.yaml"),
+    );
+    assert_eq!(codigo, 0, "{saida}");
+}
+
+// Risco: código gerado ignorado pelo git (contrato_gerado/ do excurfly) reprovar o projeto.
+#[test]
+fn lint_cobre_nao_dispara_com_analysis_options_ignorado_pelo_git() {
+    let (codigo, saida) = validar_lint_dart(
+        &[
+            (".gitignore", "contrato_gerado/\n"),
+            ("analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO),
+            ("contrato_gerado/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO),
+        ],
+        json!("analysis_options.yaml"),
+    );
+    assert_eq!(codigo, 0, "{saida}");
+}
+
+// Risco: reprovar antes do commit um arquivo que o projeto ainda não versionou (a regra é sobre o versionado).
+#[test]
+fn lint_cobre_nao_dispara_com_analysis_options_ainda_sem_commit() {
+    let (codigo, saida) = validar_lint_dart_com_nao_versionados(
+        &[("analysis_options.yaml", ANALYSIS_OPTIONS_LIGADO)],
+        &[("lib/sub/analysis_options.yaml", ANALYSIS_OPTIONS_DESLIGADO)],
+        json!("analysis_options.yaml"),
+    );
+    assert_eq!(codigo, 0, "{saida}");
+}
+
 #[test]
 fn lint_cobre_toml_invalido_reprova() {
     let motivos = motivos_do_lint(
