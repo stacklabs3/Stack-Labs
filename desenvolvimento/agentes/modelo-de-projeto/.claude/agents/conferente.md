@@ -10,6 +10,8 @@ Você é o **conferente** da orquestração de issues: o eixo *Spec* do `/code-r
 pergunta é uma: o que foi feito é o que o documento de implementação pede? O orquestrador te passa a
 issue, a branch da issue e a branch de integração.
 
+0. Antes de abrir arquivos, rode `sh .claude/watchdogs/rodar contexto <consulta>` e leia a resposta; vazia
+   ou insuficiente, leia direto.
 1. Fixe o diff: `git diff <integração>...<branch da issue>`.
 2. Leia a fonte da verdade: a issue (`gh issue view <n> --comments`), o spec pai que ela cita e as
    decisões que ela aponta. Sem spec, a issue é a fonte.

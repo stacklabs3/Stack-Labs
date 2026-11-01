@@ -11,7 +11,7 @@ use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const LIMITE_PADRAO_POR_SECAO: usize = 5;
+pub const LIMITE_PADRAO_POR_SECAO: usize = 5;
 
 // Commits olhados para as issues dos arquivos em foco.
 const COMMITS_DE_HISTORICO: &str = "300";
@@ -82,25 +82,81 @@ pub struct Contexto {
     pub secoes: Vec<Secao>,
 }
 
+// As skills do projeto entram mesmo quando o .gitignore as esconde do git.
+fn somar_arquivos_da_pasta(raiz: &Path, pasta_relativa: &str, arquivos: &mut Vec<String>) {
+    let Ok(entradas) = fs::read_dir(raiz.join(pasta_relativa)) else { return };
+    for entrada in entradas.flatten() {
+        let caminho = format!("{pasta_relativa}/{}", entrada.file_name().to_string_lossy());
+        if entrada.path().is_dir() {
+            somar_arquivos_da_pasta(raiz, &caminho, arquivos);
+        } else if !arquivos.contains(&caminho) {
+            arquivos.push(caminho);
+        }
+    }
+}
+
+// Arquivo cujo nome ou pasta é a própria consulta: `orquestrar-issues` acha a pasta da skill.
+fn arquivos_com_o_nome(arquivos_do_repositorio: &[String], consulta: &str) -> Vec<String> {
+    let consulta_minuscula = consulta.trim_end_matches('/').to_lowercase();
+    arquivos_do_repositorio
+        .iter()
+        .filter(|caminho| {
+            let caminho_minusculo = caminho.to_lowercase();
+            let nome_sem_extensao = Path::new(&caminho_minusculo)
+                .file_stem()
+                .map(|nome| nome.to_string_lossy().to_string())
+                .unwrap_or_default();
+            nome_sem_extensao == consulta_minuscula
+                || caminho_minusculo.split('/').any(|parte| parte == consulta_minuscula)
+                || caminho_minusculo.starts_with(&format!("{consulta_minuscula}/"))
+        })
+        .cloned()
+        .collect()
+}
+
+// Os arquivos que a resposta cita, sem linha: o guarda-contexto avisa quando a leitura sai deles.
+pub fn arquivos_citados(contexto_montado: &Contexto) -> Vec<String> {
+    let mut citados = contexto_montado.arquivos_em_foco.clone();
+    for ligacao in contexto_montado.secoes.iter().flat_map(|secao| &secao.ligacoes) {
+        for local in ligacao.local.split(", ").filter(|local| !local.starts_with('#')) {
+            let caminho = local.split(':').next().unwrap_or("").to_string();
+            if !citados.contains(&caminho) {
+                citados.push(caminho);
+            }
+        }
+    }
+    citados
+}
+
 pub fn montar_contexto(raiz: &Path, consulta: &str, limite_por_secao: usize) -> Contexto {
-    let arquivos_do_repositorio: Vec<String> = git(raiz, &["ls-files", "--cached", "--others", "--exclude-standard"])
+    let mut arquivos_do_repositorio: Vec<String> = git(raiz, &["ls-files", "--cached", "--others", "--exclude-standard"])
         .unwrap_or_default()
         .lines()
         .filter(|caminho| !caminho.is_empty() && raiz.join(caminho).is_file())
         .map(String::from)
         .collect();
-    let numero_issue = consulta.strip_prefix('#').filter(|numero| !numero.is_empty() && numero.chars().all(|letra| letra.is_ascii_digit()));
+    somar_arquivos_da_pasta(raiz, ".claude/skills", &mut arquivos_do_repositorio);
+    let numero_issue = consulta
+        .strip_prefix('#')
+        .filter(|numero| !numero.is_empty() && numero.chars().all(|letra| letra.is_ascii_digit()));
     let eh_caminho = arquivos_do_repositorio.iter().any(|caminho| caminho == consulta);
     let eh_simbolo = numero_issue.is_none() && !eh_caminho && Regex::new(r"^[A-Za-z_][\w]*$").expect("regex válida").is_match(consulta);
     // Num caminho, só o nome do arquivo diz do que ele trata: as pastas casam com tudo.
     let texto_para_termos = if eh_caminho {
-        Path::new(consulta).file_stem().map(|nome| nome.to_string_lossy().to_string()).unwrap_or_default()
+        Path::new(consulta)
+            .file_stem()
+            .map(|nome| nome.to_string_lossy().to_string())
+            .unwrap_or_default()
     } else {
         consulta.to_string()
     };
     let partes = partes_da_consulta(&texto_para_termos);
 
-    let definicoes = if eh_simbolo { achar_definicoes(raiz, consulta, &arquivos_do_repositorio) } else { Vec::new() };
+    let definicoes = if eh_simbolo {
+        achar_definicoes(raiz, consulta, &arquivos_do_repositorio)
+    } else {
+        Vec::new()
+    };
     let arquivos_em_foco: Vec<String> = if let Some(numero) = numero_issue {
         arquivos_da_issue(raiz, numero)
     } else if eh_caminho {
@@ -113,11 +169,21 @@ pub fn montar_contexto(raiz: &Path, consulta: &str, limite_por_secao: usize) -> 
                 arquivos_das_definicoes.push(caminho);
             }
         }
+        for caminho in arquivos_com_o_nome(&arquivos_do_repositorio, consulta) {
+            if !arquivos_das_definicoes.contains(&caminho) {
+                arquivos_das_definicoes.push(caminho);
+            }
+        }
         arquivos_das_definicoes
     };
     // Nome de arquivo só liga um documento ao arquivo quando é único no repositório: SKILL.md,
     // README.md e mod.rs aparecem em todo lugar e ligariam tudo a tudo.
-    let nome_do_arquivo = |caminho: &str| Path::new(caminho).file_name().map(|nome| nome.to_string_lossy().to_string()).unwrap_or_default();
+    let nome_do_arquivo = |caminho: &str| {
+        Path::new(caminho)
+            .file_name()
+            .map(|nome| nome.to_string_lossy().to_string())
+            .unwrap_or_default()
+    };
     let mut arquivos_por_nome: HashMap<String, usize> = HashMap::new();
     for caminho in &arquivos_do_repositorio {
         *arquivos_por_nome.entry(nome_do_arquivo(caminho)).or_default() += 1;
@@ -133,21 +199,46 @@ pub fn montar_contexto(raiz: &Path, consulta: &str, limite_por_secao: usize) -> 
         citacoes_procuradas.push(consulta.to_string());
     }
 
-    let mut secoes = vec![Secao { titulo: "definido em", ligacoes: definicoes }];
-    secoes.push(Secao { titulo: "termos do glossário", ligacoes: termos_do_glossario(raiz, &arquivos_do_repositorio, &partes) });
-    secoes.push(Secao { titulo: "decisões (ADR)", ligacoes: adrs_que_citam(raiz, &arquivos_do_repositorio, &citacoes_procuradas) });
-    secoes.push(Secao { titulo: "riscos e testes", ligacoes: riscos_ligados(raiz, &arquivos_do_repositorio, &citacoes_procuradas, &arquivos_em_foco) });
+    let mut secoes = vec![Secao {
+        titulo: "definido em",
+        ligacoes: definicoes,
+    }];
+    secoes.push(Secao {
+        titulo: "termos do glossário",
+        ligacoes: termos_do_glossario(raiz, &arquivos_do_repositorio, &partes),
+    });
+    secoes.push(Secao {
+        titulo: "decisões (ADR)",
+        ligacoes: adrs_que_citam(raiz, &arquivos_do_repositorio, &citacoes_procuradas),
+    });
+    secoes.push(Secao {
+        titulo: "riscos e testes",
+        ligacoes: riscos_ligados(raiz, &arquivos_do_repositorio, &citacoes_procuradas, &arquivos_em_foco),
+    });
     if eh_simbolo {
-        secoes.push(Secao { titulo: "chamado por", ligacoes: chamadas(raiz, consulta, &secoes[0].ligacoes) });
+        secoes.push(Secao {
+            titulo: "chamado por",
+            ligacoes: chamadas(raiz, consulta, &secoes[0].ligacoes),
+        });
     }
-    secoes.push(Secao { titulo: "muda junto com", ligacoes: mudam_junto(raiz, &arquivos_em_foco) });
+    secoes.push(Secao {
+        titulo: "muda junto com",
+        ligacoes: mudam_junto(raiz, &arquivos_em_foco),
+    });
     if numero_issue.is_none() {
-        secoes.push(Secao { titulo: "issues", ligacoes: issues_dos_arquivos(raiz, &arquivos_em_foco) });
+        secoes.push(Secao {
+            titulo: "issues",
+            ligacoes: issues_dos_arquivos(raiz, &arquivos_em_foco),
+        });
     }
     for secao in &mut secoes {
         secao.ligacoes.truncate(limite_por_secao);
     }
-    Contexto { consulta: consulta.to_string(), arquivos_em_foco, secoes }
+    Contexto {
+        consulta: consulta.to_string(),
+        arquivos_em_foco,
+        secoes,
+    }
 }
 
 // Definição do símbolo nas linguagens da casa: a palavra que declara, depois o nome.
@@ -159,13 +250,18 @@ fn achar_definicoes(raiz: &Path, simbolo: &str, arquivos_do_repositorio: &[Strin
     .expect("regex válida");
     let mut definicoes = Vec::new();
     for caminho in arquivos_do_repositorio.iter().filter(|caminho| !eh_documento(caminho)) {
-        let Ok(texto_arquivo) = fs::read_to_string(raiz.join(caminho)) else { continue };
+        let Ok(texto_arquivo) = fs::read_to_string(raiz.join(caminho)) else {
+            continue;
+        };
         if !texto_arquivo.contains(simbolo) {
             continue;
         }
         for (indice, linha) in texto_arquivo.lines().enumerate() {
             if declaracao.is_match(linha) {
-                definicoes.push(Ligacao { rotulo: linha.trim().chars().take(100).collect(), local: format!("{caminho}:{}", indice + 1) });
+                definicoes.push(Ligacao {
+                    rotulo: linha.trim().chars().take(100).collect(),
+                    local: format!("{caminho}:{}", indice + 1),
+                });
             }
         }
     }
@@ -175,7 +271,11 @@ fn achar_definicoes(raiz: &Path, simbolo: &str, arquivos_do_repositorio: &[Strin
 // Arquivos dos commits que citam a issue (o merge da PR com "Closes #n" ou o "(#n)" do squash).
 fn arquivos_da_issue(raiz: &Path, numero_issue: &str) -> Vec<String> {
     let padrao_issue = format!("#{numero_issue}([^0-9]|$)");
-    let saida = git(raiz, &["log", "-E", "--grep", &padrao_issue, "--name-only", "--format=", "-m", "--first-parent"]).unwrap_or_default();
+    let saida = git(
+        raiz,
+        &["log", "-E", "--grep", &padrao_issue, "--name-only", "--format=", "-m", "--first-parent"],
+    )
+    .unwrap_or_default();
     let mut arquivos_da_issue: Vec<String> = Vec::new();
     for caminho in saida.lines().filter(|caminho| !caminho.is_empty() && raiz.join(caminho).is_file()) {
         if !arquivos_da_issue.iter().any(|existente| existente == caminho) {
@@ -191,13 +291,20 @@ fn termos_do_glossario(raiz: &Path, arquivos_do_repositorio: &[String], partes: 
     let termo_definido = Regex::new(r"^\*\*([^*]+)\*\*:").expect("regex válida");
     let mut termos = Vec::new();
     for caminho in arquivos_do_repositorio.iter().filter(|caminho| caminho.ends_with("GLOSSARY.md")) {
-        let Ok(texto_glossario) = fs::read_to_string(raiz.join(caminho)) else { continue };
+        let Ok(texto_glossario) = fs::read_to_string(raiz.join(caminho)) else {
+            continue;
+        };
         for (indice, linha) in texto_glossario.lines().enumerate() {
             let Some(captura) = termo_definido.captures(linha) else { continue };
             let termo = captura[1].trim();
-            let casa = partes_da_consulta(termo).iter().any(|parte_do_termo| radicais_da_consulta.contains(&radical(parte_do_termo)));
+            let casa = partes_da_consulta(termo)
+                .iter()
+                .any(|parte_do_termo| radicais_da_consulta.contains(&radical(parte_do_termo)));
             if casa {
-                termos.push(Ligacao { rotulo: termo.to_string(), local: format!("{caminho}:{}", indice + 1) });
+                termos.push(Ligacao {
+                    rotulo: termo.to_string(),
+                    local: format!("{caminho}:{}", indice + 1),
+                });
             }
         }
     }
@@ -205,7 +312,15 @@ fn termos_do_glossario(raiz: &Path, arquivos_do_repositorio: &[String], partes: 
 }
 
 fn primeira_linha_util(texto: &str) -> String {
-    texto.lines().find(|linha| !linha.trim().is_empty()).unwrap_or("").trim_start_matches('#').trim().chars().take(100).collect()
+    texto
+        .lines()
+        .find(|linha| !linha.trim().is_empty())
+        .unwrap_or("")
+        .trim_start_matches('#')
+        .trim()
+        .chars()
+        .take(100)
+        .collect()
 }
 
 fn adrs_que_citam(raiz: &Path, arquivos_do_repositorio: &[String], citacoes_procuradas: &[String]) -> Vec<Ligacao> {
@@ -214,11 +329,17 @@ fn adrs_que_citam(raiz: &Path, arquivos_do_repositorio: &[String], citacoes_proc
     }
     let citacoes_minusculas: Vec<String> = citacoes_procuradas.iter().map(|citacao| citacao.to_lowercase()).collect();
     let mut adrs = Vec::new();
-    for caminho in arquivos_do_repositorio.iter().filter(|caminho| caminho.contains("adr/") && caminho.ends_with(".md")) {
+    for caminho in arquivos_do_repositorio
+        .iter()
+        .filter(|caminho| caminho.contains("adr/") && caminho.ends_with(".md"))
+    {
         let Ok(texto_adr) = fs::read_to_string(raiz.join(caminho)) else { continue };
         let texto_minusculo = texto_adr.to_lowercase();
         if citacoes_minusculas.iter().any(|citacao| texto_minusculo.contains(citacao)) {
-            adrs.push(Ligacao { rotulo: primeira_linha_util(&texto_adr), local: caminho.clone() });
+            adrs.push(Ligacao {
+                rotulo: primeira_linha_util(&texto_adr),
+                local: caminho.clone(),
+            });
         }
     }
     // A ADR que tem a consulta no título decide sobre ela; a que só a cita no corpo vem depois.
@@ -264,9 +385,18 @@ fn riscos_ligados(raiz: &Path, arquivos_do_repositorio: &[String], citacoes_proc
         .map(|id_risco| {
             let testes_do_risco = testes_por_risco.remove(&id_risco).unwrap_or_default();
             match descricao_do_risco(&id_risco) {
-                Some((descricao, linha)) => Ligacao { rotulo: format!("{id_risco} {descricao} ({caminho_registro}:{linha})"), local: testes_do_risco.join(", ") },
-                None if texto_registro.is_empty() => Ligacao { rotulo: format!("{id_risco} (sem {caminho_registro} neste repositório)"), local: testes_do_risco.join(", ") },
-                None => Ligacao { rotulo: format!("{id_risco} fora do registro {caminho_registro}"), local: testes_do_risco.join(", ") },
+                Some((descricao, linha)) => Ligacao {
+                    rotulo: format!("{id_risco} {descricao} ({caminho_registro}:{linha})"),
+                    local: testes_do_risco.join(", "),
+                },
+                None if texto_registro.is_empty() => Ligacao {
+                    rotulo: format!("{id_risco} (sem {caminho_registro} neste repositório)"),
+                    local: testes_do_risco.join(", "),
+                },
+                None => Ligacao {
+                    rotulo: format!("{id_risco} fora do registro {caminho_registro}"),
+                    local: testes_do_risco.join(", "),
+                },
             }
         })
         .collect()
@@ -278,12 +408,17 @@ fn chamadas(raiz: &Path, simbolo: &str, definicoes: &[Ligacao]) -> Vec<Ligacao> 
     let mut chamadas_encontradas = Vec::new();
     for linha in saida.lines() {
         let mut partes = linha.splitn(3, ':');
-        let (Some(caminho), Some(numero_linha), Some(trecho)) = (partes.next(), partes.next(), partes.next()) else { continue };
+        let (Some(caminho), Some(numero_linha), Some(trecho)) = (partes.next(), partes.next(), partes.next()) else {
+            continue;
+        };
         let local = format!("{caminho}:{numero_linha}");
         if eh_documento(caminho) || linhas_de_definicao.contains(local.as_str()) || !trecho.contains(&format!("{simbolo}(")) {
             continue;
         }
-        chamadas_encontradas.push(Ligacao { rotulo: trecho.trim().chars().take(100).collect(), local });
+        chamadas_encontradas.push(Ligacao {
+            rotulo: trecho.trim().chars().take(100).collect(),
+            local,
+        });
     }
     chamadas_encontradas
 }
@@ -319,9 +454,7 @@ fn mudam_junto(raiz: &Path, arquivos_em_foco: &[String]) -> Vec<Ligacao> {
     }
     let mut pontuados: Vec<(String, usize, f64)> = commits_juntos_por_arquivo
         .into_iter()
-        .filter(|(caminho, commits_juntos)| {
-            *commits_juntos >= 2 && !arquivos_em_foco.iter().any(|em_foco| em_foco == caminho) && raiz.join(caminho).is_file()
-        })
+        .filter(|(caminho, commits_juntos)| *commits_juntos >= 2 && !arquivos_em_foco.iter().any(|em_foco| em_foco == caminho) && raiz.join(caminho).is_file())
         .map(|(caminho, commits_juntos)| {
             let commits_do_outro = commits_por_arquivo.get(&caminho).copied().unwrap_or(commits_juntos);
             let jaccard = commits_juntos as f64 / (commits_do_foco + commits_do_outro - commits_juntos) as f64;
@@ -332,7 +465,10 @@ fn mudam_junto(raiz: &Path, arquivos_em_foco: &[String]) -> Vec<Ligacao> {
     pontuados
         .into_iter()
         .map(|(caminho, commits_juntos, jaccard)| Ligacao {
-            rotulo: format!("{commits_juntos} de {commits_do_foco} commits, {:.0}% dos commits de qualquer um dos dois", jaccard * 100.0),
+            rotulo: format!(
+                "{commits_juntos} de {commits_do_foco} commits, {:.0}% dos commits de qualquer um dos dois",
+                jaccard * 100.0
+            ),
             local: caminho,
         })
         .collect()
@@ -353,7 +489,10 @@ fn issues_dos_arquivos(raiz: &Path, arquivos_em_foco: &[String]) -> Vec<Ligacao>
         let assunto = mensagem.trim().lines().next().unwrap_or("").to_string();
         for captura in citacao_de_issue.captures_iter(mensagem) {
             if numeros_vistos.insert(captura[1].to_string()) {
-                issues.push(Ligacao { rotulo: assunto.chars().take(90).collect(), local: format!("#{}", &captura[1]) });
+                issues.push(Ligacao {
+                    rotulo: assunto.chars().take(90).collect(),
+                    local: format!("#{}", &captura[1]),
+                });
             }
         }
     }
@@ -364,9 +503,19 @@ pub fn formatar(contexto_montado: &Contexto) -> String {
     let mut linhas = vec![format!("contexto de {}", contexto_montado.consulta)];
     if !contexto_montado.arquivos_em_foco.is_empty() {
         let quantidade_em_foco = contexto_montado.arquivos_em_foco.len();
-        let mostrados = contexto_montado.arquivos_em_foco.iter().take(ARQUIVOS_EM_FOCO_MOSTRADOS).cloned().collect::<Vec<_>>().join(", ");
+        let mostrados = contexto_montado
+            .arquivos_em_foco
+            .iter()
+            .take(ARQUIVOS_EM_FOCO_MOSTRADOS)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(", ");
         let restantes = quantidade_em_foco.saturating_sub(ARQUIVOS_EM_FOCO_MOSTRADOS);
-        let sufixo = if restantes > 0 { format!(" (+{restantes}, {quantidade_em_foco} no total)") } else { String::new() };
+        let sufixo = if restantes > 0 {
+            format!(" (+{restantes}, {quantidade_em_foco} no total)")
+        } else {
+            String::new()
+        };
         linhas.push(format!("  arquivos: {mostrados}{sufixo}"));
     }
     for secao in contexto_montado.secoes.iter().filter(|secao| !secao.ligacoes.is_empty()) {

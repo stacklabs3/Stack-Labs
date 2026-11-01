@@ -617,7 +617,13 @@ fn analysis_options_por_pasta(raiz: &Path, caminhos_de_config: &[String]) -> Vec
         .map(String::from)
         .filter(|caminho| caminho.ends_with(&format!("/{ARQUIVO_DE_OPCOES}")) && !declarados.contains(caminho))
         .filter(|caminho| pastas_declaradas.iter().any(|pasta| caminho.starts_with(pasta)))
-        .map(|caminho| Violacao::em(&caminho, None, format!("este {ARQUIVO_DE_OPCOES} cala o lint da pasta dele: apague-o ou declare-o em \"config\"")))
+        .map(|caminho| {
+            Violacao::em(
+                &caminho,
+                None,
+                format!("este {ARQUIVO_DE_OPCOES} cala o lint da pasta dele: apague-o ou declare-o em \"config\""),
+            )
+        })
         .collect()
 }
 

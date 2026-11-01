@@ -17,7 +17,11 @@ impl Repositorio {
         let raiz = std::env::temp_dir().join(format!("contexto-{}-{ordem}-{sufixo}", std::process::id()));
         fs::create_dir_all(&raiz).unwrap();
         let repositorio = Repositorio { raiz };
-        for argumentos in [&["init", "-q", "-b", "main"][..], &["config", "user.email", "t@t"], &["config", "user.name", "t"]] {
+        for argumentos in [
+            &["init", "-q", "-b", "main"][..],
+            &["config", "user.email", "t@t"],
+            &["config", "user.name", "t"],
+        ] {
             repositorio.git(argumentos);
         }
         repositorio
@@ -35,7 +39,11 @@ impl Repositorio {
         self.git(&["commit", "-q", "-m", mensagem]);
     }
     fn contexto(&self, consulta: &str) -> String {
-        let saida = Command::new(env!("CARGO_BIN_EXE_watchdogs")).args(["contexto", consulta]).current_dir(&self.raiz).output().unwrap();
+        let saida = Command::new(env!("CARGO_BIN_EXE_watchdogs"))
+            .args(["contexto", consulta])
+            .current_dir(&self.raiz)
+            .output()
+            .unwrap();
         assert!(saida.status.success(), "contexto falhou: {}", String::from_utf8_lossy(&saida.stderr));
         String::from_utf8_lossy(&saida.stdout).into()
     }
@@ -49,13 +57,22 @@ impl Drop for Repositorio {
 
 fn projeto_do_cupom() -> Repositorio {
     let repositorio = Repositorio::novo();
-    repositorio.escrever("GLOSSARY.md", "## Language\n\n**Cupom**:\nDesconto aplicado ao pedido.\n\n**Mesa**:\nOnde o cliente senta.\n");
-    repositorio.escrever("docs/adr/0003-cupom.md", "# Cupom não acumula\n\nSó um cupom por pedido: `aplicar_cupom` recusa o segundo.\n");
+    repositorio.escrever(
+        "GLOSSARY.md",
+        "## Language\n\n**Cupom**:\nDesconto aplicado ao pedido.\n\n**Mesa**:\nOnde o cliente senta.\n",
+    );
+    repositorio.escrever(
+        "docs/adr/0003-cupom.md",
+        "# Cupom não acumula\n\nSó um cupom por pedido: `aplicar_cupom` recusa o segundo.\n",
+    );
     repositorio.escrever("docs/riscos.md", "| ID | Risco | Dano | Área | Origem | Situação |\n|---|---|---|---|---|---|\n| RK2 | Cupom vencido aceito | margem perdida | cupom | docs/adr/0003-cupom.md | |\n");
     repositorio.escrever("src/cupom.rs", "pub fn aplicar_cupom(valor_pedido: u64) -> u64 {\n    valor_pedido - 10\n}\n");
     repositorio.escrever("src/pedido.rs", "pub fn finalizar_pedido() -> u64 {\n    aplicar_cupom(100)\n}\n");
     repositorio.commitar("Cupom por pedido (#7)");
-    repositorio.escrever("src/cupom.rs", "pub fn aplicar_cupom(valor_pedido: u64) -> u64 {\n    valor_pedido.saturating_sub(10)\n}\n");
+    repositorio.escrever(
+        "src/cupom.rs",
+        "pub fn aplicar_cupom(valor_pedido: u64) -> u64 {\n    valor_pedido.saturating_sub(10)\n}\n",
+    );
     repositorio.escrever("src/pedido.rs", "pub fn finalizar_pedido() -> u64 {\n    aplicar_cupom(100) + 0\n}\n");
     repositorio.escrever(
         "tests/cupom.rs",
@@ -100,4 +117,16 @@ fn consulta_sem_ligacao_diz_que_nao_achou() {
     let repositorio = projeto_do_cupom();
     assert!(repositorio.contexto("reembolso_parcial").contains("nada ligado a esta consulta"));
     assert!(Path::new(&repositorio.raiz).exists());
+}
+
+#[test]
+fn skill_escondida_pelo_gitignore_aparece_pelo_nome() {
+    let repositorio = projeto_do_cupom();
+    repositorio.escrever(".gitignore", ".claude/skills/\n");
+    repositorio.escrever(".claude/skills/orquestrar-issues/SKILL.md", "# Orquestrar\n");
+    let contexto = repositorio.contexto("orquestrar-issues");
+    assert!(
+        contexto.contains(".claude/skills/orquestrar-issues/SKILL.md"),
+        "skill não apareceu:\n{contexto}"
+    );
 }
