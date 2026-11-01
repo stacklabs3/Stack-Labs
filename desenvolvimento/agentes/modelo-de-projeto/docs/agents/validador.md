@@ -103,7 +103,7 @@ regra reprovar tudo (pesquisas em `desenvolvimento/research/` do Stack-Labs):
 | Lint e formatador em Rust | `cargo clippy --all-targets --locked -- -D warnings` e `cargo fmt --all -- --check` |
 | Dependências em Rust (P7, P8, RS3) | `cargo machete` e `cargo deny check` |
 | Lint e formatador em Dart e Flutter | `dart analyze --fatal-infos` (ou `flutter analyze --fatal-infos`) e `dart format --output=none --set-exit-if-changed .`; lint é `info` por padrão e só reprova com `--fatal-infos` |
-| Dependências em Dart (P7, DT4) | `dart pub get --enforce-lockfile`, `dart run dependency_validator` e `osv-scanner scan --lockfile pubspec.lock` |
+| Dependências em Dart (P7, DT4) | `dart pub get --enforce-lockfile`, `dart run dependency_validator` e `osv-scanner scan source --lockfile pubspec.lock` |
 | Mutação no diff em TS/JS (P5) | `npx stryker run --mutate <fontes alterados, separados por vírgula> --incremental`, com `@stryker-mutator/core@10.0.0` e `thresholds.break` no `stryker.config.json` (não há flag para o limite) |
 | Mutação no diff em Rust (P5) | `git diff origin/main...HEAD > alteracoes.diff && cargo mutants --in-diff alteracoes.diff`, com `cargo-mutants@27.1.0`; sai com 2 se um mutante sobrevive |
 | Mutação no diff em Java (P5) | `mvn test-compile org.pitest:pitest-maven:1.30.0:mutationCoverage -DtargetClasses=<classes do diff> -DmutationThreshold=80 -DwithHistory` (o modo por git do PIT é pago; monte `targetClasses` do diff) |

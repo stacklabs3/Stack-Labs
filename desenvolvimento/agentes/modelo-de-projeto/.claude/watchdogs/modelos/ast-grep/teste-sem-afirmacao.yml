@@ -94,6 +94,8 @@ rule:
             regex: '^(assert|verify|expect|fail|conferir)'
 
 ---
+# goldenTest fica fora: o alchemist afirma por dentro (expectLater com matchesGoldenFile), e o corpo
+# dele não tem expect para este documento achar.
 id: teste-sem-afirmacao-dart
 language: Dart
 message: "P5: teste sem afirmação passa sem conferir nada. Afirme o que o risco muda (RK<n>) ou apague o teste."

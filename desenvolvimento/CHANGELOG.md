@@ -11,6 +11,13 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 2.1.0 (2026-11-01)
+
+- O modelo Dart fica igual ao guia: caixa do E1, `avoid_print`, `implementation_imports` e as outras
+  regras que o guia cita, DT5 e DT6 como `revisor`, `**/*.mocks.dart` fora do validador e do
+  analisador, e a troca para `flutter analyze --fatal-infos` registrada.
+- Uma receita só do OSV-Scanner, conferida na documentação da v2.7.0:
+  `osv-scanner scan source --lockfile pubspec.lock`.
 ## 2.0.1 (2026-11-01)
 
 - A revisão por modelo mostra o nome certo de `testWidgets`, `goldenTest` e `patrolTest`, também com a descrição na linha de
