@@ -11,6 +11,10 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 2.0.1 (2026-11-01)
+
+- A revisão por modelo mostra o nome certo de `testWidgets`, `goldenTest` e `patrolTest`, também com a descrição na linha de
+  baixo.
 ## 2.0.0 (2026-11-01)
 
 - **Ao atualizar os watchdogs:** o `lint-cobre` passa a reprovar `analysis_options.yaml` versionado
