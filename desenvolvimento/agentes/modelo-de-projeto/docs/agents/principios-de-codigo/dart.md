@@ -16,13 +16,21 @@ Todas BSD-3-Clause, MIT ou Apache-2.0, sem plano pago. Fixe a versão no `pubspe
 |---|---|---|
 | Dart SDK (analyzer, linter, `dart format`) | 3.13 | Lint e formatador; regras no `analysis_options.yaml` |
 | Flutter SDK (`flutter analyze`, `flutter test`) | 3.47 | O mesmo analyzer, mais `flutter_test` |
-| `very_good_analysis` | 11.0.0 | Preset base: 216 regras e os três `strict-*` |
+| `very_good_analysis` | 11.0.0 com Dart 3.13 ou mais novo; 10.3.0 com Dart 3.12 | Preset base: 216 regras (na 11.0.0) e os três `strict-*` |
 | `mocktail` | 1.0.5 | Mock sem geração de código, quando o fake à mão não basta |
 | `alchemist` | 0.14.1 | Golden test |
 | `dependency_validator` | 5.1.0 | Dependência sem uso ou fora do `pubspec.yaml` |
-| OSV-Scanner | do projeto | Vulnerabilidade no `pubspec.lock` |
+| OSV-Scanner | v2.7.0 | Vulnerabilidade no `pubspec.lock` |
 | `mutation_test` | 1.8.1 | Mutação, fora do CI de PR |
 | `ast-grep`, `jscpd` | 0.51.0, 5.4.2 | Validador; os dois leem Dart |
+
+**Requisito para o `rodar ci` passar.** O motor usa o `PATH` e não procura SDK: ferramenta ausente
+sai com 127 e reprova (ADR 0021).
+
+- Na máquina e no CI: SDK do Dart ou Flutter, Node (`npx jscpd`) e OSV-Scanner v2.7.0.
+- No `pubspec.yaml`: `environment.sdk` preenchido; `very_good_analysis` e `dependency_validator` em
+  `dev_dependencies`.
+- No git: `pubspec.lock`, em app.
 
 **Lint é `info` e `info` não reprova.** `dart analyze` sai com 0 quando só há infos. Toda receita usa
 `dart analyze --fatal-infos` (ou `flutter analyze --fatal-infos`), o `-D warnings` do Dart. As regras

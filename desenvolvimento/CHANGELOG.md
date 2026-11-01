@@ -11,6 +11,12 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 2.1.1 (2026-11-01)
+
+- Quem configura e quem audita acham o Dart: requisito e versão do preset no `dart.md`, Flutter e
+  subpasta no `validador.md`, DT no mapa de Regras de código, e a `/auditar-metodo` vale para toda
+  linguagem com arquivo de princípios.
+
 ## 2.1.0 (2026-11-01)
 
 - O modelo Dart fica igual ao guia: caixa do E1, `avoid_print`, `implementation_imports` e as outras

@@ -47,5 +47,5 @@ Os de grupo são obrigatórios; um grupo que não cabe numa sessão vira mais de
 | *Desenho de módulos e SOLID* | grilling | P1 a P4 ([padrões](../principios-de-codigo/padroes.md)), S, O, L, I, D ([SOLID](../principios-de-codigo/solid.md)) | `/codebase-design` |
 | *Riscos que os testes cobrem*: as classes de risco do produto, com exemplo, e o primeiro `docs/riscos.md` ([riscos.md](../riscos.md)) | grilling | P5 | `/human-architect-mindset`, `/domain-modeling` |
 | *Testes e fluxo de trabalho* | grilling | P5 a P9 ([padrões](../principios-de-codigo/padroes.md)); teste de mutação nos módulos de risco alto | `/tdd` |
-| *Opções de lint, formatador e typecheck* → *Lint e formatador* | pesquisa → grilling | os que a ferramenta garante sozinha; as práticas só da linguagem (TS, JV, RS) | `/research` |
+| *Opções de lint, formatador e typecheck* → *Lint e formatador* | pesquisa → grilling | os que a ferramenta garante sozinha; as práticas só da linguagem (TS, JV, RS, DT) | `/research` |
 | *Escrever docs/regras-de-codigo.md e .json*: junta as decisões nos modelos; fecha o mapa com `--so-cobertura` aprovado | tarefa | os 22 na cobertura | |

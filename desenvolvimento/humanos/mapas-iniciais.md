@@ -81,8 +81,8 @@ formatador?
 por grupo de princípios, e cada princípio sai adotado, adaptado ou deixado de fora, com o porquê.
 O E1, nome que diz o que é, nunca fica de fora: você decide só a língua e os termos. O P5, todo
 teste cobre um risco, também não: num ticket próprio, você aprova os riscos do `docs/riscos.md`.
-No ticket de lint, você decide também as práticas só da linguagem do projeto (TypeScript, Java ou
-Rust).
+No ticket de lint, você decide também as práticas só da linguagem do projeto (TypeScript, Java,
+Rust ou Dart).
 
 **Fecha quando:** `docs/regras-de-codigo.md` está escrito, com os 22 princípios decididos na tabela
 de cobertura, o `docs/riscos.md` tem os primeiros riscos, e você aprovou os dois. **Bloqueia a implementação.** Regra nova ou mudada depois passa por
