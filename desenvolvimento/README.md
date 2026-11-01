@@ -19,7 +19,7 @@ com o `/wayfinder` como porta de entrada, mais as regras da casa.
 | [GLOSSARY.md](GLOSSARY.md) | Os dois | A linguagem do método, fonte única dos termos |
 | [research/](research/) | Os dois | As pesquisas que sustentam as decisões do método |
 | [adr/](adr/) | Os dois | As decisões do próprio método e o porquê; a escrita dos documentos na [ADR 0009](adr/0009-escrita-dos-documentos-do-metodo.md) |
-| Princípios de código ([humanos](humanos/principios-de-codigo.md) · [agentes](agentes/modelo-de-projeto/docs/agents/principios-de-codigo.md)) | Os dois | A base da casa para escrever código: escrita, padrões de desenvolvimento e SOLID, com as práticas de TypeScript, Java e Rust |
+| Princípios de código ([humanos](humanos/principios-de-codigo.md) · [agentes](agentes/modelo-de-projeto/docs/agents/principios-de-codigo.md)) | Os dois | A base da casa para escrever código: escrita, padrões de desenvolvimento e SOLID, com as práticas de TypeScript, Java, Rust e Dart |
 
 ## As regras da casa, em uma linha cada
 

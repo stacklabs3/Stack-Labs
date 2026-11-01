@@ -18,7 +18,7 @@ agentes/
 │   │   ├── orquestracao.md            a orquestração de issues
 │   │   ├── adocao.md                  as etapas de adoção num projeto que já existia
 │   │   ├── principios-de-codigo.md    os 22 princípios (ADR 0008); grupos, grilling e práticas de
-│   │   │                              TypeScript, Java e Rust (ADR 0012) em principios-de-codigo/
+│   │   │                              TypeScript, Java, Rust e Dart (ADRs 0012 e 0019) em principios-de-codigo/
 │   │   ├── validador.md               o formato de regras-de-codigo.json, o catálogo e como refinar
 │   │   ├── riscos.md                  o registro de riscos e o que faz um teste valer (ADR 0014)
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)

@@ -114,9 +114,14 @@ As regras de cada linguagem e o porquê estão no arquivo dela, em
 ## Refinar para o projeto
 
 1. **Copie o modelo da stack** (`regras-de-codigo.json` para TypeScript, `regras-de-codigo.java.json`,
-   `regras-de-codigo.rust.json`) e, para cada regra, escolha o `tipo` que a linha do princípio no
+   `regras-de-codigo.rust.json`, `regras-de-codigo.dart.json`) e, para cada regra, escolha o `tipo` que a linha do princípio no
    arquivo da linguagem indica ([principios-de-codigo.md](principios-de-codigo.md)). A configuração
    de lint de referência está em `.claude/watchdogs/modelos/lint/`.
+   - **Flutter:** troque `dart analyze --fatal-infos` por `flutter analyze --fatal-infos`, com o passo
+     de geração no próprio comando (`tool/gerar.sh && flutter analyze --fatal-infos`).
+   - **Linguagem em subpasta:** mescle o modelo num `.json` só, com prefixo em `arquivos` e `config`
+     por regra (`app/lib/**`, `app/analysis_options.yaml`), e `cd app && ...` em `comando`. `{arquivos}`
+     vem relativo à raiz e não combina com `cd`: a regra que o usa roda da raiz.
 2. **Preencha os parâmetros** com o que o grilling decidiu: pastas, pacotes, regex do commit.
 3. **Regra de padrão** (`ast-grep`): copie o modelo de `.claude/watchdogs/modelos/ast-grep/` para
    `docs/regras-de-codigo/ast-grep/`, troque os marcadores `<...>` e apague os documentos das
@@ -138,6 +143,7 @@ ou as violações listadas viraram tickets.
   duas primeiras. Sem `docs/regras-de-codigo.json`, passa. Termina em `CI: APROVADO` ou `CI: REPROVADO`.
 - **CI do projeto**, configurado na primeira fatia da primeira fase, junto com o lint:
   `sh .claude/watchdogs/rodar validar --base origin/${{ github.base_ref }}`, com o ast-grep instalado
-  no passo anterior quando o `.json` usa `ast-grep` (`npm i -g @ast-grep/cli@0.51.0`).
+  no passo anterior quando o `.json` usa `ast-grep` (`npm i -g @ast-grep/cli@0.51.0`). O SDK da
+  linguagem também é instalado antes do validador, porque ferramenta ausente reprova.
 - **Implementador**, antes do commit; **revisor** da orquestração, como violação dura.
 - **Fechamento do mapa** de Regras de código, com `--so-cobertura`.
