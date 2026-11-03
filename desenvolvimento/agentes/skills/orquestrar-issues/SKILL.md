@@ -17,7 +17,7 @@ Todos os papéis rodam no modelo `opus`. O esforço vai na chamada de cada subag
 
 | Papel | Ciclo 1 | Ciclos de correção |
 |---|---|---|
-| `implementador` | `low` | `medium` |
+| `implementador` | `medium` | `medium` |
 | `revisor` | `low` | `medium` |
 | `conferente` | `low` | `medium` |
 | `diagnosticador` | `medium`, já no primeiro diagnóstico | `medium` |

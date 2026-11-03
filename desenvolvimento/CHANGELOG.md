@@ -24,6 +24,7 @@ Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrad
 - Os papéis da orquestração leem o contrato: o implementador o publica e implementa contra ele, o
   revisor e o conferente conferem o diff com ele, e o diagnosticador escreve o plano com a linha do
   contrato que cada passo preserva (passo `contrato:` quando precisa mudar uma).
+- O implementador do primeiro ciclo roda em `medium`, porque escreve o contrato.
 
 ## 3.0.0 (2026-11-01)
 

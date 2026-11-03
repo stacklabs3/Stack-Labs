@@ -66,7 +66,8 @@ cada issue trabalha na sua worktree, criada a partir da integração.
 
 ## Esforço
 
-O primeiro ciclo roda barato; o diagnosticador e os ciclos de correção sobem o esforço. O esforço vai
+O primeiro ciclo roda barato, menos o implementador, que escreve o contrato da fatia e por isso já
+roda em `medium` (ADR 0023); o diagnosticador e os ciclos de correção sobem o esforço. O esforço vai
 em cada chamada, para subir sem editar os papéis.
 
 ## Watchdogs na orquestração
