@@ -1,5 +1,6 @@
 // Watchdog PreToolUse (Write | Edit | NotebookEdit).
-// W1 protege os próprios watchdogs · W2 smart zone · W3 código só com issue ativa, fora da main.
+// W1 protege os próprios watchdogs · W2 smart zone · W3 código só com issue ativa, fora da main ·
+// W4 código só depois do contrato da fatia publicado na issue (regra 24).
 
 use crate::comum::*;
 
@@ -71,6 +72,32 @@ pub fn rodar() -> i32 {
                 nome_branch.unwrap_or_default()
             ),
         );
+    }
+
+    // W4 — o contrato da fatia vem antes da primeira linha de código. Uma consulta ao GitHub por
+    // sessão e por subagente: achado, fica no estado; o ciclo de correção o reencontra na issue.
+    let id_sessao = texto(&entrada_hook["session_id"]);
+    let chave_agente = chave_do_agente(&entrada_hook);
+    let numero_issue = issue_ativa["numero"].as_i64().unwrap_or(0);
+    let mut estado_sessao = ler_estado_sessao(&diretorio_projeto, id_sessao);
+    if estado_sessao["contratos"][&chave_agente].as_i64() == Some(numero_issue) {
+        return 0;
+    }
+    match buscar_corpos_dos_comentarios(&diretorio_projeto, numero_issue) {
+        Ok(corpos) if corpos.iter().any(|corpo| corpo.contains(MARCADOR_CONTRATO)) => {
+            estado_sessao["contratos"][&chave_agente] = serde_json::json!(numero_issue);
+            gravar_estado_sessao(&diretorio_projeto, id_sessao, &estado_sessao);
+        }
+        Ok(_) => bloquear_ferramenta(
+            NOME_WATCHDOG,
+            &format!(
+                "editar \"{caminho_relativo}\" é código, e a issue #{numero_issue} ainda não tem o contrato da fatia. Antes do código, publique o comentário \"{MARCADOR_CONTRATO}\" na issue (gh issue comment {numero_issue} --body-file <arquivo>), como manda docs/agents/contrato-da-fatia.md: o que o diff toca e o vizinho que imita, as seams e os riscos RK<n>, as regras de código que o alcançam, os termos do glossário, as ADRs e os critérios de aceite."
+            ),
+        ),
+        Err(erro) => bloquear_ferramenta(
+            NOME_WATCHDOG,
+            &format!("não deu para ler os comentários da issue #{numero_issue} para achar o contrato da fatia ({erro}). Confira o gh auth status e a rede."),
+        ),
     }
     0
 }

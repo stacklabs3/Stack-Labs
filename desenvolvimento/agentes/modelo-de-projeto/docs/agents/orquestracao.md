@@ -35,6 +35,10 @@ sozinho (o kickoff colado não trava); a fila e a branch continuam decisão do h
 Revisão e conferência são separadas de propósito: código que segue todos os padrões pode fazer a
 coisa errada, e código que faz a coisa certa pode quebrar os padrões. Um eixo não esconde o outro.
 
+Os quatro leem o mesmo **contrato da fatia**, publicado na issue pelo implementador antes do código
+([contrato-da-fatia.md](contrato-da-fatia.md)): a primeira escrita já sai dos documentos, e o ciclo
+de correção resolve o achado dentro do que o contrato fixa, em vez de deixar o código à deriva.
+
 ## O ciclo de uma issue
 
 ```
@@ -62,7 +66,8 @@ cada issue trabalha na sua worktree, criada a partir da integração.
 
 ## Esforço
 
-O primeiro ciclo roda barato; o diagnosticador e os ciclos de correção sobem o esforço. O esforço vai
+O primeiro ciclo roda barato, menos o implementador, que escreve o contrato da fatia e por isso já
+roda em `medium` (ADR 0023); o diagnosticador e os ciclos de correção sobem o esforço. O esforço vai
 em cada chamada, para subir sem editar os papéis.
 
 ## Watchdogs na orquestração

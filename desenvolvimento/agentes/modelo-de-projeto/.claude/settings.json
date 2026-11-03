@@ -76,6 +76,16 @@
         ]
       },
       {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/watchdogs/rodar\" hook vigia-codigo",
+            "timeout": 30
+          }
+        ]
+      },
+      {
         "matcher": "Skill",
         "hooks": [
           {

@@ -11,6 +11,21 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 4.0.0 (2026-11-03)
+
+- **Ao atualizar os watchdogs:** o `guarda-edicao` só libera código quando a issue ativa tem o
+  comentário `## Contrato da fatia`: o que o diff toca e o vizinho que imita, as seams com os riscos,
+  as regras de código que o alcançam, os termos, as ADRs e os critérios de aceite. Regra 24 do
+  `AGENTS.md`, `docs/agents/contrato-da-fatia.md`, [ADR 0023](adr/0023-contrato-da-fatia-antes-do-codigo.md).
+  Rode o `--atualizar-watchdogs`.
+- Hook novo `vigia-codigo`: a cada edição de código, devolve na hora a regra de
+  `docs/regras-de-codigo.json` que o arquivo quebra (`ast-grep`, `termo-evitado`, `todo-sem-issue`),
+  com a regra de onde nasceu, em vez de esperar o validador no commit ou o `ci` no push.
+- Os papéis da orquestração leem o contrato: o implementador o publica e implementa contra ele, o
+  revisor e o conferente conferem o diff com ele, e o diagnosticador escreve o plano com a linha do
+  contrato que cada passo preserva (passo `contrato:` quando precisa mudar uma).
+- O implementador do primeiro ciclo roda em `medium`, porque escreve o contrato.
+
 ## 3.0.0 (2026-11-01)
 
 - **Ao atualizar os watchdogs:** o `guarda-contexto` novo e o `guarda-bash` barram a leitura de código

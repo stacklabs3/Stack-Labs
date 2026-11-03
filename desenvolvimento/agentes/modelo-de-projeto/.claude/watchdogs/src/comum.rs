@@ -60,6 +60,9 @@ pub const CAMINHOS_PROTEGIDOS: [&str; 7] = [
 ];
 
 // Onde o git procura os hooks deste repo (pre-push que protege a main).
+// Título do comentário da issue que publica o contrato da fatia (regra 24, docs/agents/contrato-da-fatia.md).
+pub const MARCADOR_CONTRATO: &str = "## Contrato da fatia";
+
 pub const CAMINHO_GITHOOKS: &str = ".claude/githooks";
 
 // Como o agente ativa uma issue: o guarda-bash reconhece este comando antes de ele rodar.

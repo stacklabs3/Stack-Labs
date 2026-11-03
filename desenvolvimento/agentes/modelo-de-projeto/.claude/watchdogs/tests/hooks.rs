@@ -248,7 +248,100 @@ fn edicao_protege_watchdogs_e_exige_issue_ativa() {
     assert_eq!(codigo, 2);
     assert!(erro.contains("Ative com: .claude/watchdogs/rodar ativar-issue <número>"), "{erro}");
     projeto.estado(json!({ "issuesAtivas": { "principal": { "numero": 7, "titulo": "F" } }, "ticketsWayfinderResolvidos": [] }));
+    projeto.respostas_do_gh(&[comentarios(7, &["## Contrato da fatia\n**Toca:** src/a.ts"])]);
     assert_eq!(projeto.edicao("src/a.ts").0, 0);
+}
+
+#[test]
+fn edicao_exige_o_contrato_da_fatia_na_issue_e_o_lembra_na_sessao() {
+    let projeto = Projeto::novo("issue/7-x");
+    projeto.estado(json!({ "issuesAtivas": { "principal": { "numero": 7, "titulo": "F" } }, "ticketsWayfinderResolvidos": [] }));
+
+    let (codigo, _, erro) = projeto.edicao("src/a.ts");
+    assert_eq!(codigo, 2, "sem rede, o portão falha fechado");
+    assert!(erro.contains("não deu para ler os comentários da issue #7"), "{erro}");
+
+    projeto.respostas_do_gh(&[comentarios(7, &["Reivindicada.", "Pergunta solta sem contrato"])]);
+    let (codigo, _, erro) = projeto.edicao("src/a.test.ts");
+    assert_eq!(codigo, 2);
+    assert!(erro.contains("ainda não tem o contrato da fatia"), "{erro}");
+    assert!(erro.contains("gh issue comment 7 --body-file"), "{erro}");
+    assert!(projeto.ler_estado()["contratos"].is_null(), "sem contrato, nada fica no estado");
+
+    projeto.respostas_do_gh(&[comentarios(
+        7,
+        &["Reivindicada.", "## Contrato da fatia\n**Toca:** src/a.ts (vizinho: src/b.ts)"],
+    )]);
+    assert_eq!(projeto.edicao("src/a.ts").0, 0);
+    assert_eq!(projeto.ler_estado()["contratos"]["principal"], 7);
+
+    projeto.respostas_do_gh(&[]);
+    assert_eq!(
+        projeto.edicao("src/c.ts").0,
+        0,
+        "contrato achado uma vez vale a sessão inteira, sem chamar o gh de novo"
+    );
+    assert_eq!(projeto.edicao("docs/notas.md").0, 0, "caminho livre não passa pelo portão");
+}
+
+#[test]
+fn vigia_codigo_devolve_a_regra_quebrada_no_arquivo_editado() {
+    let projeto = Projeto::novo("issue/7-x");
+    let editar = |caminho: &str| {
+        projeto.rodar(
+            &["hook", "vigia-codigo"],
+            &json!({ "session_id": "s1", "tool_input": { "file_path": projeto.raiz.join(caminho).to_string_lossy() } }).to_string(),
+            &[],
+        )
+    };
+    let escrever = |caminho: &str, conteudo: &str| {
+        let destino = projeto.raiz.join(caminho);
+        fs::create_dir_all(destino.parent().unwrap()).unwrap();
+        fs::write(destino, conteudo).unwrap();
+    };
+    escrever("GLOSSARY.md", "**Comanda**:\nO pedido da mesa.\n_Evitar_: Ticket, ordem de serviço\n");
+    escrever("src/comanda.ts", "export const ticketAberto = 1;\n// TODO trocar depois\n");
+    assert_eq!(
+        editar("src/comanda.ts"),
+        (0, String::new(), String::new()),
+        "sem regras de código decididas, passa"
+    );
+
+    escrever(
+        "docs/regras-de-codigo.json",
+        &json!({ "versao": 1, "projeto": { "codigo": ["src/**"] }, "regras": [
+            { "id": "R1", "principio": "E1", "texto": "Nome usa a língua do glossário", "verificacao": { "tipo": "termo-evitado" } },
+            { "id": "R2", "principio": "E6", "texto": "TODO cita a issue", "verificacao": { "tipo": "todo-sem-issue" } },
+            { "id": "R3", "principio": "P5", "texto": "Teste cobre risco", "verificacao": { "tipo": "teste-cobre-risco" } },
+            { "id": "R4", "principio": "E2", "texto": "Lint", "verificacao": { "tipo": "comando", "executar": "false" } }
+        ] })
+        .to_string(),
+    );
+    let (codigo, saida, _) = editar("src/comanda.ts");
+    assert_eq!(codigo, 0);
+    let resposta: Value = serde_json::from_str(&saida).unwrap();
+    assert_eq!(resposta["decision"], "block");
+    let motivo = resposta["reason"].as_str().unwrap();
+    assert!(motivo.contains("R1 (E1) linha 1: \"ticketAberto\" usa \"Ticket\""), "{motivo}");
+    assert!(motivo.contains("Regra: Nome usa a língua do glossário"), "{motivo}");
+    assert!(motivo.contains("R2 (E6) linha 2:"), "{motivo}");
+    assert!(
+        !motivo.contains("R3") && !motivo.contains("R4"),
+        "P5 é do vigia-teste e comando é do ci: {motivo}"
+    );
+
+    escrever("src/comanda.ts", "export const comandaAberta = 1;\n// TODO #12 trocar\n");
+    assert_eq!(editar("src/comanda.ts").1, "");
+    escrever("lib/fora.ts", "export const ticketAberto = 1;\n");
+    assert_eq!(editar("lib/fora.ts").1, "", "arquivo fora de projeto.codigo passa");
+
+    escrever(".claude/metodo.json", "{\"etapaDeAdocao\": \"observacao\"}");
+    escrever("src/comanda.ts", "export const ticketAberto = 1;\n");
+    let (_, saida, _) = editar("src/comanda.ts");
+    assert!(
+        saida.contains("additionalContext") && !saida.contains("\"decision\""),
+        "na observação só avisa: {saida}"
+    );
 }
 
 #[test]

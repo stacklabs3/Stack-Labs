@@ -6,6 +6,7 @@ mod guarda_contexto;
 mod guarda_edicao;
 mod sessao_inicio;
 mod vigia_agente;
+mod vigia_codigo;
 mod vigia_custo;
 mod vigia_parada;
 mod vigia_prompt;
@@ -26,8 +27,9 @@ pub fn rodar(nome_do_hook: &str) -> i32 {
         "vigia-custo" => vigia_custo::rodar(),
         "vigia-saida" => vigia_saida::rodar(),
         "vigia-agente" => vigia_agente::rodar(),
+        "vigia-codigo" => vigia_codigo::rodar(),
         _ => {
-            eprintln!("hook desconhecido: {nome_do_hook} (sessao-inicio, vigia-prompt, vigia-skill, guarda-edicao, guarda-bash, guarda-contexto, vigia-parada, vigia-teste, vigia-custo, vigia-saida, vigia-agente)");
+            eprintln!("hook desconhecido: {nome_do_hook} (sessao-inicio, vigia-prompt, vigia-skill, guarda-edicao, guarda-bash, guarda-contexto, vigia-parada, vigia-teste, vigia-custo, vigia-saida, vigia-agente, vigia-codigo)");
             2
         }
     }

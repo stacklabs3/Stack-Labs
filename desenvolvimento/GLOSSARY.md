@@ -161,6 +161,20 @@ O "aprovado" escrito pelo humano no comentário de resolução do ticket de prot
 A única fatia vertical em que uma sessão de agente pode editar código de produção, ativada com
 `sh .claude/watchdogs/rodar ativar-issue <n>`.
 
+**Contrato da fatia**:
+O comentário `## Contrato da fatia` que o agente publica na issue antes da primeira linha de código:
+o que o diff toca e o vizinho que imita, as seams com os riscos, as regras de código que o alcançam,
+os termos do glossário, as ADRs e os critérios de aceite, cada um com o documento de onde veio. O
+código cumpre o contrato; a correção também, e muda uma linha dele só por escrito. É compromisso,
+não fonte: os documentos continuam a verdade.
+_Evitar_: Plano de implementação, checklist, pré-voo (que é do kickoff)
+
+**Vizinho**:
+O arquivo que já existe no projeto, faz o mesmo tipo de coisa que o arquivo que vai nascer ou mudar,
+e que este imita em forma, nomes, tratamento de erro e testes. Cada arquivo do contrato da fatia tem
+um.
+_Evitar_: Referência, exemplo, template
+
 **Sessão**:
 Uma janela de contexto de um agente, do kickoff ao `/nova-sessao` que abre a próxima. Uma sessão
 resolve um ticket de decisão, implementa uma issue ou conduz uma fase.
@@ -233,6 +247,7 @@ _Evitar_: Prompt, instruções
 - Um **mapa** fechado vira uma **spec**, que vira **fatias verticais**; cada fatia é a **issue ativa** de uma **sessão**.
 - Um **watchdog** vigia uma regra da **constituição**.
 - Toda **fatia vertical** segue as **regras de código**; o revisor reprova a que quebra uma.
+- Toda **fatia vertical** tem um **contrato da fatia** na issue antes do código; o revisor e o conferente leem o diff com ele.
 - As **regras de código** de um projeto partem dos **princípios de código** da casa, e cada regra cita o princípio de onde nasceu.
 
 ## Flagged ambiguities

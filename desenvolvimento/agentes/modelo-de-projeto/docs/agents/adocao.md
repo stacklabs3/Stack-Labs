@@ -6,8 +6,8 @@ Sem esse arquivo, o projeto nasceu no método e vale tudo.
 
 | Etapa | O que bloqueia | O que ainda não bloqueia |
 |---|---|---|
-| `observacao` | Mexer nos watchdogs, `--no-verify`, `core.hooksPath`, push forçado, push na `main`, contexto acima de 550k | Consulta antes de ler código (`guarda-contexto`), ativação de issue, regras do wayfinder e das fontes, commit na `main`, código sem issue ativa, teste sem risco ou sem valor (`vigia-teste`); no CI, as regras de branch e de issue |
-| `planejamento` | Tudo de `observacao`, mais consulta antes de ler código (`guarda-contexto`), ativação de issue (com mapas iniciais), wayfinder (claim, fontes, um ticket por sessão, ponteiro no mapa), commit na `main`, teste sem risco ou sem valor (`vigia-teste`) e as regras de branch e de issue no CI | Código sem issue ativa |
+| `observacao` | Mexer nos watchdogs, `--no-verify`, `core.hooksPath`, push forçado, push na `main`, contexto acima de 550k | Consulta antes de ler código (`guarda-contexto`), ativação de issue, regras do wayfinder e das fontes, commit na `main`, código sem issue ativa ou sem contrato da fatia, teste sem risco ou sem valor (`vigia-teste`), regra de código quebrada na edição (`vigia-codigo`); no CI, as regras de branch e de issue |
+| `planejamento` | Tudo de `observacao`, mais consulta antes de ler código (`guarda-contexto`), ativação de issue (com mapas iniciais), wayfinder (claim, fontes, um ticket por sessão, ponteiro no mapa), commit na `main`, teste sem risco ou sem valor (`vigia-teste`), regra de código quebrada na edição (`vigia-codigo`) e as regras de branch e de issue no CI | Código sem issue ativa ou sem contrato da fatia |
 | `completo` | Tudo | Nada |
 
 ## Numa sessão de um projeto em adoção
