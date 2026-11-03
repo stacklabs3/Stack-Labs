@@ -36,3 +36,5 @@ máquina, para que dois builds ao mesmo tempo não derrubem tudo.
 
 - Issue boa para a orquestração tem critério de aceite claro e cabe numa sessão.
 - Revise a branch de integração antes de levar à `main`: três agentes aprovando não substituem você.
+- O comentário `## Contrato da fatia` de cada issue diz o que o agente entendeu antes de escrever.
+  Uma linha errada ali é mais barata de corrigir do que um ciclo de correção depois.

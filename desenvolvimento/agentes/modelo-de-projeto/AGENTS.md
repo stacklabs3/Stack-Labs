@@ -122,6 +122,14 @@ ideia grande demais para uma sessão
     e leia a resposta: uma vez por sessão e por subagente. Vazia ou insuficiente, leia direto
     ([docs/agents/watchdogs.md](docs/agents/watchdogs.md#consultar-o-contexto)).
 
+### 10. Contrato antes do código
+24. **[W]** **Antes da primeira linha de código de uma issue, publique nela o `## Contrato da fatia`**:
+    o que o diff toca e o vizinho que imita, as seams com os riscos `RK<n>`, as regras de código que o
+    alcançam, os termos do glossário, as ADRs e os critérios de aceite, cada um com o documento de onde
+    veio ([docs/agents/contrato-da-fatia.md](docs/agents/contrato-da-fatia.md)). O código cumpre o
+    contrato; a correção também, e muda uma linha dele só por escrito. O `vigia-codigo` devolve a
+    regra de código quebrada a cada edição.
+
 ## Agent skills
 
 - **Issue tracker:** GitHub Issues deste repositório, via `gh`, com sub-issues e dependências

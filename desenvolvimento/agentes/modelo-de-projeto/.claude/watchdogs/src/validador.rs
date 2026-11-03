@@ -236,6 +236,7 @@ pub fn ler_tabela_de_cobertura(texto_md: &str) -> Vec<(String, LinhaDeCobertura)
 pub struct Regra {
     pub id: String,
     pub principio: String,
+    pub texto: String,
     pub verificacao: Map<String, Value>,
 }
 
@@ -1405,6 +1406,7 @@ pub fn ler_regras(config: &Value) -> Result<Vec<Regra>, ErroDeConfiguracao> {
         regras.push(Regra {
             id: id.into(),
             principio: principio.into(),
+            texto: regra["texto"].as_str().unwrap_or("").into(),
             verificacao,
         });
     }
@@ -1492,6 +1494,57 @@ pub fn conferir_arquivo_editado(raiz: &Path, config: &Value, caminho_relativo: &
         parametros.remove("tipo");
         if let Ok(achadas) = rodar_checagem(tipo, &parametros, &mut contexto) {
             violacoes.extend(achadas.into_iter().filter(|violacao| violacao.arquivo.is_some()));
+        }
+    }
+    violacoes
+}
+
+// Hook vigia-codigo: as regras que leem código fora do P5 e têm forma fixa (ast-grep, termo-evitado,
+// todo-sem-issue) rodam só no arquivo que o agente acabou de editar, cada violação com a regra de onde
+// nasceu. Comando (lint, typecheck) e checagens do repositório inteiro ficam para o validador e o ci.
+pub const TIPOS_RAPIDOS_NO_HOOK: [&str; 3] = ["ast-grep", "termo-evitado", "todo-sem-issue"];
+
+pub struct ViolacaoDeRegra {
+    pub id: String,
+    pub principio: String,
+    pub texto: String,
+    pub violacao: Violacao,
+}
+
+pub fn conferir_codigo_editado(raiz: &Path, config: &Value, caminho_relativo: &str) -> Vec<ViolacaoDeRegra> {
+    let Ok(regras) = ler_regras(config) else {
+        return Vec::new();
+    };
+    let mut contexto = Contexto {
+        raiz: raiz.to_path_buf(),
+        projeto: config["projeto"].clone(),
+        base: None,
+        avisos: Vec::new(),
+        arquivos: Vec::new(),
+        alterados: Some(vec![caminho_relativo.to_string()]),
+        conferir_o_registro_inteiro: false,
+        analysis_options_ja_mostrados: HashSet::new(),
+    };
+    let mut violacoes = Vec::new();
+    for regra in regras.iter().filter(|regra| regra.principio != "P5") {
+        let tipo = regra.verificacao.get("tipo").and_then(Value::as_str).unwrap_or("");
+        if !TIPOS_RAPIDOS_NO_HOOK.contains(&tipo) {
+            continue;
+        }
+        let mut parametros = regra.verificacao.clone();
+        parametros.remove("tipo");
+        if let Ok(achadas) = rodar_checagem(tipo, &parametros, &mut contexto) {
+            violacoes.extend(
+                achadas
+                    .into_iter()
+                    .filter(|violacao| violacao.arquivo.is_some())
+                    .map(|violacao| ViolacaoDeRegra {
+                        id: regra.id.clone(),
+                        principio: regra.principio.clone(),
+                        texto: regra.texto.clone(),
+                        violacao,
+                    }),
+            );
         }
     }
     violacoes

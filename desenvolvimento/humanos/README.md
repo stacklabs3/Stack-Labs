@@ -71,6 +71,10 @@ libera o protótipo para virar código. Etapas do protótipo: o
 ## Implementação
 
 - Uma issue por sessão. Para trocar de issue, abra outra sessão.
+- Antes do código, o agente publica na issue o **contrato da fatia**: o que vai mudar, as regras,
+  os riscos e os critérios que o código vai cumprir, cada um com o documento de onde veio. É ali que
+  você vê, antes do diff, se ele leu a issue e as regras do seu jeito
+  ([ADR 0023](../adr/0023-contrato-da-fatia-antes-do-codigo.md)).
 - A `main` só muda por PR. A PR cita a issue (`Closes #42`) e passa no `vigia-do-metodo`.
 - "Pronto" é teste passando, não o agente dizendo que terminou.
 - Com issues em `ready-for-agent`, o agente recomenda a **orquestração**:
