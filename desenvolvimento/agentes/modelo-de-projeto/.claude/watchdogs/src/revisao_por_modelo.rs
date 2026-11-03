@@ -95,6 +95,25 @@ fn eh_cabecalho(linha: &str) -> bool {
     ["//", "/*", "*", "#", "@"].iter().any(|prefixo| aparada.starts_with(prefixo))
 }
 
+// Um it.each(tabela)(nome, corpo) só acaba na linha em que todo parêntese, colchete e chave já fechou:
+// a tabela pode ter chaves próprias ou ser longa demais para o corpo aparecer nas primeiras linhas.
+fn fim_da_tabela(linhas: &[&str], indice_da_declaracao: usize, limite: usize) -> usize {
+    let mut profundidade: i64 = 0;
+    for (indice, linha) in linhas.iter().enumerate().take(limite).skip(indice_da_declaracao) {
+        for letra in linha.chars() {
+            match letra {
+                '(' | '[' | '{' => profundidade += 1,
+                ')' | ']' | '}' => profundidade -= 1,
+                _ => {}
+            }
+        }
+        if profundidade <= 0 {
+            return indice + 1;
+        }
+    }
+    limite
+}
+
 // O teste inteiro: o cabeçalho colado em cima, a declaração e o corpo, até a chave que fecha o bloco
 // aberto na declaração ou, sem chaves (Python), até a linha com recuo igual ou menor.
 fn trecho_do_teste(linhas: &[&str], indice_da_declaracao: usize) -> String {
@@ -103,6 +122,9 @@ fn trecho_do_teste(linhas: &[&str], indice_da_declaracao: usize) -> String {
         inicio -= 1;
     }
     let limite = (indice_da_declaracao + LINHAS_MAXIMAS_DO_TRECHO).min(linhas.len());
+    if linhas[indice_da_declaracao].contains(".each(") {
+        return linhas[inicio..fim_da_tabela(linhas, indice_da_declaracao, limite)].join("\n");
+    }
     let tem_chaves = linhas[indice_da_declaracao..limite.min(indice_da_declaracao + 6)]
         .iter()
         .any(|linha| linha.contains('{'));
@@ -363,5 +385,37 @@ fn revisado(pedido: &Pedido, veredito: Veredito) -> TesteRevisado {
         nome: pedido.nome.clone(),
         riscos: pedido.riscos.clone(),
         veredito,
+    }
+}
+
+#[cfg(test)]
+mod testes_do_trecho {
+    use super::trecho_do_teste;
+
+    fn trecho_de(arquivo: &str) -> String {
+        let linhas: Vec<&str> = arquivo.lines().collect();
+        trecho_do_teste(&linhas, 0)
+    }
+
+    #[test]
+    fn it_each_de_tabela_longa_leva_o_corpo() {
+        let arquivo = "  it.each([\n    [1],\n    [2],\n    [3],\n    [4],\n    [5],\n    [6],\n  ])(\"caso %s\", (valor) => {\n    expect(valor).toBe(1);\n  });\n\n  it(\"outro\", () => {});\n";
+        let trecho = trecho_de(arquivo);
+        assert!(trecho.contains("expect(valor)"), "{trecho}");
+        assert!(!trecho.contains("outro"), "{trecho}");
+    }
+
+    #[test]
+    fn it_each_com_chave_na_tabela_leva_o_corpo() {
+        let arquivo = "  it.each([\n    [\"a\", { sexta: [{ abre: \"18:00\" }] }],\n  ])(\"recusa %s\", (nome, periodos) => {\n    expect(periodos).toBeNull();\n  });\n\n  it(\"outro\", () => {});\n";
+        let trecho = trecho_de(arquivo);
+        assert!(trecho.contains("expect(periodos)"), "{trecho}");
+        assert!(!trecho.contains("outro"), "{trecho}");
+    }
+
+    #[test]
+    fn teste_comum_para_na_chave_que_fecha() {
+        let trecho = trecho_de("it(\"um\", () => {\n  expect(1).toBe(1);\n});\nit(\"outro\", () => {});\n");
+        assert_eq!(trecho, "it(\"um\", () => {\n  expect(1).toBe(1);\n});");
     }
 }
