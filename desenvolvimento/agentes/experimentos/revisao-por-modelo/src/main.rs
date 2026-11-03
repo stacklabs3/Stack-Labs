@@ -466,6 +466,9 @@ fn veredito_em_texto(resposta: &Resposta) -> String {
     }
 }
 
+// Um teste real na revisão humana: nome, riscos citados e o veredito de cada variante.
+type TesteReal = (String, String, HashMap<String, Resposta>);
+
 // Um caso a perguntar: o tipo (real ou gabarito), os riscos do prompt e as linhas do arquivo.
 type Caso = (&'static str, Vec<String>, Vec<String>);
 
@@ -578,7 +581,7 @@ fn rodar() -> Result<(), String> {
     escrever(&saida.join("resultados.csv"), &resultados)?;
 
     // Para a revisão humana: cada teste real com o veredito de cada variante lado a lado.
-    let mut por_teste: BTreeMap<(String, usize), (String, String, HashMap<String, Resposta>)> = BTreeMap::new();
+    let mut por_teste: BTreeMap<(String, usize), TesteReal> = BTreeMap::new();
     for (pedido, resposta) in pedidos.iter().zip(&respostas).filter(|(pedido, _)| pedido.tipo == "real") {
         por_teste
             .entry((pedido.arquivo.clone(), pedido.linha))
