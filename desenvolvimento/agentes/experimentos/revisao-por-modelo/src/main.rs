@@ -190,11 +190,32 @@ fn fim_do_bloco(linhas: &[String], inicio: usize) -> usize {
     linhas.len()
 }
 
+// Porta de fim_da_tabela (revisao_por_modelo.rs): o it.each acaba quando tudo que abriu já fechou.
+fn fim_da_tabela(linhas: &[String], indice: usize, limite: usize) -> usize {
+    let mut profundidade: i64 = 0;
+    for (posicao, linha) in linhas.iter().enumerate().take(limite).skip(indice) {
+        for letra in linha.chars() {
+            match letra {
+                '(' | '[' | '{' => profundidade += 1,
+                ')' | ']' | '}' => profundidade -= 1,
+                _ => {}
+            }
+        }
+        if profundidade <= 0 {
+            return posicao + 1;
+        }
+    }
+    limite
+}
+
 // Porta de trecho_do_teste (revisao_por_modelo.rs): devolve (início, fim). Sem chaves nas 6 primeiras
 // linhas, corta por recuo como o watchdog, o que num it.each de tabela longa deixa o corpo de fora.
 fn trecho_atual(linhas: &[String], indice: usize) -> (usize, usize) {
     let inicio = inicio_com_cabecalho(linhas, indice);
     let limite = (indice + LINHAS_MAXIMAS_DO_TRECHO).min(linhas.len());
+    if linhas[indice].contains(".each(") {
+        return (inicio, fim_da_tabela(linhas, indice, limite));
+    }
     let tem_chaves = linhas[indice..limite.min(indice + 6)].iter().any(|linha| linha.contains('{'));
     if !tem_chaves {
         let recuo_da_declaracao = recuo(&linhas[indice]);
