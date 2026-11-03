@@ -4,7 +4,7 @@ Experimento da issue [Stack-Labs#53](https://github.com/stacklabs1/Stack-Labs/is
 se o trecho que o watchdog envia ao modelo, sem auxiliares nem `beforeEach`, gera suspeitos falsos, e
 se dar mais contexto deixa RK errado passar.
 
-O `comparar.py` não altera o watchdog. Ele monta os prompts por conta própria e chama o `claude -p`
+O `comparar-revisao` (Rust, em `src/main.rs`) não altera o watchdog. Ele monta os prompts por conta própria e chama o `claude -p`
 com as mesmas flags, **sem cache**. Só lê testes JS e TS (`it` e `test`).
 
 ## Variantes
@@ -20,12 +20,19 @@ do registro escolhido ao acaso (semente fixa). A resposta esperada é `exercita=
 
 ## Rodar
 
-Requisitos: `python3` e o `claude` autenticado no PATH. Rode dentro do checkout do projeto, por exemplo
-o organiza-ai:
+Requisitos: `cargo` e o `claude` autenticado no PATH. Compile uma vez:
 
 ```bash
-python3 /caminho/do/Stack-Labs/desenvolvimento/agentes/experimentos/revisao-por-modelo/comparar.py --projeto . --simular src/estado.test.ts src/ultimo-botao.test.ts src/tela-de-entrada.test.tsx src/estado-da-fila.test.ts
+cargo build --release --manifest-path /caminho/do/Stack-Labs/desenvolvimento/agentes/experimentos/revisao-por-modelo/Cargo.toml
 ```
+
+Depois, rode dentro do checkout do projeto, por exemplo o organiza-ai:
+
+```bash
+/caminho/do/Stack-Labs/desenvolvimento/agentes/experimentos/revisao-por-modelo/target/release/comparar-revisao --projeto . --simular src/estado.test.ts src/ultimo-botao.test.ts src/tela-de-entrada.test.tsx src/estado-da-fila.test.ts
+```
+
+`--help` lista as opções.
 
 O `--simular` só monta os prompts e mede o tamanho, sem gastar nada. Confira alguns em
 `.scratch/comparacao-revisao-por-modelo/prompts/`. Depois, rode sem `--simular`. Com 26 testes, são
@@ -47,4 +54,4 @@ também aquele risco.
 ## Limites
 
 - A detecção de auxiliares e de ganchos é feita por regex e recuo, não por um parser de TypeScript.
-- O roteiro porta a lógica do watchdog e pode divergir se ele mudar. As constantes do topo do `comparar.py` estão copiadas de `revisao_por_modelo.rs`.
+- O roteiro porta a lógica do watchdog e pode divergir se ele mudar. As constantes do topo de `src/main.rs` estão copiadas de `revisao_por_modelo.rs`.
