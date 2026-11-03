@@ -190,13 +190,19 @@ fn fim_do_bloco(linhas: &[String], inicio: usize) -> usize {
     linhas.len()
 }
 
-// Porta de trecho_do_teste (revisao_por_modelo.rs), só o caminho com chaves: devolve (início, fim).
+// Porta de trecho_do_teste (revisao_por_modelo.rs): devolve (início, fim). Sem chaves nas 6 primeiras
+// linhas, corta por recuo como o watchdog, o que num it.each de tabela longa deixa o corpo de fora.
 fn trecho_atual(linhas: &[String], indice: usize) -> (usize, usize) {
     let inicio = inicio_com_cabecalho(linhas, indice);
     let limite = (indice + LINHAS_MAXIMAS_DO_TRECHO).min(linhas.len());
     let tem_chaves = linhas[indice..limite.min(indice + 6)].iter().any(|linha| linha.contains('{'));
     if !tem_chaves {
-        return (inicio, limite);
+        let recuo_da_declaracao = recuo(&linhas[indice]);
+        let fim = linhas[indice + 1..limite]
+            .iter()
+            .position(|linha| !linha.trim().is_empty() && recuo(linha) <= recuo_da_declaracao)
+            .map_or(limite, |deslocamento| indice + 1 + deslocamento);
+        return (inicio, fim);
     }
     let (mut profundidade, mut abriu) = (0i64, false);
     for (posicao, linha) in linhas.iter().enumerate().take(limite).skip(indice) {
