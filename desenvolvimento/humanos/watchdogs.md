@@ -32,7 +32,7 @@ Três camadas barram; o `/auditar-metodo` confere depois.
 | "contexto ... acima da smart zone" | `/nova-sessao` e cole o kickoff numa janela nova |
 | "push direto para main" | Suba a branch e abra PR |
 | "a PR não fecha a issue da branch" | Acrescente `Closes #<n>` no corpo da PR |
-| "a PR altera os watchdogs" | Um sócio revisa e aplica a label `altera-watchdogs` |
+| "a PR altera os watchdogs" | Atualização do método: o agente roda o `--concluir-pr`. Outra mudança: um sócio revisa e aplica a label `altera-watchdogs` |
 | "tem teste sem valor" (`vigia-teste`) | O agente escreveu teste sem risco do `docs/riscos.md`, sem afirmação ou desligado. Ele corrige; se faltar risco no registro, ele te pergunta, e quem aprova é você |
 | `VALIDADOR: REPROVADO` | O código quebra uma regra de código; a lista diz qual, onde e de que princípio ela nasceu |
 | "o CI local reprovou" (`pre-push`) | Lint, typecheck ou validador vermelho na sua branch. A saída acima diz qual regra e onde; corrija e suba de novo |
@@ -81,12 +81,13 @@ Os watchdogs ligam em etapas: [adotar-em-projeto-existente.md](adotar-em-projeto
 
 ## Atualizar os watchdogs de um projeto
 
-Rode `/setup-stacklabs` no projeto. Os watchdogs ele não sobrescreve sozinho: entrega a você o
-comando, que só você roda:
+Rode `/setup-stacklabs` no projeto. O resto é do agente: ele confere se a skill está em dia, atualiza
+os watchdogs, valida, abre a PR e faz o merge. Ele só instala da fonte oficial, e a PR fica para você
+quando traz algo que não veio de lá, quando ele mesclou um arquivo à mão ou quando o CI não fica verde
+([ADR 0024](../adr/0024-atualizacao-do-metodo-sem-humano.md)).
 
-```bash
-sh ~/.claude/skills/setup-stacklabs/rodar --atualizar-watchdogs
-```
+Voltar a uma versão anterior é só seu, porque afrouxa os watchdogs:
+`sh ~/.claude/skills/setup-stacklabs/rodar --versao <x.y.z> --permitir-regressao`.
 
 Projeto que entrou no método antes do mapa de Regras de código
 ([ADR 0007](../adr/0007-mapa-de-regras-de-codigo.md)) passa a ver "faltam mapas iniciais" depois da

@@ -112,7 +112,8 @@ ideia grande demais para uma sessão
     `.claude/agents/`, `.claude/metodo.json`, `.claude/settings.json`, `.claude/state/`,
     `.github/workflows/vigia-do-metodo.yml` nem o `core.hooksPath`. Um bloqueio é uma informação, não
     um obstáculo: leia o motivo e siga a rota que ele indica. Watchdog errado: explique ao usuário e
-    peça que ele altere.
+    peça que ele altere. A única rota sua até esses caminhos é o instalador do `/setup-stacklabs`, que
+    só traz a fonte oficial.
 22. Em projeto que está adotando o método, a etapa de `.claude/metodo.json` decide só o que a máquina
     bloqueia; as regras desta constituição valem inteiras desde o primeiro dia
     ([docs/agents/adocao.md](docs/agents/adocao.md)).

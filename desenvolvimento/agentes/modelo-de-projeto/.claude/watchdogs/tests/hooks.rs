@@ -152,7 +152,10 @@ fn bash_barra_o_que_desliga_os_watchdogs() {
         "git config core.hooksPath /tmp",
         "git push --force",
         "STACKLABS_PERMITIR_PUSH_MAIN=1 git push",
-        "sh rodar --atualizar-watchdogs",
+        "sh rodar --permitir-regressao --versao 1.0.0",
+        "STACKLABS_ORIGEM=/tmp/clone sh rodar",
+        "MATT_ORIGEM=/tmp/clone sh rodar",
+        "gh pr edit 7 --add-label altera-watchdogs",
     ] {
         let (codigo, _, erro) = projeto.bash(comando);
         assert_eq!(codigo, 2, "{comando} deveria ser barrado");
@@ -163,6 +166,8 @@ fn bash_barra_o_que_desliga_os_watchdogs() {
         "git config --get core.hooksPath",
         "cat .claude/settings.json > /dev/null",
         ".claude/watchdogs/rodar validar --base origin/main",
+        "sh ~/.claude/skills/setup-stacklabs/rodar",
+        "sh ~/.claude/skills/setup-stacklabs/rodar --concluir-pr 7",
     ] {
         assert_eq!(projeto.bash(comando).0, 0, "{comando} deveria passar");
     }

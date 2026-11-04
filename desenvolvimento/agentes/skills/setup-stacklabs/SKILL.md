@@ -2,107 +2,92 @@
 name: setup-stacklabs
 description: Instala o método StackLabs num projeto novo, ou atualiza um projeto que já o segue.
 disable-model-invocation: true
+allowed-tools: Bash(sh ${CLAUDE_SKILL_DIR}/rodar *)
 ---
 
+Resultado da conferência da skill com a fonte oficial, feita agora:
+
+!`sh ${CLAUDE_SKILL_DIR}/rodar --conferir-skill`
+
+Se a linha acima diz `SKILL ATUALIZADA setup-stacklabs`, este texto está velho: leia
+`${CLAUDE_SKILL_DIR}/SKILL.md` de novo e siga a versão nova. Com `SKILL NÃO CONFERIDA`, pare: o
+instalador também depende da fonte oficial, então diga o erro ao humano.
+
 Leva ao projeto o `modelo-de-projeto` (constituição, `docs/agents/`, watchdogs), as skills da casa e
-as skills publicadas do Matt Pocock, todas em `.claude/skills/`, para que cada pessoa e cada sessão
-na nuvem tenham as mesmas. Quem copia é o instalador em Rust desta pasta (`src/`), que o
-[`rodar`](rodar) compila na primeira vez; você conduz, confere e mescla.
+as skills publicadas do Matt Pocock, todas em `.claude/skills/`. Quem copia, mescla, confere e faz o
+merge é o instalador em Rust desta pasta (`src/`), que o [`rodar`](rodar) compila na primeira vez;
+você conduz e resolve o que ele devolver. Numa atualização, **a pessoa só dispara a skill**: nenhum
+passo pede confirmação ([ADR 0024](../../../adr/0024-atualizacao-do-metodo-sem-humano.md)).
 
-O script é idempotente: num projeto em dia não muda nada, e depois de o Matt ou o Stack-Labs mudarem
-ele faz a **atualização**. As skills do Matt vêm sempre do `plugin.json` mais novo de
-`mattpocock/skills`; skill que saiu da fonte sai do projeto.
-
-O instalador aplica às skills do Matt, a cada cópia, dois remendos do método (não os reaplique à mão):
-`wayfinder`, `handoff`, `to-spec`, `to-tickets` e `implement` perdem a linha
-`disable-model-invocation`, para o agente rodar a cadeia sozinho; o `implement-spec` ganha a regra de
-rodar os subagentes implementadores um de cada vez (máquina sem swap). Se o upstream mudar o trecho
-que ancora o remendo, o instalador falha em vez de pular.
+O instalador é idempotente e só instala da fonte oficial: as variáveis de fonte local e voltar de
+versão são do humano, e o `guarda-bash` as barra.
 
 ## Passos
 
 ### 1. Diagnóstico
 
-Confira, na raiz do projeto:
+Na raiz do projeto, descubra o **caso**:
 
-- é um repositório git com `origin` no GitHub;
-- `gh auth status` passa (o script cria as labels do método);
-- `cargo --version` responde (o instalador e os watchdogs são compilados na máquina pelo cargo);
-- qual é o **caso**: **instalação** (repositório sem código nem histórico além do inicial) ou
-  **atualização** (há `.claude/skills/ORIGEM.json`).
+- **atualização**: há `.claude/skills/ORIGEM.json`;
+- **instalação**: repositório sem código nem histórico além do inicial;
+- **adoção**: código em andamento sem o método. Pare e indique o `/adotar-metodo-stack-labs`.
 
-Projeto com código em andamento que não segue o método é **adoção**: pare e indique o
-`/adotar-metodo-stack-labs`.
+Pronto quando o caso está definido.
 
-Pronto quando os quatro itens estão respondidos para o humano. Item que falha bloqueia: diga o que
-falta e pare.
+### 2. Branch
 
-### 2. Simulação
+Crie `chore/atualizar-metodo` (ou `chore/setup-metodo`) a partir da `origin/main` atualizada. Com
+mudança não commitada fora de `.claude/skills/`, trabalhe num worktree novo ao lado do projeto, para
+ela não entrar na atualização, e passe `--destino <worktree>` a todo comando seguinte.
 
-Rode `sh <pasta desta skill>/rodar --simular` (com `--versao <x.y.z>` se o humano quer uma versão
-marcada em vez da mais nova) e mostre o relatório ao humano, agrupado por
-tipo de linha. Se o clone do Stack-Labs falhar, peça o caminho de um clone local e rode com
-`STACKLABS_ORIGEM=<caminho>`.
-
-Pronto quando o humano disse **sim** à lista. Ela inclui criar labels no GitHub.
+Pronto quando a branch existe e está limpa, fora o que a conferência da skill trouxe.
 
 ### 3. Instalação
 
-Rode `sh <pasta desta skill>/rodar` sem `--simular`, com o mesmo `--versao` da simulação. O
-`--atualizar-watchdogs` é do humano (o `guarda-bash` barra): ele entra no passo 4.
+Rode `sh ${CLAUDE_SKILL_DIR}/rodar` (com `--versao <x.y.z>` se o pedido citou uma versão).
 
-Pronto quando o script terminou sem erro e imprimiu o relatório.
+Pronto quando o instalador terminou sem erro e imprimiu o relatório.
 
 ### 4. Pendências do relatório
 
 A linha `VERSÃO` diz de qual versão do método para qual o projeto foi: leia as entradas do
-`desenvolvimento/CHANGELOG.md` entre as duas e trate o que elas mandam fazer à mão. `MESCLADO`
-(o `AGENTS.md` recebeu o modelo novo com a seção do projeto mantida) só se confere no diff.
+`desenvolvimento/CHANGELOG.md` entre as duas e trate o que elas mandam fazer à mão. As linhas
+`COPIADO`, `MESCLADO`, `REMOVIDO`, `SKILL` e `COMPILADO` não pedem nada.
 
-Trate as linhas `MESCLAR`, `PULADO`, `PRE-PUSH inativo` e `FALHA`; as demais são informativas.
+- **`MESCLAR`** (`AGENTS.md` sem a seção `## Regras deste projeto`, ou `CLAUDE.md` próprio): o modelo
+  novo em `<arquivo>.stacklabs-novo` é a base. Cada regra própria do arquivo antigo vai para
+  `### Acrescentadas`, e cada regra do modelo que o projeto não segue, para `### Afastadas`, no
+  formato da seção. Apague o `.stacklabs-novo`. O que não couber vira pergunta na PR, e ela fica para
+  uma pessoa.
+- **`FALHA` dos watchdogs:** a fonte não compilou e os watchdogs do projeto ficaram como estavam.
+  Mostre o erro ao humano e pare: é defeito do Stack-Labs.
+- **`FALHA` das labels:** sem `origin` no GitHub ou `gh` sem login. Diga o que falta e rode de novo
+  depois de resolvido; o instalador só refaz o que falta.
 
-- **`MESCLAR`**: o modelo novo está em `<arquivo>.stacklabs-novo`; junte e apague o `.stacklabs-novo`.
-  No `.gitignore`, acrescente as linhas que faltam. No `AGENTS.md` (só chega aqui o que ainda não
-  tem a seção `## Regras deste projeto`) e no `CLAUDE.md`, o modelo novo é a base. Cada regra própria
-  do arquivo antigo vai para `### Acrescentadas`, e cada regra do modelo que o projeto não segue, para
-  `### Afastadas`, no formato da seção; o que não couber, pergunte ao humano. No
-  `.claude/settings.json`, que é protegido, entregue o JSON junto ao humano.
-- **`PULADO`** (watchdog ausente ou desatualizado) e **`PRE-PUSH inativo`**: entregue ao humano o
-  comando exato e espere que ele rode:
-  `sh <pasta desta skill>/rodar --atualizar-watchdogs`. Com essa opção, os watchdogs antigos em
-  node (`.claude/hooks/` e `.claude/validador/`) saem do projeto (linhas `REMOVIDA`).
-- **`FALHA` das labels** (sem `origin` no GitHub ou `gh` sem login): o resto já foi instalado.
-  Peça ao humano o `gh auth login` ou o `origin` e rode o script de novo; ele só refaz o que falta.
-- **`FALHA`** (os watchdogs não compilaram): rode `sh .claude/watchdogs/rodar --version` e
-  mostre o erro do cargo ao humano: o passo 5 só passa com os watchdogs compilados.
-
-Pronto quando `find . -name '*.stacklabs-novo' -not -path './.git/*'` não lista nada, ou lista só
-arquivos de watchdog entregues ao humano.
+Pronto quando `find . -name '*.stacklabs-novo' -not -path './.git/*'` não lista nada.
 
 ### 5. Verificação
 
-- `sh .claude/watchdogs/rodar --version` termina com código 0 (compila os watchdogs, se preciso);
-- `sh -n .claude/githooks/pre-push` passa;
-- `.claude/hooks/` e `.claude/validador/` não existem;
-- `git config core.hooksPath` responde `.claude/githooks`;
-- toda pasta em `.claude/skills/` tem `SKILL.md` (fora `prototipo-html/`, que guarda o modelo e os
-  scripts da família `*-prototipo`), e `ORIGEM.json` lista as skills do Matt e as da casa;
-- com `docs/regras-de-codigo.json`, `sh .claude/watchdogs/rodar validar` termina em
-  `VALIDADOR: APROVADO`, ou cada violação virou ajuste no `.json` ou ticket. Depois da ADR 0012, o
-  `lint-cobre` reprova regra desligada, comentada ou ligada só por preset, que antes passava; depois
-  da ADR 0013, a `cobertura` reprova o E1 afastado (vira ticket no mapa de Regras de código);
-  depois da ADR 0014, reprova o P5 afastado ou sem a regra `teste-cobre-risco`, e a falta do
-  `docs/riscos.md` (viram ticket no mapa de Regras de código).
+Rode `sh ${CLAUDE_SKILL_DIR}/rodar --verificar`. Cada `REPROVADO` é defeito da instalação ou violação
+no código do projeto. Corrija o defeito; violação do validador vira ajuste em
+`docs/regras-de-codigo.json` ou ticket, e a PR fica para uma pessoa (o `lint-cobre`, a `cobertura` e
+o P5 passam a reprovar regra afastada depois das ADRs 0012 a 0014).
 
-Pronto quando os seis passam. Falha é defeito da instalação: corrija antes de seguir.
+Pronto quando imprime `VERIFICADO`, ou cada reprovação restante tem ticket.
 
-### 6. Commit e PR
+### 6. PR
 
-Numa branch `chore/setup-metodo` (ou `chore/atualizar-metodo`), um commit com tudo o que o script e
-a mesclagem mudaram, push e PR. O corpo da PR traz a versão do método e os commits de origem de `ORIGEM.json` e o que foi
-mesclado à mão. Num repositório sem `main`, diga ao humano que a PR depende de ele criar a `main`.
+Um commit com tudo o que o instalador e a mesclagem mudaram, push e PR. Escreva o corpo com a skill
+`/pr`, trazendo a versão do método e os commits de origem de `ORIGEM.json`. Num repositório sem
+`main`, diga ao humano que a PR depende de ele criar a `main`.
 
-Pronto quando a PR existe, ou o humano sabe exatamente o que a impede.
+**Atualização:** rode `sh ${CLAUDE_SKILL_DIR}/rodar --concluir-pr <número>`. Ele prova que a PR só traz o
+que a fonte oficial manda, aplica a label `altera-watchdogs` se precisar, espera o CI e faz o merge.
+Saída 3 (`FICA PARA UM HUMANO`) lista os motivos: repasse-os ao humano com o link da PR.
+
+**Instalação:** o merge é do humano.
+
+Pronto quando a PR foi mesclada, ou o humano tem o link e os motivos.
 
 ### 7. Próximo passo
 

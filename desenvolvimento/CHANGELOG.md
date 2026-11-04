@@ -11,6 +11,20 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 4.1.0 (2026-11-04)
+
+- **Antes da primeira atualização, uma vez por máquina:** reinstale as skills com o comando do
+  `AGENTS.md` do Stack-Labs. Depois disso, a skill se atualiza sozinha.
+- O `/setup-stacklabs` atualiza sem intervenção: a pessoa só dispara a skill
+  ([ADR 0024](adr/0024-atualizacao-do-metodo-sem-humano.md)). O `--atualizar-watchdogs` saiu, e o
+  instalador atualiza os watchdogs por padrão, depois de compilar a fonte à parte.
+- O instalador mescla `.gitignore` e `.claude/settings.json` sozinho e tira do projeto o arquivo de
+  watchdog que saiu da fonte.
+- Comandos novos: `--conferir-skill` (roda a cada `/setup-stacklabs` e `/adotar-metodo-stack-labs`),
+  `--verificar` e `--concluir-pr <número>`.
+- O `guarda-bash` barra `STACKLABS_ORIGEM`, `MATT_ORIGEM`, `--permitir-regressao` e a label
+  `altera-watchdogs` aplicada direto pelo agente.
+
 ## 4.0.0 (2026-11-03)
 
 - **Ao atualizar os watchdogs:** o `guarda-edicao` só libera código quando a issue ativa tem o

@@ -62,9 +62,10 @@ Depois, numa sessão do Claude Code dentro do projeto:
 
 **Atualizar** um projeto é rodar `/setup-stacklabs` de novo. O método tem versão
 ([../VERSAO](../VERSAO), o que mudou em [../CHANGELOG.md](../CHANGELOG.md)); o projeto guarda a dele
-em `.claude/skills/ORIGEM.json`, e `--versao <x.y.z>` instala uma versão marcada em vez da mais nova. Watchdog desatualizado num projeto que
-já tem watchdogs só um humano atualiza:
-`sh ~/.claude/skills/setup-stacklabs/rodar --atualizar-watchdogs`.
+em `.claude/skills/ORIGEM.json`, e `--versao <x.y.z>` instala uma versão marcada em vez da mais nova.
+A pessoa só dispara a skill: o agente confere se a própria skill está em dia, atualiza watchdogs e
+skills, valida e faz o merge da PR
+([ADR 0024](../adr/0024-atualizacao-do-metodo-sem-humano.md)).
 
 Não instale também o plugin `mattpocock-skills`: as skills dele já ficam no projeto e apareceriam
 duplicadas.
