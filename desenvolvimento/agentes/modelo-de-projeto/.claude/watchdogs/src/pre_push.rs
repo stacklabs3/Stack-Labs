@@ -1,12 +1,12 @@
 // Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto. Depois, o CI local
-// (ci.rs) contra <remoto>/main: lint, typecheck ou validador vermelho barram o push; na etapa de
+// (ci.rs) contra a branch padrão do remoto (<remoto>/HEAD; sem ela, <remoto>/main): lint, typecheck ou validador vermelho barram o push; na etapa de
 // observação, só avisam. O CI roda como comando pesado (trava.rs), sem a revisão por modelo, e não
 // roda quando o mesmo conteúdo já foi aprovado contra a mesma base.
 // Ativação (uma vez por clone): git config core.hooksPath .claude/githooks
 // Escape humano para emergências: STACKLABS_PERMITIR_PUSH_MAIN=1 git push ...
 
 use crate::ci;
-use crate::comum::{etapa_de_adocao, executar_git};
+use crate::comum::{base_do_remoto, etapa_de_adocao, executar_git};
 use std::io::Read;
 use std::path::PathBuf;
 
@@ -29,7 +29,7 @@ pub fn rodar(argumentos: &[String]) -> i32 {
         }
     }
     let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    let base = format!("{nome_do_remoto}/main");
+    let base = base_do_remoto(&raiz, nome_do_remoto);
     // O cache vale para o conteúdo do HEAD: só quando tudo o que sobe é exatamente o HEAD.
     let shas_enviados: Vec<&str> = linhas_do_push
         .lines()

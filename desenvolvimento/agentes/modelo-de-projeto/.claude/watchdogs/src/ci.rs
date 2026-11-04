@@ -7,7 +7,8 @@
 // Aprovado com a árvore limpa, ele grava a aprovação pela chave do conteúdo (árvore do HEAD, commit
 // da base, regras e o hash do binário dos watchdogs); o pre-push que encontra a chave não roda de novo.
 //
-// Uso: .claude/watchdogs/rodar ci [--base <ref>] [--sem-revisao]   (base padrão: origin/main)
+// Uso: .claude/watchdogs/rodar ci [--base <ref>] [--sem-revisao]
+// (base padrão: a branch padrão do origin, origin/HEAD; sem ela, origin/main)
 // Saída: 0 aprovado, 1 violação, 2 configuração inválida. A última linha é "CI: APROVADO" ou "CI: REPROVADO".
 
 use serde_json::Value;
@@ -16,12 +17,11 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use crate::comum::executar_git;
+use crate::comum::{base_do_remoto, executar_git};
 use crate::revisao_por_modelo::{self, Revisao};
 use crate::trava;
 use crate::validador::{self, ErroDeConfiguracao, Opcoes, Relatorio};
 
-pub const BASE_PADRAO: &str = "origin/main";
 const CAMINHO_CONFIG: &str = "docs/regras-de-codigo.json";
 const CAMINHO_MD: &str = "docs/regras-de-codigo.md";
 const PASTA_DE_APROVADOS: &str = ".claude/state/ci-aprovado";
@@ -218,13 +218,13 @@ pub fn executar(raiz: &Path, opcoes_do_ci: &OpcoesDoCi, saida: &mut dyn Write) -
 }
 
 pub fn rodar(argumentos: &[String]) -> i32 {
-    let mut base = BASE_PADRAO.to_string();
+    let mut base_pedida: Option<String> = None;
     let mut revisar = true;
     let mut restantes = argumentos.iter();
     while let Some(argumento) = restantes.next() {
         match (argumento.as_str(), restantes.clone().next()) {
             ("--base", Some(valor)) => {
-                base = valor.clone();
+                base_pedida = Some(valor.clone());
                 restantes.next();
             }
             ("--sem-revisao", _) => revisar = false,
@@ -238,6 +238,7 @@ pub fn rodar(argumentos: &[String]) -> i32 {
     if trava::projeto_de_fora().is_none() {
         return rodar_como_pesado(&raiz, argumentos, trava::Saida::Herdada);
     }
+    let base = base_pedida.unwrap_or_else(|| base_do_remoto(&raiz, "origin"));
     executar(&raiz, &OpcoesDoCi { base: &base, revisar }, &mut std::io::stdout())
 }
 

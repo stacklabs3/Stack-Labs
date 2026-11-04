@@ -41,6 +41,10 @@ Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrad
 - Guia humano: *Preparar a máquina para dois projetos* (swap, limite e workers) em
   `humanos/orquestracao.md`. Glossário: **comando pesado** e **vaga**. `docs/agents/watchdogs.md`:
   seção *Rodar um comando pesado* e os limites dela.
+- **Base do CI:** o `pre-push`, o `rodar ci` sem `--base` e a regra `mensagem-de-commit` comparam
+  com a branch padrão do remoto (`origin/HEAD`), não mais com `origin/main` fixo: projeto em que a
+  `dev` faz o papel da `main` deixa de remendar o `pre_push.rs`. Sem `origin/HEAD`, continua a `main`;
+  para gravá-lo, `git remote set-head origin -a`.
 
 ## 4.0.0 (2026-11-03)
 

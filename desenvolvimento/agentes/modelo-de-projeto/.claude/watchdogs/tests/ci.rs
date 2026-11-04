@@ -444,3 +444,18 @@ fn watchdogs_novos_nao_reaproveitam_a_aprovacao_dos_antigos() {
     let tudo = format!("{}{}", String::from_utf8_lossy(&saida.stdout), String::from_utf8_lossy(&saida.stderr));
     assert!(tudo.contains("[ci] base origin/main") && !tudo.contains("já passou"), "{tudo}");
 }
+
+// Risco: no projeto em que a dev faz o papel da main, o push confere o diff contra a main.
+#[test]
+fn ci_e_pre_push_comparam_com_a_branch_padrao_do_remoto() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    projeto.git(&["update-ref", "refs/remotes/origin/dev", "main"]);
+    projeto.git(&["symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/dev"]);
+    let (codigo, saida) = pre_push(&projeto);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("[ci] base origin/dev"), "{saida}");
+    let (codigo, saida) = projeto.rodar(&["ci", "--sem-revisao"], "", true);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("[ci] base origin/dev"), "{saida}");
+}
