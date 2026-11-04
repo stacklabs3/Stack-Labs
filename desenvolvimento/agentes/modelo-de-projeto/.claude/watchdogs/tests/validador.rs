@@ -262,6 +262,24 @@ fn comando_saida_zero_aprova_e_outra_reprova() {
 }
 
 #[test]
+fn comando_com_antes_separa_linha_de_base_vermelha_de_score_baixo() {
+    let base_vermelha = rodar_uma_regra(
+        &[],
+        json!({ "tipo": "comando", "antes": "echo 'FAIL soma.test.ts > soma dois numeros'; exit 1", "executar": "touch mutou; exit 2" }),
+        "P5",
+    );
+    assert_eq!(base_vermelha.len(), 1);
+    assert!(base_vermelha[0].2.starts_with("linha de base falhou"), "{}", base_vermelha[0].2);
+    assert!(base_vermelha[0].2.contains("soma dois numeros"), "{}", base_vermelha[0].2);
+
+    let score_baixo = rodar_uma_regra(&[], json!({ "tipo": "comando", "antes": "true", "executar": "echo 'score 40 < 80'; exit 2" }), "P5");
+    assert_eq!(score_baixo.len(), 1);
+    assert!(!score_baixo[0].2.contains("linha de base") && score_baixo[0].2.contains("saiu com 2") && score_baixo[0].2.contains("score 40"));
+
+    assert!(rodar_uma_regra(&[], json!({ "tipo": "comando", "antes": "true", "executar": "true" }), "P5").is_empty());
+}
+
+#[test]
 fn configuracao_invalida_e_erro_de_configuracao() {
     let repositorio = Repositorio::novo(&[]);
     for regra in [

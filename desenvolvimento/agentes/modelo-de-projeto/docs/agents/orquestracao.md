@@ -73,11 +73,13 @@ Navegador, conector e computador são autorizados pelo humano, na sessão. O orq
 passo 2, junto com a fila, quais issues vão pedir o quê: pedida no meio da rodada, a autorização
 para a issue até alguém responder.
 
-## Esforço
+## Esforço e modelo
 
 O primeiro ciclo roda barato, menos o implementador, que escreve o contrato da fatia e por isso já
 roda em `medium` (ADR 0023); o diagnosticador e os ciclos de correção sobem o esforço. O esforço vai
-em cada chamada, para subir sem editar os papéis.
+em cada chamada, para subir sem editar os papéis. O conferente roda em Sonnet, para poupar o limite
+semanal do plano: ele confere lista contra lista. Quem escreve, julga ou conserta fica em Opus
+(ADR 0026).
 
 ## Watchdogs na orquestração
 

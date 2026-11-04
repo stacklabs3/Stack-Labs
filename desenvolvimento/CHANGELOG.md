@@ -11,6 +11,19 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 4.4.0 (2026-11-04)
+
+- **Conferente em Sonnet** ([ADR 0026](adr/0026-conferente-em-sonnet.md)), para poupar o limite
+  semanal; implementador, revisor e diagnosticador seguem em Opus. Fecha a PR 33, que também punha a
+  1ª implementação em Sonnet e foi superada pela ADR 0023 (o implementador escreve o contrato).
+- **Linha de base da mutação:** o tipo `comando` do validador aceita `antes`, que roda primeiro (a
+  suíte). Se ele falha, a violação começa por `linha de base falhou`, com o nome do teste vermelho, e
+  a mutação nem roda; score baixo continua aparecendo como antes. Issue 60.
+- **Regras que só o revisor cobra:** o revisor dá o veredito de cada regra `"tipo": "revisor"` em todo
+  parecer (`R<n>: cumprida`, `quebrada em <arquivo:linha>` ou `não alcança o diff`), e a
+  `/auditar-metodo` lista essas regras, confere a amostra de PRs e recomenda automatizar, manter ou
+  tirar. Issue 61.
+
 ## 4.3.0 (2026-11-04)
 
 Ajustes vindos da retro de uma rodada de orquestração do Organiza-ai.
