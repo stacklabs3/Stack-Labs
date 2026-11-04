@@ -55,8 +55,10 @@ sh .claude/watchdogs/rodar pesado "npm run build"
   nunca suba o teto por conta própria.
 - `next dev` segura a trava do projeto enquanto estiver de pé: suba pelo `rodar pesado` e derrube-o
   ao terminar. Derrubar o `rodar pesado` derruba todos os processos do comando.
-- O `rodar ci` e o pre-push já passam pela trava: o `git push` vai direto, e não roda o CI de novo
-  para um conteúdo que ele já aprovou.
+- O `rodar ci` e o pre-push pegam uma vaga, não a trava do projeto: o `git push` vai direto, mesmo
+  com o dev server de pé, e não roda o CI de novo para um HEAD que ele já aprovou.
+- Sem terminal, o comando não lê o teclado: um prompt de senha (git, ssh) falha na hora. Configure
+  as credenciais antes (`gh auth setup-git`, chave ssh sem senha ou agente ssh).
 - Leve: typecheck, lint, `git` e `gh` rodam fora dela.
 - O prompt de **todo** subagente que roda comandos (implementador, e os outros papéis se rodarem
   testes, e o brief de cada sessão de issue) traz a frase: "todo comando pesado roda por

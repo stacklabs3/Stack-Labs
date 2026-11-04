@@ -6,7 +6,7 @@
 // Escape humano para emergências: STACKLABS_PERMITIR_PUSH_MAIN=1 git push ...
 
 use crate::ci;
-use crate::comum::etapa_de_adocao;
+use crate::comum::{etapa_de_adocao, executar_git};
 use std::io::Read;
 use std::path::PathBuf;
 
@@ -30,7 +30,16 @@ pub fn rodar(argumentos: &[String]) -> i32 {
     }
     let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let base = format!("{nome_do_remoto}/main");
-    if let Some(chave) = ci::chave_do_conteudo(&raiz, &base).filter(|chave| ci::ja_aprovado(&raiz, chave)) {
+    // O cache vale para o conteúdo do HEAD: só quando tudo o que sobe é exatamente o HEAD.
+    let shas_enviados: Vec<&str> = linhas_do_push
+        .lines()
+        .filter_map(|linha| linha.split(' ').nth(1))
+        .filter(|sha| !sha.is_empty() && sha.chars().any(|letra| letra != '0'))
+        .collect();
+    let sobe_so_o_head =
+        executar_git(&raiz, &["rev-parse", "HEAD"]).is_some_and(|head| !shas_enviados.is_empty() && shas_enviados.iter().all(|sha| *sha == head));
+    let aprovado_antes = ci::chave_do_conteudo(&raiz, &base).filter(|chave| sobe_so_o_head && ci::ja_aprovado(&raiz, chave));
+    if let Some(chave) = aprovado_antes {
         eprintln!(
             "[pre-push] este conteúdo já passou no CI local contra {base} (chave {}); push sem rodar de novo.",
             &chave[..12]

@@ -21,11 +21,14 @@ Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrad
 - No Linux com systemd de usuário, cada comando pesado roda com o limite de memória da vaga
   (cgroup): quem passa dele morre sozinho, não a máquina nem o shell do agente.
 - Derrubar o `rodar pesado` derruba todos os processos do comando, e o que ele deixar para trás é
-  encerrado com a trava: nenhum dev server órfão.
+  encerrado com a trava: nenhum dev server órfão. Sem terminal (o agente), o comando não lê o
+  teclado: um prompt de senha do git ou do ssh falha na hora em vez de travar; configure as
+  credenciais antes.
 - O heap do Node deixa de ser forçado (era 4096 MB); o pico se controla pelos workers de cada
   projeto. `STACKLABS_HEAP_MB` liga o teto quando a máquina precisa.
-- **Push mais rápido:** o pre-push não roda a revisão por modelo (ela fica no `rodar ci`) e não roda
-  o CI de novo para um conteúdo já aprovado contra a mesma base.
+- **Push mais rápido:** o pre-push não roda a revisão por modelo (ela fica no `rodar ci`), não roda
+  o CI de novo para um HEAD já aprovado contra a mesma base e não espera um dev server de pé no
+  projeto (o CI pega uma vaga, não a trava do projeto).
 - A revisão por modelo abre 1 `claude -p` por vez (eram 4, ~220 MB cada).
 - O binário dos watchdogs fica guardado por versão em `~/.stacklabs/watchdogs/`: o segundo projeto
   copia em vez de compilar.

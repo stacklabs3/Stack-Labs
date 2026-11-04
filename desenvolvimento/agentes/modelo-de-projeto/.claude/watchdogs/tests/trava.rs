@@ -6,7 +6,9 @@ use std::fs::{self, File, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
-use watchdogs::trava::{argumentos_do_scope, memoria_livre_para_entrar, memoria_por_vaga, node_options_com_teto, vagas_para_memoria};
+use watchdogs::trava::{
+    argumentos_do_scope, arquivo_da_trava_do_projeto, memoria_livre_para_entrar, memoria_por_vaga, node_options_com_teto, projeto_da_pasta, vagas_para_memoria,
+};
 
 const PRAZO_DE_ESPERA: Duration = Duration::from_millis(1500);
 
@@ -19,8 +21,8 @@ fn pasta_nova(prefixo: &str) -> PathBuf {
     pasta
 }
 
-fn nome(pasta: &Path) -> String {
-    pasta.file_name().unwrap().to_string_lossy().into_owned()
+fn trava_do_projeto(travas: &Path, pasta: &Path) -> PathBuf {
+    travas.join(arquivo_da_trava_do_projeto(&projeto_da_pasta(pasta)))
 }
 
 // Um projeto (pasta sem git: o nome vem da pasta) que roda `rodar pesado` com as travas em `travas`.
@@ -102,8 +104,10 @@ fn roda_o_comando_e_devolve_a_saida_dele_sem_mexer_no_heap() {
         .unwrap();
     assert_eq!(saida.status.code(), Some(3));
     let impresso = String::from_utf8_lossy(&saida.stdout);
-    assert_eq!(impresso.trim(), format!("[]|{}", nome(&projeto)));
-    assert!(travas.join(format!("stacklabs-{}.lock", nome(&projeto))).exists());
+    let (heap, dono) = impresso.trim().split_once('|').unwrap();
+    assert_eq!(heap, "[]", "sem STACKLABS_HEAP_MB, o heap não muda");
+    assert!(dono.starts_with(&format!("{}:", projeto_da_pasta(&projeto))), "{dono}");
+    assert!(trava_do_projeto(&travas, &projeto).exists());
 }
 
 #[test]
@@ -139,7 +143,7 @@ fn dois_projetos_rodam_juntos_quando_ha_vaga() {
     let travas = pasta_nova("travas");
     let excurfly = pasta_nova("excurfly");
     let organiza_ai = pasta_nova("organiza-ai");
-    let _excurfly_ocupado = segurar(&travas.join(format!("stacklabs-{}.lock", nome(&excurfly))));
+    let _excurfly_ocupado = segurar(&trava_do_projeto(&travas, &excurfly));
     let _vaga_do_excurfly = segurar(&travas.join("vaga-0.lock"));
     let mut do_organiza_ai = pesado(&organiza_ai, &travas, 2, "true");
     assert_eq!(terminou_ate(&mut do_organiza_ai, PRAZO_DE_ESPERA), Some(0));
@@ -149,7 +153,7 @@ fn dois_projetos_rodam_juntos_quando_ha_vaga() {
 fn o_mesmo_projeto_espera_o_comando_pesado_anterior() {
     let travas = pasta_nova("travas");
     let excurfly = pasta_nova("excurfly");
-    let trava_do_excurfly = segurar(&travas.join(format!("stacklabs-{}.lock", nome(&excurfly))));
+    let trava_do_excurfly = segurar(&trava_do_projeto(&travas, &excurfly));
     let mut segundo = pesado(&excurfly, &travas, 2, "true");
     assert_eq!(terminou_ate(&mut segundo, PRAZO_DE_ESPERA), None);
     drop(trava_do_excurfly);
@@ -289,4 +293,92 @@ fn as_vagas_e_os_orcamentos_saem_da_memoria_total() {
     assert_eq!(memoria_por_vaga(1_000, 4), 1024, "nunca abaixo de 1 GB");
     assert_eq!(memoria_livre_para_entrar(2_876), 1_438);
     assert_eq!(argumentos_do_scope(2_876)[6..9], ["MemoryHigh=2588M", "-p", "MemoryMax=2876M"]);
+}
+
+#[test]
+fn pastas_com_o_mesmo_nome_em_lugares_diferentes_nao_dividem_a_trava() {
+    let app_do_excurfly = pasta_nova("excurfly").join("app");
+    let app_do_organiza_ai = pasta_nova("organiza-ai").join("app");
+    fs::create_dir_all(&app_do_excurfly).unwrap();
+    fs::create_dir_all(&app_do_organiza_ai).unwrap();
+    assert!(projeto_da_pasta(&app_do_excurfly).starts_with("app-"));
+    assert_ne!(projeto_da_pasta(&app_do_excurfly), projeto_da_pasta(&app_do_organiza_ai));
+}
+
+// Risco: um comando aninhado em outro projeto espera uma vaga que o de fora segura: espera sem fim.
+#[test]
+fn aninhado_em_outro_projeto_pega_a_trava_dele_e_nao_outra_vaga() {
+    let travas = pasta_nova("travas");
+    let excurfly = pasta_nova("excurfly");
+    let organiza_ai = pasta_nova("organiza-ai");
+    let watchdogs = env!("CARGO_BIN_EXE_watchdogs");
+    let comando = format!("cd '{}' && '{watchdogs}' pesado 'echo dentro'", organiza_ai.display());
+    let mut externo = pesado(&excurfly, &travas, 1, &comando);
+    assert_eq!(
+        terminou_ate(&mut externo, PRAZO_DE_ESPERA),
+        Some(0),
+        "com 1 vaga, o de dentro não espera a vaga do de fora"
+    );
+    assert!(trava_do_projeto(&travas, &organiza_ai).exists(), "o de dentro pegou a trava do próprio projeto");
+}
+
+// Risco: a variável herdada de um dono que já morreu faz um comando pular todas as travas.
+#[test]
+fn variavel_de_um_dono_morto_nao_dispensa_as_travas() {
+    let travas = pasta_nova("travas");
+    let excurfly = pasta_nova("excurfly");
+    let vaga_ocupada = segurar(&travas.join("vaga-0.lock"));
+    let dono_morto = format!("{}:999999", projeto_da_pasta(&excurfly));
+    let mut comando = pesado_com(&excurfly, &travas, 1, "true", &[("STACKLABS_PESADO", &dono_morto)]);
+    assert_eq!(terminou_ate(&mut comando, PRAZO_DE_ESPERA), None, "espera a vaga como qualquer outro");
+    drop(vaga_ocupada);
+    assert_eq!(terminou_ate(&mut comando, PRAZO_DE_ESPERA), Some(0));
+}
+
+// Risco: sem terminal (o agente), um prompt de senha do git ou um pager para o comando para sempre,
+// segurando a trava e a vaga.
+#[cfg(target_os = "linux")]
+#[test]
+fn sem_terminal_o_comando_nao_para_esperando_o_teclado() {
+    let travas = pasta_nova("travas");
+    let excurfly = pasta_nova("excurfly");
+    let mut comando = pesado(&excurfly, &travas, 1, "if read resposta </dev/tty; then echo leu; else echo sem-terminal; fi");
+    assert_eq!(terminou_ate(&mut comando, PRAZO_DE_ESPERA), Some(0));
+    let saida = comando.wait_with_output().unwrap();
+    assert_eq!(String::from_utf8_lossy(&saida.stdout).trim(), "sem-terminal");
+}
+
+// Risco: no terminal de uma pessoa, o comando que lê o teclado para em segundo plano (SIGTTIN).
+#[cfg(target_os = "linux")]
+#[test]
+fn no_terminal_o_comando_le_o_teclado() {
+    if Command::new("script").arg("--version").output().is_err() {
+        return; // sem util-linux: o pty não se cria aqui
+    }
+    let travas = pasta_nova("travas");
+    let excurfly = pasta_nova("excurfly");
+    let watchdogs = env!("CARGO_BIN_EXE_watchdogs");
+    let dentro_do_pty = format!(
+        "cd '{}' && STACKLABS_TRAVAS='{}' STACKLABS_MEMORIA_POR_VAGA_MB=64 STACKLABS_LIMITE_DE_MEMORIA=desligado '{watchdogs}' pesado 'read resposta </dev/tty; echo \"leu $resposta\"'",
+        excurfly.display(),
+        travas.display()
+    );
+    let mut processo = Command::new("script")
+        .args(["-qec", &dentro_do_pty, "/dev/null"])
+        .env_remove("STACKLABS_PESADO")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    std::thread::sleep(Duration::from_millis(500));
+    use std::io::Write;
+    processo.stdin.as_mut().unwrap().write_all(b"sim\n").unwrap();
+    assert_eq!(terminou_ate(&mut processo, Duration::from_secs(5)), Some(0), "não ficou parado em SIGTTIN");
+    let saida = processo.wait_with_output().unwrap();
+    assert!(
+        String::from_utf8_lossy(&saida.stdout).contains("leu sim"),
+        "{}",
+        String::from_utf8_lossy(&saida.stdout)
+    );
 }

@@ -96,6 +96,7 @@ impl Projeto {
             .env_remove("STACKLABS_PESADO")
             // Sem a sonda do systemd: o limite de memória tem testes próprios (tests/trava.rs).
             .env("STACKLABS_LIMITE_DE_MEMORIA", "desligado")
+            .env("STACKLABS_MEMORIA_POR_VAGA_MB", "64")
             .env_remove("STACKLABS_PERMITIR_PUSH_MAIN")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -300,8 +301,19 @@ fn revisao_mostra_o_nome_de_goldentest_e_patroltest() {
     assert!(saida.contains("test/tela_test.dart:10 RK2 cupom vencido (RK2)"), "{saida}");
 }
 
+fn sha(projeto: &Projeto, referencia: &str) -> String {
+    let saida = Command::new("git").args(["rev-parse", referencia]).current_dir(&projeto.raiz).output().unwrap();
+    String::from_utf8_lossy(&saida.stdout).trim().to_string()
+}
+
+// O push da branch da issue com o sha do HEAD, como o git escreve no stdin do hook.
 fn pre_push(projeto: &Projeto) -> (i32, String) {
-    projeto.rodar(&["pre-push", "origin"], "refs/heads/issue/7-cupom abc refs/heads/issue/7-cupom def\n", true)
+    let linha = format!(
+        "refs/heads/issue/7-cupom {} refs/heads/issue/7-cupom {}\n",
+        sha(projeto, "HEAD"),
+        "0".repeat(40)
+    );
+    projeto.rodar(&["pre-push", "origin"], &linha, true)
 }
 
 // Risco: o push espera minutos pelo mesmo CI que já passou para exatamente o mesmo conteúdo.
@@ -364,4 +376,31 @@ fn ci_reprovado_nao_vira_aprovacao_guardada() {
         assert_eq!(codigo, 1, "{saida}");
         assert!(saida.contains("CI: REPROVADO") && !saida.contains("já passou"), "{saida}");
     }
+}
+
+// Risco: com o HEAD aprovado, o push de outra branch sobe sem conferir o conteúdo dela.
+#[test]
+fn push_de_outro_commit_nao_usa_a_aprovacao_do_head() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    assert!(pre_push(&projeto).1.contains("CI: APROVADO"));
+    assert!(pre_push(&projeto).1.contains("já passou no CI local"), "o HEAD aprovado usa o cache");
+    let outra = format!("refs/heads/outra {} refs/heads/outra {}\n", sha(&projeto, "HEAD~1"), "0".repeat(40));
+    let (_, saida) = projeto.rodar(&["pre-push", "origin"], &outra, true);
+    assert!(saida.contains("[ci] base origin/main") && !saida.contains("já passou"), "{saida}");
+}
+
+// Risco: um dev server de pé no projeto segura a trava dele, e o git push espera sem fim.
+#[test]
+fn dev_server_de_pe_no_projeto_nao_segura_o_push() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    let travas = projeto.raiz.with_extension("travas");
+    fs::create_dir_all(&travas).unwrap();
+    let nome = watchdogs::trava::arquivo_da_trava_do_projeto(&watchdogs::trava::projeto_da_pasta(&projeto.raiz));
+    let trava_do_dev_server = fs::OpenOptions::new().create(true).truncate(false).write(true).open(travas.join(nome)).unwrap();
+    trava_do_dev_server.lock().unwrap();
+    let (codigo, saida) = pre_push(&projeto);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("CI: APROVADO"), "{saida}");
 }

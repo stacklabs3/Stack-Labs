@@ -3,7 +3,7 @@
 // validador e a revisão por modelo dos testes alterados. Reprova só pelas duas primeiras; a revisão é
 // consultiva e falha aberta. Projeto que ainda não fechou as regras de código passa direto.
 //
-// O ci roda como comando pesado (trava.rs): a trava do projeto, uma vaga e o limite de memória.
+// O ci roda como comando pesado (trava.rs): uma vaga e o limite de memória.
 // Aprovado com a árvore limpa, ele grava a aprovação pela chave do conteúdo (árvore do HEAD, commit
 // da base, regras e versão dos watchdogs); o pre-push que encontra a chave não roda de novo.
 //
@@ -222,13 +222,14 @@ pub fn rodar(argumentos: &[String]) -> i32 {
         }
     }
     let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    if !trava::ja_dentro_da_trava() {
+    if trava::projeto_de_fora().is_none() {
         return rodar_como_pesado(&raiz, argumentos, trava::Saida::Herdada);
     }
     executar(&raiz, &OpcoesDoCi { base: &base, revisar }, &mut std::io::stdout())
 }
 
-// O próprio binário, de novo, como comando pesado: herda a trava, a vaga e o limite de memória.
+// O próprio binário, de novo, como comando pesado: pega uma vaga e o limite de memória. Não pega a
+// trava do projeto: o ci só lê o código, e um dev server de pé no projeto não pode segurar o push.
 pub fn rodar_como_pesado(raiz: &Path, argumentos_do_ci: &[String], saida: trava::Saida) -> i32 {
     let Ok(binario) = std::env::current_exe() else {
         eprintln!("[ci] não achei o próprio binário para rodar como comando pesado.");
@@ -238,5 +239,5 @@ pub fn rodar_como_pesado(raiz: &Path, argumentos_do_ci: &[String], saida: trava:
         .into_iter()
         .chain(argumentos_do_ci.iter().cloned())
         .collect();
-    trava::executar(&argumentos, raiz, saida)
+    trava::executar(&argumentos, raiz, saida, trava::Travar::SoVaga)
 }

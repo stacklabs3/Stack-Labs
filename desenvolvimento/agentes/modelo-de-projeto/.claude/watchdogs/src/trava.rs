@@ -1,25 +1,29 @@
 // Comandos pesados (ADR 0024, emenda a 0016): build, dev server, suíte de testes, e2e, build nativo e
 // o CI local passam por aqui, e nada mais na máquina decide quem roda.
 //
-//   1. Trava do projeto, `stacklabs-<projeto>.lock`: um comando pesado por vez em cada projeto.
+//   1. Trava do projeto, `stacklabs-<projeto>-<hash do caminho>.lock`: um comando pesado por vez em
+//      cada projeto. O CI só lê código e não a pega: um dev server de pé não segura o push.
 //   2. Vaga da máquina, `vaga-<n>.lock`: projetos diferentes rodam juntos até o número de vagas, que
 //      sai da memória total (2 em 8 GB). Antes de entrar, espera a memória livre (MemAvailable)
 //      chegar a metade da vaga, por até 2 minutos.
 //   3. Limite de memória de verdade (Linux com systemd de usuário): o comando roda num scope com
 //      MemoryHigh/MemoryMax do tamanho da vaga; quem passa dele morre sozinho, não a máquina. A sonda
 //      confere no memory.max do próprio scope que o limite pegou; sem isso, avisa e segue sem ele.
-//   4. O comando roda num grupo de processos próprio: SIGINT/SIGTERM/SIGHUP no `rodar pesado` chegam
-//      a todos os processos dele, e o que sobrar quando ele terminar é encerrado. Nenhum dev server
-//      fica vivo, fora da conta, depois que a trava solta.
+//   4. Sem terminal (o agente), o comando roda numa sessão própria, sem terminal de controle: nada nele
+//      para esperando o teclado, SIGINT/SIGTERM/SIGHUP no `rodar pesado` chegam a todos os processos
+//      dele, e o que sobrar quando ele terminar é encerrado. No terminal de uma pessoa, ele fica no
+//      grupo do terminal (Ctrl+C e Ctrl+Z valem para ele) e SIGTERM/SIGHUP vão ao processo direto.
 //
-// As travas usam flock: o sistema as solta quando o processo morre. O que roda dentro de um comando
-// pesado (o pre-push dentro de um `rodar pesado git push`) não espera de novo.
+// As travas usam flock: o sistema as solta quando o processo morre. Um comando pesado dentro de outro
+// (o pre-push dentro de um `rodar pesado git push`) não pega vaga nem scope de novo: a memória dele já
+// conta na vaga de fora. No mesmo projeto, também não pega a trava do projeto.
 //
 // Uso: .claude/watchdogs/rodar pesado <comando> [argumentos]   (um argumento só roda por `sh -c`)
 // Ajustes da máquina: STACKLABS_VAGAS, STACKLABS_MEMORIA_POR_VAGA_MB, STACKLABS_HEAP_MB (opcional,
 // põe --max-old-space-size no NODE_OPTIONS), STACKLABS_LIMITE_DE_MEMORIA=desligado,
 // STACKLABS_TRAVAS (pasta das travas, padrão ~/.stacklabs/travas).
 
+use sha2::{Digest, Sha256};
 use std::fs::{self, File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -27,6 +31,7 @@ use std::time::{Duration, Instant};
 
 use crate::comum::executar_git;
 
+// "<projeto>:<pid do rodar pesado que segura as travas>", herdada pelo comando.
 pub const VARIAVEL_DE_DENTRO: &str = "STACKLABS_PESADO";
 // Memória que fica para o sistema, o editor e as sessões do Claude; o resto se divide em vagas.
 const RESERVA_DO_SISTEMA_MIB: u64 = 2048;
@@ -35,6 +40,13 @@ const VAGAS_SEM_MEDIDA: usize = 2;
 const INTERVALO_DE_ESPERA: Duration = Duration::from_millis(500);
 const ESPERA_MAXIMA_POR_MEMORIA: Duration = Duration::from_secs(120);
 const PRAZO_DA_SONDA: Duration = Duration::from_secs(10);
+
+// O que o comando trava: tudo (build, dev server, testes) ou só a vaga (o CI, que só lê o código).
+#[derive(Clone, Copy, PartialEq)]
+pub enum Travar {
+    ProjetoEVaga,
+    SoVaga,
+}
 
 pub struct Ajustes {
     pub pasta_das_travas: PathBuf,
@@ -79,11 +91,13 @@ fn numero_da_variavel(nome: &str) -> Option<u64> {
     std::env::var(nome).ok().and_then(|valor| valor.trim().parse().ok()).filter(|valor| *valor > 0)
 }
 
-// O nome do projeto é a pasta da raiz do git (a worktree, quando houver), só com [A-Za-z0-9._-].
-fn nome_do_projeto(pasta: &Path) -> String {
+// O projeto é a raiz do git (a worktree, quando houver): o nome da pasta, só com [A-Za-z0-9._-], e um
+// hash curto do caminho inteiro, para `~/a/app` e `~/b/app` não dividirem a mesma trava.
+pub fn projeto_da_pasta(pasta: &Path) -> String {
     let raiz = executar_git(pasta, &["rev-parse", "--show-toplevel"])
         .map(|saida| PathBuf::from(saida.trim()))
         .unwrap_or_else(|| pasta.to_path_buf());
+    let raiz = fs::canonicalize(&raiz).unwrap_or(raiz);
     let nome: String = raiz
         .file_name()
         .map(|nome| nome.to_string_lossy().into_owned())
@@ -91,11 +105,12 @@ fn nome_do_projeto(pasta: &Path) -> String {
         .chars()
         .map(|letra| if letra.is_ascii_alphanumeric() || "._-".contains(letra) { letra } else { '-' })
         .collect();
-    if nome.is_empty() {
-        "projeto".into()
-    } else {
-        nome
-    }
+    let hash = format!("{:x}", Sha256::digest(raiz.to_string_lossy().as_bytes()));
+    format!("{}-{}", if nome.is_empty() { "projeto" } else { &nome }, &hash[..8])
+}
+
+pub fn arquivo_da_trava_do_projeto(projeto: &str) -> String {
+    format!("stacklabs-{projeto}.lock")
 }
 
 pub fn ajustes_da_maquina(pasta: &Path) -> Ajustes {
@@ -111,7 +126,7 @@ pub fn ajustes_da_maquina(pasta: &Path) -> Ajustes {
     let memoria_por_vaga_mib = numero_da_variavel("STACKLABS_MEMORIA_POR_VAGA_MB").or_else(|| memoria_total.map(|total| memoria_por_vaga(total, vagas)));
     Ajustes {
         pasta_das_travas,
-        projeto: nome_do_projeto(pasta),
+        projeto: projeto_da_pasta(pasta),
         vagas,
         memoria_por_vaga_mib,
         heap_mb: numero_da_variavel("STACKLABS_HEAP_MB"),
@@ -121,12 +136,6 @@ pub fn ajustes_da_maquina(pasta: &Path) -> Ajustes {
 
 fn abrir(caminho: &Path) -> std::io::Result<File> {
     OpenOptions::new().create(true).truncate(false).write(true).open(caminho)
-}
-
-// As travas seguradas; soltam ao sair de escopo (e o sistema solta se o processo morrer).
-pub struct Travas {
-    _do_projeto: File,
-    _vaga: File,
 }
 
 // Memória livre para entrar: metade da vaga. A vaga é o teto do comando, não o uso típico; exigir o
@@ -157,17 +166,20 @@ fn esperar_memoria_livre(ajustes: &Ajustes) {
     }
 }
 
-pub fn segurar(ajustes: &Ajustes) -> std::io::Result<Travas> {
-    fs::create_dir_all(&ajustes.pasta_das_travas)?;
-    let do_projeto = abrir(&ajustes.pasta_das_travas.join(format!("stacklabs-{}.lock", ajustes.projeto)))?;
+fn segurar_projeto(ajustes: &Ajustes) -> std::io::Result<File> {
+    let do_projeto = abrir(&ajustes.pasta_das_travas.join(arquivo_da_trava_do_projeto(&ajustes.projeto)))?;
     match do_projeto.try_lock() {
-        Ok(()) => {}
+        Ok(()) => Ok(do_projeto),
         Err(TryLockError::WouldBlock) => {
             eprintln!("[pesado] {} já roda um comando pesado; esperando ele terminar.", ajustes.projeto);
             do_projeto.lock()?;
+            Ok(do_projeto)
         }
-        Err(TryLockError::Error(erro)) => return Err(erro),
+        Err(TryLockError::Error(erro)) => Err(erro),
     }
+}
+
+fn segurar_vaga(ajustes: &Ajustes) -> std::io::Result<File> {
     let mut avisou = false;
     loop {
         for numero in 0..ajustes.vagas.max(1) {
@@ -175,10 +187,7 @@ pub fn segurar(ajustes: &Ajustes) -> std::io::Result<Travas> {
             match vaga.try_lock() {
                 Ok(()) => {
                     esperar_memoria_livre(ajustes);
-                    return Ok(Travas {
-                        _do_projeto: do_projeto,
-                        _vaga: vaga,
-                    });
+                    return Ok(vaga);
                 }
                 Err(TryLockError::WouldBlock) => {}
                 Err(TryLockError::Error(erro)) => return Err(erro),
@@ -204,8 +213,27 @@ pub fn node_options_com_teto(atual: &str, heap_mb: u64) -> String {
     }
 }
 
-pub fn ja_dentro_da_trava() -> bool {
-    std::env::var_os(VARIAVEL_DE_DENTRO).is_some()
+fn processo_vivo(pid: u32) -> bool {
+    #[cfg(unix)]
+    {
+        let Ok(pid) = i32::try_from(pid) else { return false };
+        // SAFETY: kill com sinal 0 só confere se o processo existe.
+        unsafe { libc::kill(pid, 0) == 0 || std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM) }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = pid;
+        true
+    }
+}
+
+// O projeto de fora, quando este comando roda dentro de outro comando pesado ainda vivo. Variável
+// herdada de um dono que já morreu (um shell que sobreviveu a ele) não conta.
+pub fn projeto_de_fora() -> Option<String> {
+    let valor = std::env::var(VARIAVEL_DE_DENTRO).ok()?;
+    let (projeto, pid) = valor.rsplit_once(':')?;
+    let pid: u32 = pid.parse().ok()?;
+    processo_vivo(pid).then(|| projeto.to_string())
 }
 
 // O comando como o sistema roda: um argumento só vai por `sh -c`, vários vão direto.
@@ -280,29 +308,31 @@ fn limite_de_memoria(ajustes: &Ajustes) -> Option<u64> {
 #[cfg(unix)]
 mod grupo {
     use std::os::unix::process::{CommandExt, ExitStatusExt};
-    use std::process::{Child, Command, ExitStatus};
-    use std::sync::atomic::{AtomicI32, Ordering};
+    use std::process::{Command, ExitStatus};
+    use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
     use std::time::{Duration, Instant};
 
-    static GRUPO_DO_FILHO: AtomicI32 = AtomicI32::new(0);
+    // Para onde os sinais vão: -pgid (todo o grupo do comando) ou o pid do processo direto.
+    static ALVO: AtomicI32 = AtomicI32::new(0);
+    static REPASSA_SIGINT: AtomicBool = AtomicBool::new(true);
     static SINAL_RECEBIDO: AtomicI32 = AtomicI32::new(0);
-    const SINAIS_REPASSADOS: [libc::c_int; 3] = [libc::SIGINT, libc::SIGTERM, libc::SIGHUP];
+    const SINAIS_TRATADOS: [libc::c_int; 3] = [libc::SIGINT, libc::SIGTERM, libc::SIGHUP];
     const PRAZO_PARA_SAIR: Duration = Duration::from_secs(3);
 
-    // Só usa funções seguras dentro de um tratador de sinal: guardar um inteiro e kill(2).
+    // Só usa funções seguras dentro de um tratador de sinal: atômicos e kill(2).
     extern "C" fn repassar(sinal: libc::c_int) {
         SINAL_RECEBIDO.store(sinal, Ordering::SeqCst);
-        let grupo = GRUPO_DO_FILHO.load(Ordering::SeqCst);
-        if grupo > 0 {
-            // SAFETY: kill(2) é async-signal-safe; o grupo é o do filho, criado por nós.
+        let alvo = ALVO.load(Ordering::SeqCst);
+        if alvo != 0 && (sinal != libc::SIGINT || REPASSA_SIGINT.load(Ordering::SeqCst)) {
+            // SAFETY: kill(2) é async-signal-safe; o alvo é o processo ou o grupo que criamos.
             unsafe {
-                libc::kill(-grupo, sinal);
+                libc::kill(alvo, sinal);
             }
         }
     }
 
     fn instalar_repasse() {
-        for sinal in SINAIS_REPASSADOS {
+        for sinal in SINAIS_TRATADOS {
             // SAFETY: sigaction com um tratador extern "C" que só faz operações async-signal-safe.
             unsafe {
                 let mut acao: libc::sigaction = std::mem::zeroed();
@@ -312,6 +342,11 @@ mod grupo {
                 libc::sigaction(sinal, &acao, std::ptr::null_mut());
             }
         }
+    }
+
+    pub fn tem_terminal() -> bool {
+        // SAFETY: isatty só consulta o descritor.
+        [0, 1, 2].iter().any(|descritor| unsafe { libc::isatty(*descritor) == 1 })
     }
 
     // No Linux, lê o /proc: kill(-grupo, 0) conta o zumbi, que já morreu e só espera quem o adotou
@@ -341,10 +376,10 @@ mod grupo {
         unsafe { libc::kill(-grupo, 0) == 0 }
     }
 
-    fn sinalizar(grupo: i32, sinal: libc::c_int) {
-        // SAFETY: kill(2) no grupo que criamos.
+    fn sinalizar(alvo: i32, sinal: libc::c_int) {
+        // SAFETY: kill(2) no processo ou no grupo que criamos.
         unsafe {
-            libc::kill(-grupo, sinal);
+            libc::kill(alvo, sinal);
         }
     }
 
@@ -353,13 +388,13 @@ mod grupo {
         if !grupo_vivo(grupo) {
             return false;
         }
-        sinalizar(grupo, libc::SIGTERM);
+        sinalizar(-grupo, libc::SIGTERM);
         let prazo = Instant::now() + PRAZO_PARA_SAIR;
         while grupo_vivo(grupo) && Instant::now() < prazo {
             std::thread::sleep(Duration::from_millis(50));
         }
         if grupo_vivo(grupo) {
-            sinalizar(grupo, libc::SIGKILL);
+            sinalizar(-grupo, libc::SIGKILL);
         }
         true
     }
@@ -370,19 +405,36 @@ mod grupo {
         pub sobras_encerradas: bool,
     }
 
+    // Sem terminal: sessão própria (setsid), sem terminal de controle, e o grupo inteiro é o alvo.
+    // Com terminal: o grupo do terminal, para o teclado e o Ctrl+Z valerem; o alvo é o processo direto,
+    // e o SIGINT não se repassa, porque o terminal já o entrega a todo o grupo.
     pub fn rodar(comando: &mut Command) -> std::io::Result<Fim> {
+        let com_terminal = tem_terminal();
+        if !com_terminal {
+            // SAFETY: setsid é async-signal-safe e roda no filho entre o fork e o exec.
+            unsafe {
+                comando.pre_exec(|| {
+                    if libc::setsid() == -1 {
+                        return Err(std::io::Error::last_os_error());
+                    }
+                    Ok(())
+                });
+            }
+        }
+        REPASSA_SIGINT.store(!com_terminal, Ordering::SeqCst);
         instalar_repasse();
-        let mut filho: Child = comando.process_group(0).spawn()?;
-        let grupo = i32::try_from(filho.id()).unwrap_or(0);
-        GRUPO_DO_FILHO.store(grupo, Ordering::SeqCst);
-        // Um sinal que chegou entre o spawn e o registro do grupo ainda precisa chegar ao filho.
+        let mut filho = comando.spawn()?;
+        let pid = i32::try_from(filho.id()).unwrap_or(0);
+        let alvo = if com_terminal { pid } else { -pid };
+        ALVO.store(alvo, Ordering::SeqCst);
+        // Um sinal que chegou entre o spawn e o registro do alvo ainda precisa chegar ao comando.
         let pendente = SINAL_RECEBIDO.load(Ordering::SeqCst);
-        if pendente != 0 && grupo > 0 {
-            sinalizar(grupo, pendente);
+        if pendente != 0 && pid > 0 && (pendente != libc::SIGINT || !com_terminal) {
+            sinalizar(alvo, pendente);
         }
         let estado = filho.wait()?;
-        let sobras_encerradas = grupo > 0 && encerrar_sobras(grupo);
-        GRUPO_DO_FILHO.store(0, Ordering::SeqCst);
+        let sobras_encerradas = !com_terminal && pid > 0 && encerrar_sobras(pid);
+        ALVO.store(0, Ordering::SeqCst);
         let sinal_recebido = Some(SINAL_RECEBIDO.load(Ordering::SeqCst)).filter(|sinal| *sinal != 0);
         Ok(Fim {
             estado,
@@ -421,38 +473,50 @@ fn redirecionar(comando: &mut Command, saida: Saida) {
     }
 }
 
-// Roda um comando pesado do começo ao fim: travas, memória, grupo de processos. Devolve o código de
-// saída (128 + sinal quando morto por um).
-pub fn executar(argumentos: &[String], pasta: &Path, saida: Saida) -> i32 {
-    let argumentos_base = argumentos_do_sistema(argumentos);
-    if ja_dentro_da_trava() {
-        let mut comando = Command::new(&argumentos_base[0]);
-        comando.args(&argumentos_base[1..]).current_dir(pasta);
-        redirecionar(&mut comando, saida);
-        return match comando.status() {
-            Ok(estado) => estado.code().unwrap_or(1),
-            Err(erro) => {
-                eprintln!("[pesado] {} não iniciou: {erro}", argumentos_base[0]);
-                127
-            }
-        };
-    }
+// As travas seguradas; soltam ao sair de escopo (e o sistema solta se o processo morrer).
+struct Travas {
+    _do_projeto: Option<File>,
+    _vaga: Option<File>,
+}
+
+// Pega o que falta. Dentro de outro comando pesado vivo, nunca a vaga (a memória já conta na de fora,
+// e esperar outra com 1 vaga só seria esperar a si mesmo); a trava do projeto só se for outro projeto.
+fn segurar(ajustes: &Ajustes, travar: Travar, de_fora: Option<&str>) -> std::io::Result<Travas> {
+    fs::create_dir_all(&ajustes.pasta_das_travas)?;
+    let precisa_do_projeto = travar == Travar::ProjetoEVaga && de_fora != Some(ajustes.projeto.as_str());
+    let do_projeto = if precisa_do_projeto { Some(segurar_projeto(ajustes)?) } else { None };
+    let vaga = if de_fora.is_none() { Some(segurar_vaga(ajustes)?) } else { None };
+    Ok(Travas {
+        _do_projeto: do_projeto,
+        _vaga: vaga,
+    })
+}
+
+// Roda um comando pesado do começo ao fim: travas, memória, processos. Devolve o código de saída
+// (128 + sinal quando morto por um).
+pub fn executar(argumentos: &[String], pasta: &Path, saida: Saida, travar: Travar) -> i32 {
     let ajustes = ajustes_da_maquina(pasta);
-    let travas = segurar(&ajustes);
+    let de_fora = projeto_de_fora();
+    let travas = segurar(&ajustes, travar, de_fora.as_deref());
     if let Err(erro) = &travas {
         eprintln!(
             "[pesado] não consegui a trava em {} ({erro}); seguindo sem ela.",
             ajustes.pasta_das_travas.display()
         );
     }
-    let limite = limite_de_memoria(&ajustes);
-    let completos: Vec<String> = limite.map(argumentos_do_scope).unwrap_or_default().into_iter().chain(argumentos_base).collect();
+    // Um scope novo tiraria o comando do limite da vaga de fora.
+    let limite = if de_fora.is_none() { limite_de_memoria(&ajustes) } else { None };
+    let completos: Vec<String> = limite
+        .map(argumentos_do_scope)
+        .unwrap_or_default()
+        .into_iter()
+        .chain(argumentos_do_sistema(argumentos))
+        .collect();
     let mut comando = Command::new(&completos[0]);
     comando
         .args(&completos[1..])
         .current_dir(pasta)
-        .stdin(Stdio::null())
-        .env(VARIAVEL_DE_DENTRO, &ajustes.projeto);
+        .env(VARIAVEL_DE_DENTRO, format!("{}:{}", ajustes.projeto, std::process::id()));
     if let Some(heap_mb) = ajustes.heap_mb {
         comando.env(
             "NODE_OPTIONS",
@@ -505,5 +569,5 @@ pub fn rodar(argumentos: &[String]) -> i32 {
         return 2;
     }
     let pasta = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    executar(&argumentos, &pasta, Saida::Herdada)
+    executar(&argumentos, &pasta, Saida::Herdada, Travar::ProjetoEVaga)
 }

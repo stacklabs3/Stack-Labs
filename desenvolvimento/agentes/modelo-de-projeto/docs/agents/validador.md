@@ -145,8 +145,8 @@ ou as violações listadas viraram tickets.
   Roda como comando pesado (trava do projeto, vaga e limite de memória; ADR 0024). Aprovado com a
   árvore limpa, grava a aprovação em `.claude/state/ci-aprovado/`, pela árvore do HEAD, o commit da
   base, as regras e a versão dos watchdogs. O `pre-push` pula a revisão por modelo e não roda o CI
-  quando acha a aprovação do mesmo conteúdo: para o push sair na hora, rode o `ci` contra
-  `origin/main` com a árvore limpa antes.
+  quando acha a aprovação do mesmo conteúdo e tudo o que sobe é o HEAD: para o push sair na hora,
+  rode o `ci` contra `origin/main` com a árvore limpa antes. O que o git ignora fica fora da chave.
 - **CI do projeto**, configurado na primeira fatia da primeira fase, junto com o lint:
   `sh .claude/watchdogs/rodar validar --base origin/${{ github.base_ref }}`, com o ast-grep instalado
   no passo anterior quando o `.json` usa `ast-grep` (`npm i -g @ast-grep/cli@0.51.0`). O SDK da
