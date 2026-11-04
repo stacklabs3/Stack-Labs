@@ -163,6 +163,24 @@ fn o_mesmo_projeto_espera_o_comando_pesado_anterior() {
 }
 
 #[test]
+fn quem_espera_ve_o_comando_que_segura_a_trava() {
+    let travas = pasta_nova("travas");
+    let excurfly = pasta_nova("excurfly");
+    let mut primeiro = pesado(&excurfly, &travas, 2, "sleep 3");
+    let caminho = trava_do_projeto(&travas, &excurfly);
+    let limite = Instant::now() + PRAZO_DE_ESPERA;
+    while !fs::read_to_string(&caminho).unwrap_or_default().contains("sleep 3") {
+        assert!(Instant::now() < limite, "o dono não anotou o comando na trava");
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    let segundo = pesado(&excurfly, &travas, 2, "true");
+    let saida = segundo.wait_with_output().unwrap();
+    let avisos = String::from_utf8_lossy(&saida.stderr);
+    assert!(avisos.contains(&format!("(pid {}: sleep 3)", primeiro.id())), "{avisos}");
+    primeiro.wait().unwrap();
+}
+
+#[test]
 fn sem_vaga_livre_o_outro_projeto_espera_uma_soltar() {
     let travas = pasta_nova("travas");
     let organiza_ai = pasta_nova("organiza-ai");

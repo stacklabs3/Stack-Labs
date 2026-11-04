@@ -24,11 +24,16 @@ contrato e um documento divergem, o documento vence e o contrato se corrige por 
    - `GLOSSARY.md`: cada conceito que o diff nomeia, com o nome que ele terá no código. Conceito sem
      termo é lacuna: `BLOQUEADO` com a pergunta ao humano, pelo `/domain-modeling`.
    - `docs/adr/`: cada ADR que fixa algo neste trecho, com o que ela fixa aqui.
-   - `docs/riscos.md`: cada seam que a issue ou o spec combinam, o `RK<n>` que o teste nela cobre e
-     o nome do teste que vai existir. Fatia sem risco a cobrir escreve `sem teste, pela issue`.
+   - `docs/riscos.md`: cada seam que a issue ou o spec combinam, o `RK<n>` que o teste nela cobre, o
+     nome do teste que vai existir e o **dano**: a mudança no código que deixa esse teste vermelho
+     (`aceitar cupom vencido`). Teste cujo dano você não consegue escrever não exercita o risco que
+     cita. Fatia sem risco a cobrir escreve `sem teste, pela issue`.
+   - Cada **regra de validação** que o diff cria ou muda (formato, limite, campo obrigatório): a
+     tabela de **aceitos e recusados**, com os casos de borda, cada linha com o teste que a prova.
    - A issue e o spec: cada critério de aceite, citado, com o teste ou a conferência que o prova.
    Pronto quando toda regra que alcança *Toca* tem linha, todo critério tem prova, todo teste tem
-   `RK<n>`, todo conceito tem termo e toda ADR do trecho está citada.
+   `RK<n>` e dano, toda regra de validação tem a tabela, todo conceito tem termo e toda ADR do
+   trecho está citada.
 3. **Publique** na issue, no modelo abaixo, com `gh issue comment <n> --body-file <arquivo>` (o
    arquivo em `.scratch/`). Pronto quando o comentário está na issue: é ele que o `guarda-edicao`
    procura antes de liberar o código.
@@ -39,7 +44,8 @@ contrato e um documento divergem, o documento vence e o contrato se corrige por 
 ## Contrato da fatia
 
 **Toca:** `src/cupom/aplicar.ts` (vizinho: `src/pedido/fechar.ts`) · `src/cupom/aplicar.test.ts` (vizinho: `src/pedido/fechar.test.ts`)
-**Seams e riscos:** `aplicarCupom(pedido, cupom)` → RK2 em `recusa cupom vencido` · RK7 em `aplica uma vez por pedido`
+**Seams e riscos:** `aplicarCupom(pedido, cupom)` → RK2 em `recusa cupom vencido` (dano: aceitar cupom vencido) · RK7 em `aplica uma vez por pedido` (dano: somar o desconto duas vezes)
+**Validação:** código do cupom → aceita `NATAL10`, `natal10` (vira maiúsculo) · recusa `""`, `NATAL 10`, 21 caracteres → `valida o código do cupom`
 **Regras de código:** R3 erro esperado vira `ResultadoDeCupom`, não exceção · R6 `src/cupom/` não importa `src/infra/` · R11 nome do teste cita o risco
 **Linguagem:** Cupom → `Cupom` · Comanda → `Comanda` (nunca `Ticket`)
 **ADRs:** ADR 0003 (cupom vence à meia-noite do fuso da loja): a data vem de `RelogioDaLoja`
@@ -66,7 +72,8 @@ Pronto quando toda linha tem o seu trecho, e nenhum trecho do diff está fora de
 
 - O **revisor** lê o diff com o contrato e com os documentos: cada linha do contrato cumprida no
   diff, e cada regra de `docs/regras-de-codigo.md` que alcança o diff e **falta no contrato** é
-  achado, porque mostra o documento que não foi lido.
+  achado, porque mostra o documento que não foi lido. Em cada teste, aplica o dano do contrato de
+  cabeça: se o teste continuaria verde, ele não cobre o risco que cita.
 - O **conferente** confere a coluna *Critérios de aceite* contra a issue e contra o diff: critério da
   issue fora do contrato é achado (a); trecho fora de *Fora do contrato* é achado (b).
 - O **diagnosticador** escreve cada passo do plano com a linha do contrato que ele preserva. Achado

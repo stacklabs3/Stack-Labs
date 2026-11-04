@@ -7,7 +7,7 @@ argument-hint: "N issues, ou --retomar <arquivo de estado>"
 Você é o **orquestrador**: o código é dos subagentes. Você os dispara de `.claude/agents/`, lê os
 pareceres, cuida das branches e do estado da rodada. **Uma issue por vez, até o fim:** cada issue
 ganha uma sessão própria do Claude, de janela limpa, que segue o ciclo fixo do passo 3; só quando ela
-termina (integrada ou devolvida) abre-se a sessão da próxima (seção *Uma sessão por issue*). Passe a
+termina (na integração ou devolvida) abre-se a sessão da próxima (seção *Uma sessão por issue*). Passe a
 eles **ponteiros** (número da issue, nomes das branches, o plano); o conteúdo eles mesmos leem. O porquê de cada peça está em
 `docs/agents/orquestracao.md`.
 
@@ -26,7 +26,8 @@ Todos os papéis rodam no modelo `opus`. O esforço vai na chamada de cada subag
 
 `.claude/orquestracao/<nome-da-integração>.json`, regravado depois de **cada** subagente: a branch
 de integração e a base dela, e para cada issue da rodada o número, o título, a branch, o ciclo, a
-situação (`em-andamento`, `integrada`, `devolvida`) e o último parecer de cada papel; mais o contador
+situação (`em-andamento`, `na-integracao`, `devolvida`; estado antigo com `integrada` vale como
+`na-integracao`) e o último parecer de cada papel; mais o contador
 de issues devolvidas em sequência. É por ele que uma janela nova retoma a rodada.
 
 ## Vários orquestradores ao mesmo tempo
@@ -69,7 +70,7 @@ sh .claude/watchdogs/rodar pesado "npm run build"
 
 - **Abrir:** para a issue da vez, abra uma sessão própria com o `start_session` do app (contexto
   `fresh`, worktree própria; o brief dá a issue, a branch da issue, a branch de integração e manda
-  seguir o ciclo do passo 3, itens 2 a 5, até `integrada` ou `devolvida`). Sem `start_session` no
+  seguir o ciclo do passo 3, itens 2 a 5, até `na-integracao` ou `devolvida`). Sem `start_session` no
   ambiente, rode o mesmo ciclo com os subagentes de `.claude/agents/`, um por vez, como antes.
 - **Workflow fixo dentro da sessão:** implementador → revisor → conferente → (diagnosticador →
   implementador → revisor → conferente, até 2 ciclos de correção). Um papel por vez; nada pula etapa.
@@ -78,6 +79,11 @@ sh .claude/watchdogs/rodar pesado "npm run build"
 - **Acompanhar sem polling:** espere o aviso de fim da sessão. Então confira o resultado de verdade
   (os pareceres, a branch da issue, o commit na integração), grave o estado e siga.
 - **O merge** na integração é do orquestrador, um por vez, depois da conferência.
+- **Trabalhe onde a branch está.** O git não deixa a mesma branch aberta em duas worktrees: antes
+  de `git switch`, rode `git worktree list`. Branch já aberta noutra worktree (a da sessão da issue,
+  a de um subagente) se usa lá, com `git -C <caminho da worktree>`; worktree de sessão que já
+  terminou se fecha com `git worktree remove <caminho>`. Criar outra branch, copiar commits ou forçar
+  o checkout deixa duas versões da mesma issue.
 - O brief traz a regra da trava da máquina (seção acima), com a frase pronta.
 - O brief e o prompt de **todo** subagente trazem a frase: "antes de abrir arquivos, rode
   `sh .claude/watchdogs/rodar contexto <consulta>` e leia a resposta; vazia ou insuficiente, leia direto".
@@ -104,16 +110,21 @@ Pergunte numa rodada só, com recomendação em cada pergunta, e **espere as res
 2. **A branch de integração:** o nome (`integracao/<nome>`, sugira um a partir do spec ou do mapa)
    e a base (padrão: `main`). Com outra trilha rodando, nome e arquivo de estado são outros.
 
+Na mesma rodada, **avise o que só o humano autoriza**: issue da fila que precisa de navegador
+(e2e, Playwright, conferência visual) ou de outra permissão da sessão (conector, computador) pede a
+autorização dele agora, na sessão, e não quando a issue chegar. Diga quais issues e o que cada uma
+vai pedir.
+
 Crie a branch a partir da base, `git push -u origin integracao/<nome>`, e grave o estado.
 
-Pronto quando o desenvolvedor respondeu, a branch de integração está no `origin` e o estado da rodada
+Pronto quando o desenvolvedor respondeu e autorizou o que a fila vai pedir, a branch de integração está no `origin` e o estado da rodada
 está gravado.
 
 ### 3. Uma issue por vez, numa sessão própria
 
 **Fronteira:** issues abertas com `ready-for-agent`, sem responsável, sem label `wayfinder:*` nem
 `spec`, sem sub-issues (issue com filhas é um spec, mesmo sem a label) e sem bloqueio aberto, da mais
-antiga para a mais nova. Um bloqueador já `integrada` nesta rodada conta
+antiga para a mais nova. Um bloqueador já `na-integracao` nesta rodada conta
 como resolvido: o código dele já está na branch de integração.
 
 Para a próxima issue da fronteira, na sessão dela (seção *Uma sessão por issue*):
@@ -124,8 +135,14 @@ Para a próxima issue da fronteira, na sessão dela (seção *Uma sessão por is
    plano do diagnosticador. `RESULTADO: BLOQUEADO` → **devolva** a issue.
 3. **`revisor`** e depois **`conferente`**, cada um com a issue, a branch dela e a de integração.
 4. Os dois com `PARECER: APROVADO` → integre: `git switch integracao/<nome>`,
-   `git merge --no-ff issue/<n>-<slug>`, `git push`. Comente na issue que ela foi integrada (branch e
-   commit). Zere o contador de devolvidas e siga para a próxima.
+   `git merge --no-ff issue/<n>-<slug>`, `git push`. Comente na issue e relate ao desenvolvedor
+   onde o código está, sempre nestas três linhas:
+   ```
+   Branch: issue/<n>-<slug> @ <commit>
+   Integração: integracao/<nome> @ <commit do merge>
+   main: ainda não; chega pela PR do fim da fila
+   ```
+   Zere o contador de devolvidas e siga para a próxima.
 5. Algum `PARECER: REPROVADO` → se esta issue ainda não teve **2 ciclos de correção**: chame o
    **`diagnosticador`** com os pareceres, some um ao ciclo e volte ao item 2 com o plano dele. Se já
    teve, **devolva** a issue.
@@ -146,10 +163,10 @@ Pronto quando o estado está gravado e o desenvolvedor tem o kickoff.
 
 ### 5. Fim da fila
 
-Mostre ao desenvolvedor a tabela da rodada (cada issue com a situação, os ciclos e o motivo das
-devolvidas) e pergunte como as integradas chegam à `main`:
+Mostre ao desenvolvedor a tabela da rodada (cada issue com a situação, os ciclos, o motivo das
+devolvidas e as três linhas de onde o código está) e pergunte como as issues na integração chegam à `main`:
 
-- **(A) Uma PR só:** `integracao/<nome>` → base, com `Closes #<n>` de cada integrada.
+- **(A) Uma PR só:** `integracao/<nome>` → base, com `Closes #<n>` de cada issue na integração.
 - **(B) Uma PR por issue:** empilhadas na ordem da rodada (a primeira contra a base, cada seguinte
   contra a branch da anterior), para o merge ser feito na ordem.
 

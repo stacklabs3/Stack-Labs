@@ -61,7 +61,17 @@ sempre do desenvolvedor.
 
 Cada orquestrador tem a **sua** branch de integração e o **seu** estado
 (`.claude/orquestracao/<nome-da-integração>.json`) e não toca nos de outra trilha. A sessão de
-cada issue trabalha na sua worktree, criada a partir da integração.
+cada issue trabalha na sua worktree, criada a partir da integração. Como o git não abre a mesma
+branch em duas worktrees, quem precisa de uma branch trabalha na worktree onde ela já está.
+
+Uma issue aprovada fica **na integração**, não na `main`: só chega lá pela PR do fim da fila. Por
+isso o relato de cada issue diz sempre as três posições (branch, integração, `main`).
+
+## Autorizações do humano
+
+Navegador, conector e computador são autorizados pelo humano, na sessão. O orquestrador avisa no
+passo 2, junto com a fila, quais issues vão pedir o quê: pedida no meio da rodada, a autorização
+para a issue até alguém responder.
 
 ## Esforço
 

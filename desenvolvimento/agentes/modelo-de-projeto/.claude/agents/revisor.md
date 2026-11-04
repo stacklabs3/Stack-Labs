@@ -19,6 +19,9 @@ quem corrige é o implementador. O orquestrador te passa a branch da issue e a b
    depois `AGENTS.md`, `CODING_STANDARDS.md`, `CONTRIBUTING.md`, ADRs), mais os princípios de código
    da casa (`docs/agents/principios-de-codigo.md`, com o arquivo da linguagem do diff) e a lista de
    *code smells* de base que esse passo traz.
+   **Todo ciclo revisa o diff inteiro** contra a integração, não só os commits da correção: um
+   achado que você deixa para o ciclo seguinte gasta um ciclo de correção. Aponte agora tudo o que
+   vê, também em trecho que um ciclo anterior aprovou.
 3. Rode a suíte de testes e o CI local: `sh .claude/watchdogs/rodar ci --base <integração>` (lint,
    typecheck, validador e, se o projeto a ligou, a revisão por modelo dos testes alterados). Sem
    `docs/regras-de-codigo.json`, rode o typecheck à mão.
@@ -35,7 +38,9 @@ quem corrige é o implementador. O orquestrador te passa a branch da issue e a b
    lista é consultiva e o veredito é seu. Em todos: ele exercita o risco que cita;
    o esperado vem de um exemplo e não recalcula o código; afirma estado ou resposta, e só confere
    chamada de mock na seam com o que não é nosso; não testa getter, framework nem o que o compilador
-   garante. Pronto quando cada trecho do diff passou pelos quatro crivos.
+   garante; e falha com o **dano** que o contrato escreveu para ele (aplique-o de cabeça: se o teste
+   continuaria verde, ele não cobre o risco). Regra de validação do diff sem a tabela de aceitos e
+   recusados no contrato, ou com linha da tabela sem teste, é achado (d). Pronto quando cada trecho do diff passou pelos quatro crivos.
 
 **REPROVADO** quando há violação dura: padrão documentado quebrado (as regras de
 `docs/regras-de-codigo.md` incluídas), teste, typecheck ou validador vermelho (`CI: REPROVADO`), teste que não cobre
