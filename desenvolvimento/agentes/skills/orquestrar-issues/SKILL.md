@@ -39,31 +39,31 @@ trava da máquina (abaixo) vale entre todos os orquestradores e qualquer outro a
 
 ## A trava da máquina (obrigatória)
 
-Várias sessões na mesma máquina disputam a memória. Numa máquina sem swap não há lentidão gradual: o
-kernel mata processos, inclusive o shell do agente (num projeto da casa, dois builds de Next ao mesmo
-tempo derrubaram tudo; ADR 0016). Por isso todo **comando pesado** — build, dev server, suíte de
-testes, e2e (Playwright), build nativo (Flutter, `cargo build`) e o CI local — roda dentro da trava
-global, um por vez **na máquina inteira**, valendo para todos os projetos:
+Várias sessões na mesma máquina disputam a memória, e sem swap o kernel mata processos, inclusive o
+shell do agente (ADR 0016). Por isso todo **comando pesado** — build, dev server, suíte de testes,
+e2e (Playwright), build nativo (Flutter, `cargo build`) — roda pelo `rodar pesado`:
 
 ```sh
-TRAVA="$HOME/.stacklabs/pesado.lock"; mkdir -p "$HOME/.stacklabs"
-until mkdir "$TRAVA" 2>/dev/null; do
-  dono=$(cat "$TRAVA/pid" 2>/dev/null)
-  if [ -n "$dono" ] && ! kill -0 "$dono" 2>/dev/null; then rm -rf "$TRAVA"; continue; fi
-  sleep 15
-done
-echo $$ > "$TRAVA/pid"; trap 'rm -rf "$TRAVA"' EXIT INT TERM
-NODE_OPTIONS=--max-old-space-size=4096 <comando pesado>   # um comando por trava
-rm -rf "$TRAVA"; trap - EXIT INT TERM
+sh .claude/watchdogs/rodar pesado "npm run build"
 ```
 
-- A espera limpa a trava de um dono que morreu (`kill -0` falha); trava viva não se toca.
-- `next dev` segura a trava enquanto estiver de pé: suba, use e derrube dentro da mesma trava.
+- **Um por vez em cada projeto, e projetos diferentes juntos** até as vagas da máquina (2 em 8 GB).
+  Quem espera vê o motivo no terminal e segue sozinho quando a trava solta (ADR 0025).
+- No Linux com systemd, o comando roda com o limite de memória da vaga. Saída 137 com o aviso
+  `[pesado] o comando foi morto (SIGKILL)` é o limite agindo: reduza os workers do comando
+  (`experimental.cpus` do Next, `--maxWorkers=2` do Jest e do Vitest, `--workers=2` do Playwright),
+  nunca suba o teto por conta própria.
+- `next dev` segura a trava do projeto enquanto estiver de pé: suba pelo `rodar pesado` e derrube-o
+  ao terminar. Derrubar o `rodar pesado` derruba todos os processos do comando.
+- O `rodar ci` e o pre-push pegam uma vaga, não a trava do projeto: o `git push` vai direto, mesmo
+  com o dev server de pé, e não roda o CI de novo para um HEAD que ele já aprovou.
+- Sem terminal, o comando não lê o teclado: um prompt de senha (git, ssh) falha na hora. Configure
+  as credenciais antes (`gh auth setup-git`, chave ssh sem senha ou agente ssh).
 - Leve: typecheck, lint, `git` e `gh` rodam fora dela.
 - O prompt de **todo** subagente que roda comandos (implementador, e os outros papéis se rodarem
-  testes, e o brief de cada sessão de issue) traz este bloco e a frase: "todo comando pesado passa pela trava
-  `$HOME/.stacklabs/pesado.lock`, com
-  `NODE_OPTIONS=--max-old-space-size=4096`; sem swap, dois ao mesmo tempo matam a máquina".
+  testes, e o brief de cada sessão de issue) traz a frase: "todo comando pesado roda por
+  `sh .claude/watchdogs/rodar pesado "<comando>"`: um por vez no projeto; sem swap, comandos além
+  das vagas matam a máquina".
 
 ## Uma sessão por issue
 

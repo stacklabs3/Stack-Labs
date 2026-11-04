@@ -1205,7 +1205,7 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
                 .base
                 .clone()
                 .or_else(|| parametro_texto(parametros, "base").map(String::from))
-                .unwrap_or_else(|| "origin/main".into());
+                .unwrap_or_else(|| crate::comum::base_do_remoto(&raiz, "origin"));
             if git(&raiz, &["rev-parse", "--verify", "--quiet", &base]).is_none() {
                 contexto
                     .avisos

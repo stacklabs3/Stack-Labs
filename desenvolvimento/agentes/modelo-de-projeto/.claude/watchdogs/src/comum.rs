@@ -250,7 +250,7 @@ pub fn gravar_estado_sessao(diretorio_projeto: &Path, id_sessao: &str, estado_se
 
 // ---------- git ----------
 
-fn executar_git(diretorio: &Path, argumentos_git: &[&str]) -> Option<String> {
+pub fn executar_git(diretorio: &Path, argumentos_git: &[&str]) -> Option<String> {
     let saida = Command::new("git")
         .args(argumentos_git)
         .current_dir(diretorio)
@@ -259,6 +259,16 @@ fn executar_git(diretorio: &Path, argumentos_git: &[&str]) -> Option<String> {
         .output()
         .ok()?;
     saida.status.success().then(|| String::from_utf8_lossy(&saida.stdout).trim().to_string())
+}
+
+// A base do CI: a branch padrão do remoto (refs/remotes/<remoto>/HEAD, que o clone grava e o
+// `git remote set-head <remoto> -a` refaz). Projeto em que outra branch faz o papel da main (a dev,
+// por exemplo) compara com ela. Sem a referência, <remoto>/main.
+pub fn base_do_remoto(diretorio: &Path, nome_do_remoto: &str) -> String {
+    let referencia_do_head = format!("refs/remotes/{nome_do_remoto}/HEAD");
+    executar_git(diretorio, &["symbolic-ref", "--quiet", "--short", &referencia_do_head])
+        .filter(|branch_padrao| !branch_padrao.is_empty())
+        .unwrap_or_else(|| format!("{nome_do_remoto}/main"))
 }
 
 pub fn caminho_hooks_do_git(diretorio_projeto: &Path) -> Option<String> {

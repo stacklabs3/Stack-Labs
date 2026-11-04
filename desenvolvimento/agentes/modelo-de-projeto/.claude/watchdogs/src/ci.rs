@@ -3,20 +3,82 @@
 // validador e a revisão por modelo dos testes alterados. Reprova só pelas duas primeiras; a revisão é
 // consultiva e falha aberta. Projeto que ainda não fechou as regras de código passa direto.
 //
-// Uso: .claude/watchdogs/rodar ci [--base <ref>]   (base padrão: origin/main)
+// O ci roda como comando pesado (trava.rs): uma vaga e o limite de memória.
+// Aprovado com a árvore limpa, ele grava a aprovação pela chave do conteúdo (árvore do HEAD, commit
+// da base, regras e o hash do binário dos watchdogs); o pre-push que encontra a chave não roda de novo.
+//
+// Uso: .claude/watchdogs/rodar ci [--base <ref>] [--sem-revisao]
+// (base padrão: a branch padrão do origin, origin/HEAD; sem ela, origin/main)
 // Saída: 0 aprovado, 1 violação, 2 configuração inválida. A última linha é "CI: APROVADO" ou "CI: REPROVADO".
 
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use crate::comum::{base_do_remoto, executar_git};
 use crate::revisao_por_modelo::{self, Revisao};
+use crate::trava;
 use crate::validador::{self, ErroDeConfiguracao, Opcoes, Relatorio};
 
-pub const BASE_PADRAO: &str = "origin/main";
 const CAMINHO_CONFIG: &str = "docs/regras-de-codigo.json";
 const CAMINHO_MD: &str = "docs/regras-de-codigo.md";
+const PASTA_DE_APROVADOS: &str = ".claude/state/ci-aprovado";
+
+pub struct OpcoesDoCi<'a> {
+    pub base: &'a str,
+    // A revisão por modelo é consultiva e a parte mais lenta: o pre-push a pula.
+    pub revisar: bool,
+}
+
+// Chave do conteúdo que o ci confere. None com a árvore suja (arquivo não commitado ou não
+// rastreado também entra no ci) ou sem a base: aí não há cache.
+pub fn chave_do_conteudo(raiz: &Path, base: &str) -> Option<String> {
+    let pendencias = executar_git(raiz, &["status", "--porcelain", "--untracked-files=normal"])?;
+    if !pendencias.is_empty() {
+        return None;
+    }
+    let arvore = executar_git(raiz, &["rev-parse", "HEAD^{tree}"])?;
+    let commit_da_base = executar_git(raiz, &["rev-parse", "--verify", "--quiet", &format!("{base}^{{commit}}")])?;
+    // A versão do pacote não muda entre versões do método; o binário muda. Watchdogs atualizados com
+    // regras mais rígidas não reaproveitam a aprovação dada pelos antigos.
+    let hash_do_binario = hash_do_proprio_binario()?;
+    let mut soma = Sha256::new();
+    for parte in [
+        "ci-v2",
+        hash_do_binario,
+        &arvore,
+        &commit_da_base,
+        &fs::read_to_string(raiz.join(CAMINHO_CONFIG)).unwrap_or_default(),
+        &fs::read_to_string(raiz.join(CAMINHO_MD)).unwrap_or_default(),
+    ] {
+        soma.update(parte.as_bytes());
+        soma.update([0]);
+    }
+    Some(format!("{:x}", soma.finalize()))
+}
+
+// Calculado uma vez por processo: o pre-push e o ci leem a chave mais de uma vez.
+fn hash_do_proprio_binario() -> Option<&'static str> {
+    static HASH: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    HASH.get_or_init(|| {
+        let binario = fs::read(std::env::current_exe().ok()?).ok()?;
+        Some(format!("{:x}", Sha256::digest(&binario)))
+    })
+    .as_deref()
+}
+
+pub fn ja_aprovado(raiz: &Path, chave: &str) -> bool {
+    raiz.join(PASTA_DE_APROVADOS).join(chave).is_file()
+}
+
+fn gravar_aprovacao(raiz: &Path, chave: &str, base: &str) {
+    let pasta = raiz.join(PASTA_DE_APROVADOS);
+    if fs::create_dir_all(&pasta).is_ok() {
+        let _ = fs::write(pasta.join(chave), format!("aprovado contra {base}\n"));
+    }
+}
 
 fn ler_configuracao(raiz: &Path) -> Result<(Value, String), ErroDeConfiguracao> {
     let texto_config = fs::read_to_string(raiz.join(CAMINHO_CONFIG)).unwrap_or_default();
@@ -87,7 +149,10 @@ fn revisar_os_testes(raiz: &Path, config: &Value, base: &str, saida: &mut dyn Wr
 }
 
 // O CI inteiro numa pasta de projeto, escrevendo o relatório em `saida`. Devolve o código de saída.
-pub fn executar(raiz: &Path, base: &str, saida: &mut dyn Write) -> i32 {
+pub fn executar(raiz: &Path, opcoes_do_ci: &OpcoesDoCi, saida: &mut dyn Write) -> i32 {
+    let base = opcoes_do_ci.base;
+    // A chave se lê antes: um arquivo criado durante o ci não pode entrar numa aprovação velha.
+    let chave = chave_do_conteudo(raiz, base);
     if !raiz.join(CAMINHO_CONFIG).exists() {
         let _ = writeln!(
             saida,
@@ -133,8 +198,17 @@ pub fn executar(raiz: &Path, base: &str, saida: &mut dyn Write) -> i32 {
     let _ = writeln!(saida, "{}", validador::formatar(&do_validador));
 
     let _ = writeln!(saida, "\n[ci] 3/3 revisão por modelo dos testes alterados (consultiva)");
-    revisar_os_testes(raiz, &config, base, saida);
+    if opcoes_do_ci.revisar {
+        revisar_os_testes(raiz, &config, base, saida);
+    } else {
+        let _ = writeln!(saida, "pulada aqui; rode sh .claude/watchdogs/rodar ci para vê-la.");
+    }
 
+    if let (true, Some(chave)) = (aprovado, &chave) {
+        if chave_do_conteudo(raiz, base).as_ref() == Some(chave) {
+            gravar_aprovacao(raiz, chave, base);
+        }
+    }
     let _ = writeln!(saida, "\nCI: {}", if aprovado { "APROVADO" } else { "REPROVADO" });
     if aprovado {
         0
@@ -144,14 +218,40 @@ pub fn executar(raiz: &Path, base: &str, saida: &mut dyn Write) -> i32 {
 }
 
 pub fn rodar(argumentos: &[String]) -> i32 {
-    let base = match argumentos {
-        [] => BASE_PADRAO.to_string(),
-        [opcao, base] if opcao == "--base" => base.clone(),
-        _ => {
-            eprintln!("uso: rodar ci [--base <ref>]");
-            return 2;
+    let mut base_pedida: Option<String> = None;
+    let mut revisar = true;
+    let mut restantes = argumentos.iter();
+    while let Some(argumento) = restantes.next() {
+        match (argumento.as_str(), restantes.clone().next()) {
+            ("--base", Some(valor)) => {
+                base_pedida = Some(valor.clone());
+                restantes.next();
+            }
+            ("--sem-revisao", _) => revisar = false,
+            _ => {
+                eprintln!("uso: rodar ci [--base <ref>] [--sem-revisao]");
+                return 2;
+            }
         }
-    };
+    }
     let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    executar(&raiz, &base, &mut std::io::stdout())
+    if trava::projeto_de_fora().is_none() {
+        return rodar_como_pesado(&raiz, argumentos, trava::Saida::Herdada);
+    }
+    let base = base_pedida.unwrap_or_else(|| base_do_remoto(&raiz, "origin"));
+    executar(&raiz, &OpcoesDoCi { base: &base, revisar }, &mut std::io::stdout())
+}
+
+// O próprio binário, de novo, como comando pesado: pega uma vaga e o limite de memória. Não pega a
+// trava do projeto: o ci só lê o código, e um dev server de pé no projeto não pode segurar o push.
+pub fn rodar_como_pesado(raiz: &Path, argumentos_do_ci: &[String], saida: trava::Saida) -> i32 {
+    let Ok(binario) = std::env::current_exe() else {
+        eprintln!("[ci] não achei o próprio binário para rodar como comando pesado.");
+        return 2;
+    };
+    let argumentos: Vec<String> = [binario.to_string_lossy().into_owned(), "ci".into()]
+        .into_iter()
+        .chain(argumentos_do_ci.iter().cloned())
+        .collect();
+    trava::executar(&argumentos, raiz, saida, trava::Travar::SoVaga)
 }

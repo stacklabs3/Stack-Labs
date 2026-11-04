@@ -29,8 +29,37 @@ desenho: [ADR 0005](../adr/0005-orquestracao-de-issues-com-subagentes.md) e
 ## Mais de uma fila ao mesmo tempo
 
 Filas que não mexem nos mesmos arquivos podem rodar juntas: abra **um orquestrador por fila**, cada um
-na sua janela, com a sua branch de integração. Os comandos pesados se revezam sozinhos numa trava da
-máquina, para que dois builds ao mesmo tempo não derrubem tudo.
+na sua janela, com a sua branch de integração. Os comandos pesados se revezam sozinhos: um por vez em
+cada projeto, e projetos diferentes rodam juntos até as vagas de memória da máquina (2 em 8 GB). Para
+mudar as vagas, defina `STACKLABS_VAGAS` na máquina.
+
+## Preparar a máquina para dois projetos
+
+Uma vez por máquina, antes de rodar dois produtos juntos:
+
+1. **Linux: ligue o swap.** Sem ele, faltar memória não deixa a máquina lenta, mata processos,
+   inclusive o shell do agente. Confira com `swapon --show`; vazio, crie um de 8 GB:
+
+   ```bash
+   sudo fallocate -l 8G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+   ```
+
+   ```bash
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   ```
+
+   No Mac, pule: o macOS já comprime a memória e usa swap sozinho.
+2. **Linux: confira o limite de memória por vaga.** Num projeto com o método, rode
+   `sh .claude/watchdogs/rodar pesado true`. Sem nenhuma linha `[pesado] sem limite de memória`, cada
+   comando pesado roda limitado ao tamanho da vaga e, se passar dela, morre sozinho sem derrubar o
+   resto. Com o aviso, a máquina não tem systemd de usuário com o controlador de memória
+   (comum no WSL sem systemd e em containers): os comandos rodam só com a trava e as vagas.
+3. **Limite os workers em cada projeto**, na configuração dele: `experimental.cpus: 2` no
+   `next.config`, `maxWorkers: 2` no Jest e no Vitest, `workers: 2` no Playwright. É isso, não o
+   `--max-old-space-size`, que segura o pico de um build.
+
+As vagas saem da memória total (2 em 8 GB, 5 em 16 GB). Para mudar só na sua máquina:
+`STACKLABS_VAGAS` (número de vagas) e `STACKLABS_MEMORIA_POR_VAGA_MB` (tamanho de cada uma).
 
 ## Bons hábitos
 

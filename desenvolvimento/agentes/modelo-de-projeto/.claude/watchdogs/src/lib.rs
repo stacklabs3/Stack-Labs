@@ -9,4 +9,5 @@ pub mod hooks;
 pub mod pre_push;
 pub mod revisao_por_modelo;
 pub mod riscos;
+pub mod trava;
 pub mod validador;

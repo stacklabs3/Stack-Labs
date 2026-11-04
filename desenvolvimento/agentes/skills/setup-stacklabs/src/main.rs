@@ -388,14 +388,6 @@ fn copiar_arquivo_com_datas(origem: &Path, destino: &Path) -> Resultado<()> {
         .map_err(|erro| format!("{}: {erro}", texto(destino)))
 }
 
-fn marcar_como_recem_alterado(caminho: &Path) -> Resultado<()> {
-    fs::OpenOptions::new()
-        .write(true)
-        .open(caminho)
-        .and_then(|arquivo| arquivo.set_modified(SystemTime::now()))
-        .map_err(|erro| format!("{}: {erro}", texto(caminho)))
-}
-
 /// Copia a pasta inteira, menos as pastas `target/`.
 fn copiar_pasta(origem: &Path, destino: &Path) -> Resultado<()> {
     criar_pasta(destino)?;
@@ -547,6 +539,20 @@ fn conferir_cargo() -> Resultado<()> {
     } else {
         Err("cargo não encontrado: instale o Rust (https://rustup.rs) e rode de novo.".to_string())
     }
+}
+
+/// Apaga a compilação anterior dos watchdogs do projeto. A cópia guarda as datas da origem (num clone
+/// local, mais antigas que a compilação), e tanto o `rodar` quanto o cargo decidem recompilar pela
+/// data: o cargo religaria o artefato velho, e o relatório diria COMPILADO com o binário velho rodando
+/// (e o `rodar` o guardaria sob o hash do fonte novo). Sem `target/`, o cargo compila do zero ou o
+/// `rodar` reaproveita o binário guardado pelo hash do fonte.
+fn apagar_compilacao_antiga(destino: &Path) {
+    let _ = fs::remove_dir_all(
+        destino
+            .join(".claude")
+            .join("watchdogs")
+            .join(PASTA_DE_COMPILACAO),
+    );
 }
 
 /// Roda `sh <lancador> --version`, que compila os watchdogs se preciso. O erro já vem pronto para o relatório.
@@ -808,10 +814,6 @@ fn instalar(opcoes: &Opcoes) -> Resultado<ResultadoDaInstalacao> {
         }
         if caminho_relativo.starts_with(".claude/watchdogs/") {
             copiou_watchdogs = true;
-            if !simular {
-                // Fonte com data antiga passaria por "já compilado" no `rodar` e no cargo, e o binário velho ficaria valendo.
-                marcar_como_recem_alterado(&arquivo_do_destino)?;
-            }
         }
         relatorio.push(format!("COPIADO   {caminho_relativo}"));
     }
@@ -844,6 +846,7 @@ fn instalar(opcoes: &Opcoes) -> Resultado<ResultadoDaInstalacao> {
         }
     }
     if copiou_watchdogs && !simular {
+        apagar_compilacao_antiga(&destino);
         relatorio.push(compilar_watchdogs(&destino));
     }
     if !simular {

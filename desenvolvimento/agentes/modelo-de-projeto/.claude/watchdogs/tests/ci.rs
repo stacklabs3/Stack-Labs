@@ -91,6 +91,12 @@ impl Projeto {
             .current_dir(&self.raiz)
             .env("PATH", caminho)
             .env_remove("STACKLABS_WATCHDOGS")
+            // As travas dos comandos pesados ficam na pasta do teste, nunca no ~/.stacklabs da máquina.
+            .env("STACKLABS_TRAVAS", self.raiz.with_extension("travas"))
+            .env_remove("STACKLABS_PESADO")
+            // Sem a sonda do systemd: o limite de memória tem testes próprios (tests/trava.rs).
+            .env("STACKLABS_LIMITE_DE_MEMORIA", "desligado")
+            .env("STACKLABS_MEMORIA_POR_VAGA_MB", "64")
             .env_remove("STACKLABS_PERMITIR_PUSH_MAIN")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -293,4 +299,163 @@ fn revisao_mostra_o_nome_de_goldentest_e_patroltest() {
     assert_eq!(codigo, 0, "{saida}");
     assert!(saida.contains("test/tela_test.dart:2 RK1 tela de frete (RK1)"), "{saida}");
     assert!(saida.contains("test/tela_test.dart:10 RK2 cupom vencido (RK2)"), "{saida}");
+}
+
+fn sha(projeto: &Projeto, referencia: &str) -> String {
+    let saida = Command::new("git").args(["rev-parse", referencia]).current_dir(&projeto.raiz).output().unwrap();
+    String::from_utf8_lossy(&saida.stdout).trim().to_string()
+}
+
+// O push da branch da issue com o sha do HEAD, como o git escreve no stdin do hook.
+fn pre_push(projeto: &Projeto) -> (i32, String) {
+    let linha = format!(
+        "refs/heads/issue/7-cupom {} refs/heads/issue/7-cupom {}\n",
+        sha(projeto, "HEAD"),
+        "0".repeat(40)
+    );
+    projeto.rodar(&["pre-push", "origin"], &linha, true)
+}
+
+// Risco: o push espera minutos pelo mesmo CI que já passou para exatamente o mesmo conteúdo.
+#[test]
+fn pre_push_nao_repete_o_ci_de_um_conteudo_ja_aprovado() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    let (codigo, saida) = projeto.rodar(&["ci", "--base", "origin/main"], "", true);
+    assert_eq!(codigo, 0, "{saida}");
+    let chamadas_do_ci = projeto.chamadas_ao_claude();
+
+    let (codigo, saida) = pre_push(&projeto);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(
+        saida.contains("já passou no CI local contra origin/main") && !saida.contains("[ci] base"),
+        "{saida}"
+    );
+    assert_eq!(projeto.chamadas_ao_claude(), chamadas_do_ci, "{saida}");
+
+    // Arquivo não commitado também entra no ci: com a árvore suja, o ci roda de novo.
+    projeto.escrever("tests/novo.rs", "#[test]\nfn rk1_frete_zero() {\n    assert_eq!(frete(200), 0);\n}\n");
+    let (_, saida) = pre_push(&projeto);
+    assert!(saida.contains("[ci] base origin/main"), "árvore suja não usa o cache: {saida}");
+
+    // Commit novo é conteúdo novo: roda de novo e grava a aprovação dele.
+    projeto.git(&["add", "-A"]);
+    projeto.git(&["commit", "-q", "-m", "novo teste"]);
+    let (codigo, saida) = pre_push(&projeto);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("[ci] base origin/main"), "commit novo roda o ci: {saida}");
+    assert!(pre_push(&projeto).1.contains("já passou no CI local"), "a aprovação do pre-push também vale");
+
+    // Base que andou muda o que o ci confere: roda de novo.
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "HEAD~1"]);
+    assert!(pre_push(&projeto).1.contains("[ci] base origin/main"), "base nova roda o ci");
+}
+
+// Risco: o push espera a revisão por modelo, que é consultiva e a parte mais lenta do ci.
+#[test]
+fn pre_push_roda_o_ci_sem_a_revisao_por_modelo() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    let (codigo, saida) = pre_push(&projeto);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("pulada aqui") && saida.contains("CI: APROVADO"), "{saida}");
+    assert_eq!(projeto.chamadas_ao_claude(), 0, "{saida}");
+}
+
+// Risco: um CI reprovado fica gravado como aprovado e o push seguinte passa sem conferir.
+#[test]
+fn ci_reprovado_nao_vira_aprovacao_guardada() {
+    let tabela_com_r4 = tabela_de_cobertura().replace("| E1 | adotado | R3 |", "| E1 | adotado | R3, R4 |");
+    let projeto = Projeto::novo(regras_com_lint_vermelho());
+    projeto.escrever("docs/regras-de-codigo.md", &tabela_com_r4);
+    projeto.git(&["add", "-A"]);
+    projeto.git(&["commit", "-q", "-m", "r4"]);
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    for _ in 0..2 {
+        let (codigo, saida) = pre_push(&projeto);
+        assert_eq!(codigo, 1, "{saida}");
+        assert!(saida.contains("CI: REPROVADO") && !saida.contains("já passou"), "{saida}");
+    }
+}
+
+// Risco: com o HEAD aprovado, o push de outra branch sobe sem conferir o conteúdo dela.
+#[test]
+fn push_de_outro_commit_nao_usa_a_aprovacao_do_head() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    assert!(pre_push(&projeto).1.contains("CI: APROVADO"));
+    assert!(pre_push(&projeto).1.contains("já passou no CI local"), "o HEAD aprovado usa o cache");
+    let outra = format!("refs/heads/outra {} refs/heads/outra {}\n", sha(&projeto, "HEAD~1"), "0".repeat(40));
+    let (_, saida) = projeto.rodar(&["pre-push", "origin"], &outra, true);
+    assert!(saida.contains("[ci] base origin/main") && !saida.contains("já passou"), "{saida}");
+}
+
+// Risco: um dev server de pé no projeto segura a trava dele, e o git push espera sem fim.
+#[test]
+fn dev_server_de_pe_no_projeto_nao_segura_o_push() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    let travas = projeto.raiz.with_extension("travas");
+    fs::create_dir_all(&travas).unwrap();
+    let nome = watchdogs::trava::arquivo_da_trava_do_projeto(&watchdogs::trava::projeto_da_pasta(&projeto.raiz));
+    let trava_do_dev_server = fs::OpenOptions::new().create(true).truncate(false).write(true).open(travas.join(nome)).unwrap();
+    trava_do_dev_server.lock().unwrap();
+    let (codigo, saida) = pre_push(&projeto);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("CI: APROVADO"), "{saida}");
+}
+
+// Risco: depois de atualizar os watchdogs com regras mais rígidas, o push reaproveita a aprovação
+// que os antigos deram e sobe sem conferir.
+#[test]
+fn watchdogs_novos_nao_reaproveitam_a_aprovacao_dos_antigos() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    assert!(pre_push(&projeto).1.contains("CI: APROVADO"));
+    assert!(pre_push(&projeto).1.contains("já passou no CI local"));
+
+    // Outro binário: o mesmo com um byte a mais no fim, como uma versão nova dos watchdogs.
+    let binario_novo = projeto.raiz.with_extension("watchdogs-novo");
+    let mut conteudo = fs::read(env!("CARGO_BIN_EXE_watchdogs")).unwrap();
+    conteudo.push(0);
+    fs::write(&binario_novo, conteudo).unwrap();
+    Command::new("chmod").arg("+x").arg(&binario_novo).output().unwrap();
+    let linha = format!(
+        "refs/heads/issue/7-cupom {} refs/heads/issue/7-cupom {}\n",
+        sha(&projeto, "HEAD"),
+        "0".repeat(40)
+    );
+    let mut processo = Command::new(&binario_novo)
+        .args(["pre-push", "origin"])
+        .current_dir(&projeto.raiz)
+        .env("PATH", "/usr/bin:/bin")
+        .env("STACKLABS_TRAVAS", projeto.raiz.with_extension("travas"))
+        .env("STACKLABS_LIMITE_DE_MEMORIA", "desligado")
+        .env("STACKLABS_MEMORIA_POR_VAGA_MB", "64")
+        .env_remove("STACKLABS_PESADO")
+        .env_remove("STACKLABS_WATCHDOGS")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    processo.stdin.take().unwrap().write_all(linha.as_bytes()).unwrap();
+    let saida = processo.wait_with_output().unwrap();
+    let tudo = format!("{}{}", String::from_utf8_lossy(&saida.stdout), String::from_utf8_lossy(&saida.stderr));
+    assert!(tudo.contains("[ci] base origin/main") && !tudo.contains("já passou"), "{tudo}");
+}
+
+// Risco: no projeto em que a dev faz o papel da main, o push confere o diff contra a main.
+#[test]
+fn ci_e_pre_push_comparam_com_a_branch_padrao_do_remoto() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    projeto.git(&["update-ref", "refs/remotes/origin/dev", "main"]);
+    projeto.git(&["symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/dev"]);
+    let (codigo, saida) = pre_push(&projeto);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("[ci] base origin/dev"), "{saida}");
+    let (codigo, saida) = projeto.rodar(&["ci", "--sem-revisao"], "", true);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("[ci] base origin/dev"), "{saida}");
 }

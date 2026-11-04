@@ -1,11 +1,12 @@
 // Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto. Depois, o CI local
-// (ci.rs) contra <remoto>/main: lint, typecheck ou validador vermelho barram o push; na etapa de
-// observação, só avisam.
+// (ci.rs) contra a branch padrão do remoto (<remoto>/HEAD; sem ela, <remoto>/main): lint, typecheck ou validador vermelho barram o push; na etapa de
+// observação, só avisam. O CI roda como comando pesado (trava.rs), sem a revisão por modelo, e não
+// roda quando o mesmo conteúdo já foi aprovado contra a mesma base.
 // Ativação (uma vez por clone): git config core.hooksPath .claude/githooks
 // Escape humano para emergências: STACKLABS_PERMITIR_PUSH_MAIN=1 git push ...
 
 use crate::ci;
-use crate::comum::etapa_de_adocao;
+use crate::comum::{base_do_remoto, etapa_de_adocao, executar_git};
 use std::io::Read;
 use std::path::PathBuf;
 
@@ -28,8 +29,25 @@ pub fn rodar(argumentos: &[String]) -> i32 {
         }
     }
     let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    let base = format!("{nome_do_remoto}/main");
-    if ci::executar(&raiz, &base, &mut std::io::stderr()) == 0 {
+    let base = base_do_remoto(&raiz, nome_do_remoto);
+    // O cache vale para o conteúdo do HEAD: só quando tudo o que sobe é exatamente o HEAD.
+    let shas_enviados: Vec<&str> = linhas_do_push
+        .lines()
+        .filter_map(|linha| linha.split(' ').nth(1))
+        .filter(|sha| !sha.is_empty() && sha.chars().any(|letra| letra != '0'))
+        .collect();
+    let sobe_so_o_head =
+        executar_git(&raiz, &["rev-parse", "HEAD"]).is_some_and(|head| !shas_enviados.is_empty() && shas_enviados.iter().all(|sha| *sha == head));
+    let aprovado_antes = ci::chave_do_conteudo(&raiz, &base).filter(|chave| sobe_so_o_head && ci::ja_aprovado(&raiz, chave));
+    if let Some(chave) = aprovado_antes {
+        eprintln!(
+            "[pre-push] este conteúdo já passou no CI local contra {base} (chave {}); push sem rodar de novo.",
+            &chave[..12]
+        );
+        return 0;
+    }
+    let argumentos_do_ci = ["--base".to_string(), base.clone(), "--sem-revisao".to_string()];
+    if ci::rodar_como_pesado(&raiz, &argumentos_do_ci, crate::trava::Saida::NoErro) == 0 {
         return 0;
     }
     if etapa_de_adocao(&raiz) == "observacao" {

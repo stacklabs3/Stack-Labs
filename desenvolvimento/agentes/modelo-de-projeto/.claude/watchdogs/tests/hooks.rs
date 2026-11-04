@@ -67,6 +67,12 @@ impl Projeto {
             .current_dir(&self.raiz)
             .env("PATH", caminho)
             .env("CLAUDE_PROJECT_DIR", &self.raiz)
+            // As travas dos comandos pesados ficam na pasta do teste, nunca no ~/.stacklabs da máquina.
+            .env("STACKLABS_TRAVAS", self.raiz.with_extension("travas"))
+            .env_remove("STACKLABS_PESADO")
+            // Sem a sonda do systemd: o limite de memória tem testes próprios (tests/trava.rs).
+            .env("STACKLABS_LIMITE_DE_MEMORIA", "desligado")
+            .env("STACKLABS_MEMORIA_POR_VAGA_MB", "64")
             .env_remove("STACKLABS_WATCHDOGS")
             .env_remove("STACKLABS_PERMITIR_PUSH_MAIN");
         for (nome, valor) in variaveis {

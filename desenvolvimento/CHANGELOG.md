@@ -11,6 +11,40 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 4.2.0 (2026-11-04)
+
+- **Dois projetos rodam juntos na mesma máquina.** A trava global `~/.stacklabs/pesado.lock` deu
+  lugar ao subcomando `sh .claude/watchdogs/rodar pesado "<comando>"`: um comando pesado por vez em
+  cada projeto, e projetos diferentes juntos até as vagas da máquina (2 em 8 GB, 5 em 16 GB)
+  ([ADR 0025](adr/0025-trava-por-projeto-e-vagas-de-memoria.md)). Os watchdogs passam a pedir Rust 1.89.
+- No Linux com systemd de usuário, cada comando pesado roda com o limite de memória da vaga
+  (cgroup): quem passa dele morre sozinho, não a máquina nem o shell do agente.
+- Derrubar o `rodar pesado` derruba todos os processos do comando, e o que ele deixar para trás é
+  encerrado com a trava: nenhum dev server órfão. Sem terminal (o agente), o comando não lê o
+  teclado: um prompt de senha do git ou do ssh falha na hora em vez de travar; configure as
+  credenciais antes.
+- O heap do Node deixa de ser forçado (era 4096 MB); o pico se controla pelos workers de cada
+  projeto. `STACKLABS_HEAP_MB` liga o teto quando a máquina precisa.
+- **Push mais rápido:** o pre-push não roda a revisão por modelo (ela fica no `rodar ci`), não roda
+  o CI de novo para um HEAD já aprovado contra a mesma base e não espera um dev server de pé no
+  projeto (o CI pega uma vaga, não a trava do projeto).
+- A revisão por modelo abre 1 `claude -p` por vez (eram 4, ~220 MB cada).
+- O binário dos watchdogs fica guardado por versão em `~/.stacklabs/watchdogs/`: o segundo projeto
+  copia em vez de compilar.
+- A aprovação guardada do CI leva o hash do binário dos watchdogs: depois de atualizá-los, o push
+  roda o CI de novo.
+- **Instalador:** ao atualizar os watchdogs, apaga a compilação anterior do projeto
+  (`.claude/watchdogs/target/`). Antes, com um clone local (`STACKLABS_ORIGEM`), a cópia guardava
+  datas antigas, o cargo religava o artefato velho e o relatório dizia `COMPILADO` com o binário da
+  versão anterior rodando.
+- Guia humano: *Preparar a máquina para dois projetos* (swap, limite e workers) em
+  `humanos/orquestracao.md`. Glossário: **comando pesado** e **vaga**. `docs/agents/watchdogs.md`:
+  seção *Rodar um comando pesado* e os limites dela.
+- **Base do CI:** o `pre-push`, o `rodar ci` sem `--base` e a regra `mensagem-de-commit` comparam
+  com a branch padrão do remoto (`origin/HEAD`), não mais com `origin/main` fixo: projeto em que a
+  `dev` faz o papel da `main` deixa de remendar o `pre_push.rs`. Sem `origin/HEAD`, continua a `main`;
+  para gravá-lo, `git remote set-head origin -a`.
+
 ## 4.1.0 (2026-11-04)
 
 - **Antes da primeira atualização, uma vez por máquina:** reinstale as skills com o comando do

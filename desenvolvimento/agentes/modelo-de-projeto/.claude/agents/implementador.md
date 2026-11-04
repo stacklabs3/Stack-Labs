@@ -35,11 +35,13 @@ diagnosticador. O `AGENTS.md` vale inteiro.
    passando**, `VALIDADOR: APROVADO` e toda linha do contrato com o seu trecho.
 6. Commit na branch da issue. Push, PR e merge são do orquestrador.
 
-**Trava da máquina (obrigatória).** Numa máquina sem swap, dois builds ao mesmo tempo matam tudo,
+**Trava da máquina (obrigatória).** Numa máquina sem swap, builds demais ao mesmo tempo matam tudo,
 inclusive o shell do agente (ADR 0016). Todo comando pesado (build, dev server, suíte de testes, e2e,
-build nativo, CI local) roda dentro da trava `$HOME/.stacklabs/pesado.lock`, um por vez, com
-`NODE_OPTIONS=--max-old-space-size=4096`. O bloco de espera e limpeza está na skill `/orquestrar-issues`,
-seção *A trava da máquina*. Typecheck, lint, `git` e `gh` não precisam dela.
+build nativo) roda por `sh .claude/watchdogs/rodar pesado "<comando>"`: um por vez no projeto, outros
+projetos juntos até as vagas da máquina (ADR 0025). O `git push` já passa por ela sozinho. Saída 137
+com o aviso `[pesado] o comando foi morto (SIGKILL)` é o limite de memória da vaga: reduza os workers
+do comando (`--maxWorkers=2`, `experimental.cpus`), nunca suba o teto por conta própria.
+Typecheck, lint, `git` e `gh` não precisam dela.
 
 Quando algo impede o fim (issue ambígua, decisão não escrita, bloqueio de watchdog), pare onde está e
 responda `BLOQUEADO` com o que um humano precisa decidir.

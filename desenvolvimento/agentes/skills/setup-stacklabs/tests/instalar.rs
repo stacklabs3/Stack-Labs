@@ -335,20 +335,6 @@ fn atualizacao_troca_watchdogs_existentes_e_tira_o_que_saiu_da_fonte() {
 }
 
 #[test]
-fn watchdog_copiado_de_fonte_antiga_fica_mais_novo_que_o_binario() {
-    let cenario = Cenario::novo();
-    cenario.relatorio(&[]);
-    let fonte_do_modelo = cenario.modelo().join(".claude/watchdogs/src/main.rs");
-    escrever(&fonte_do_modelo, "fn main() { /* novo */ }\n");
-    let uma_semana_atras = std::time::SystemTime::now() - std::time::Duration::from_secs(7 * 24 * 3600);
-    fs::OpenOptions::new().write(true).open(&fonte_do_modelo).unwrap().set_modified(uma_semana_atras).unwrap();
-    let antes_de_instalar = std::time::SystemTime::now() - std::time::Duration::from_secs(5);
-    cenario.relatorio(&[]);
-    let data_instalada = fs::metadata(cenario.projeto.join(".claude/watchdogs/src/main.rs")).unwrap().modified().unwrap();
-    assert!(data_instalada > antes_de_instalar);
-}
-
-#[test]
 fn fonte_que_nao_compila_nao_toca_nos_watchdogs_do_projeto() {
     let cenario = Cenario::novo();
     cenario.relatorio(&[]);
@@ -794,4 +780,42 @@ fn falha_das_labels_vai_para_o_relatorio_e_a_instalacao_termina() {
         "FALHA     labels do método não criadas (gh label create wayfinder:map: not logged in)"
     ));
     assert!(cenario.projeto.join(".claude/skills/ORIGEM.json").exists());
+}
+
+// Risco: a atualização copia o fonte novo com as datas da origem (num clone local, mais antigas que o
+// binário do projeto), o `rodar` não recompila e o binário velho segue rodando com o relatório dizendo
+// COMPILADO.
+#[test]
+fn atualizar_os_watchdogs_apaga_a_compilacao_antiga_antes_de_compilar() {
+    let cenario = Cenario::novo();
+    cenario.relatorio(&[]);
+    let binario_do_projeto = cenario
+        .projeto
+        .join(".claude/watchdogs/target/release/watchdogs");
+    escrever(&binario_do_projeto, "binário da versão anterior");
+
+    // Sem mudança nos watchdogs, o binário fica.
+    cenario.relatorio(&[]);
+    assert!(
+        binario_do_projeto.exists(),
+        "nada mudou: não há o que recompilar"
+    );
+
+    escrever(
+        &cenario.modelo().join(".claude/watchdogs/src/main.rs"),
+        "fn main() { println!(\"nova\"); }\n",
+    );
+    let relatorio = cenario.relatorio(&[]);
+    assert!(
+        relatorio.contains("COPIADO   .claude/watchdogs/src/main.rs\n"),
+        "{relatorio}"
+    );
+    assert!(
+        relatorio.contains("COMPILADO .claude/watchdogs\n"),
+        "{relatorio}"
+    );
+    assert!(
+        !binario_do_projeto.exists(),
+        "o binário velho saiu; o rodar compila o novo"
+    );
 }
