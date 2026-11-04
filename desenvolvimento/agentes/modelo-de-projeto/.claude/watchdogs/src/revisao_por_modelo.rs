@@ -24,7 +24,8 @@ use crate::validador::casa_algum;
 pub const MODELO_PADRAO: &str = "claude-haiku-5-5";
 const TETO_PADRAO_USD: &str = "0.05";
 const LIMITE_PADRAO_SEGUNDOS: u64 = 120;
-const CHAMADAS_SIMULTANEAS: usize = 4;
+// Cada `claude -p` é um processo Node próprio: duas por vez cabem numa vaga de memória.
+const CHAMADAS_SIMULTANEAS: usize = 2;
 const LINHAS_MAXIMAS_DO_TRECHO: usize = 150;
 const PASTA_DO_CACHE: &str = ".claude/state/revisao-de-testes";
 const ESQUEMA: &str = r#"{"type":"object","properties":{"exercita":{"type":"boolean"},"motivo":{"type":"string"}},"required":["exercita","motivo"]}"#;

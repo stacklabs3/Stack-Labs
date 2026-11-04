@@ -2,6 +2,8 @@
 name = "watchdogs"
 version = "1.0.0"
 edition = "2021"
+# File::lock (a trava dos comandos pesados, src/trava.rs) é estável desde o Rust 1.89.
+rust-version = "1.89"
 description = "Watchdogs e validador de regras de código do método StackLabs"
 publish = false
 

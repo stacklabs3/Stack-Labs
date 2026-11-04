@@ -153,5 +153,5 @@ pub fn rodar(argumentos: &[String]) -> i32 {
         }
     };
     let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    executar(&raiz, &base, &mut std::io::stdout())
+    crate::trava::com_trava(&raiz, || executar(&raiz, &base, &mut std::io::stdout()))
 }

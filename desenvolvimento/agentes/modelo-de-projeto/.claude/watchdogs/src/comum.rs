@@ -250,7 +250,7 @@ pub fn gravar_estado_sessao(diretorio_projeto: &Path, id_sessao: &str, estado_se
 
 // ---------- git ----------
 
-fn executar_git(diretorio: &Path, argumentos_git: &[&str]) -> Option<String> {
+pub fn executar_git(diretorio: &Path, argumentos_git: &[&str]) -> Option<String> {
     let saida = Command::new("git")
         .args(argumentos_git)
         .current_dir(diretorio)

@@ -29,8 +29,9 @@ desenho: [ADR 0005](../adr/0005-orquestracao-de-issues-com-subagentes.md) e
 ## Mais de uma fila ao mesmo tempo
 
 Filas que não mexem nos mesmos arquivos podem rodar juntas: abra **um orquestrador por fila**, cada um
-na sua janela, com a sua branch de integração. Os comandos pesados se revezam sozinhos numa trava da
-máquina, para que dois builds ao mesmo tempo não derrubem tudo.
+na sua janela, com a sua branch de integração. Os comandos pesados se revezam sozinhos: um por vez em
+cada projeto, e projetos diferentes rodam juntos até as vagas de memória da máquina (2 em 8 GB). Para
+mudar as vagas, defina `STACKLABS_VAGAS` na máquina.
 
 ## Bons hábitos
 

@@ -11,6 +11,18 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 4.1.0 (2026-11-04)
+
+- **Dois projetos rodam juntos na mesma máquina.** A trava global `~/.stacklabs/pesado.lock` deu
+  lugar ao subcomando `sh .claude/watchdogs/rodar pesado "<comando>"`: um comando pesado por vez em
+  cada projeto, e projetos diferentes juntos até as vagas de memória da máquina (2 em 8 GB, 5 em
+  16 GB). As travas usam `flock` e soltam sozinhas quando o dono morre
+  ([ADR 0024](adr/0024-trava-por-projeto-e-vagas-de-memoria.md)). Rode o `--atualizar-watchdogs`;
+  os watchdogs passam a pedir Rust 1.89.
+- O teto do heap do Node cai de 4096 para 2048 MB (`STACKLABS_HEAP_MB` ajusta).
+- O `rodar ci` e o pre-push pegam a trava sozinhos: o `git push` não precisa mais ser embrulhado.
+- A revisão por modelo do CI abre 2 `claude -p` por vez, não 4.
+
 ## 4.0.0 (2026-11-03)
 
 - **Ao atualizar os watchdogs:** o `guarda-edicao` só libera código quando a issue ativa tem o

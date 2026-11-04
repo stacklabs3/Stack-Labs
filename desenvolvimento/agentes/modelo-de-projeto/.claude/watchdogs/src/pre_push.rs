@@ -1,6 +1,6 @@
 // Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto. Depois, o CI local
 // (ci.rs) contra <remoto>/main: lint, typecheck ou validador vermelho barram o push; na etapa de
-// observação, só avisam.
+// observação, só avisam. O CI passa pela trava dos comandos pesados (trava.rs).
 // Ativação (uma vez por clone): git config core.hooksPath .claude/githooks
 // Escape humano para emergências: STACKLABS_PERMITIR_PUSH_MAIN=1 git push ...
 
@@ -29,7 +29,7 @@ pub fn rodar(argumentos: &[String]) -> i32 {
     }
     let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let base = format!("{nome_do_remoto}/main");
-    if ci::executar(&raiz, &base, &mut std::io::stderr()) == 0 {
+    if crate::trava::com_trava(&raiz, || ci::executar(&raiz, &base, &mut std::io::stderr())) == 0 {
         return 0;
     }
     if etapa_de_adocao(&raiz) == "observacao" {
