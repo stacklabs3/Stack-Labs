@@ -166,17 +166,35 @@ fn esperar_memoria_livre(ajustes: &Ajustes) {
     }
 }
 
-fn segurar_projeto(ajustes: &Ajustes) -> std::io::Result<File> {
-    let do_projeto = abrir(&ajustes.pasta_das_travas.join(arquivo_da_trava_do_projeto(&ajustes.projeto)))?;
+// Quem segura a trava do projeto escreve nela o próprio pid e o comando; quem espera mostra isso, para
+// a pessoa ou o agente saber qual sessão derrubar ou esperar.
+fn dono_da_trava(pid: u32, argumentos: &[String]) -> String {
+    format!("pid {pid}: {}", argumentos.join(" "))
+}
+
+fn segurar_projeto(ajustes: &Ajustes, argumentos: &[String]) -> std::io::Result<File> {
+    let caminho = ajustes.pasta_das_travas.join(arquivo_da_trava_do_projeto(&ajustes.projeto));
+    let mut do_projeto = abrir(&caminho)?;
     match do_projeto.try_lock() {
-        Ok(()) => Ok(do_projeto),
+        Ok(()) => {}
         Err(TryLockError::WouldBlock) => {
-            eprintln!("[pesado] {} já roda um comando pesado; esperando ele terminar.", ajustes.projeto);
+            let dono = fs::read_to_string(&caminho).unwrap_or_default();
+            let dono = dono.trim();
+            if dono.is_empty() {
+                eprintln!("[pesado] {} já roda um comando pesado; esperando ele terminar.", ajustes.projeto);
+            } else {
+                eprintln!("[pesado] {} já roda um comando pesado ({dono}); esperando ele terminar.", ajustes.projeto);
+            }
             do_projeto.lock()?;
-            Ok(do_projeto)
         }
-        Err(TryLockError::Error(erro)) => Err(erro),
+        Err(TryLockError::Error(erro)) => return Err(erro),
     }
+    // Anotar o dono é informativo: falhar aqui não tira a trava de quem já a tem.
+    let _ = do_projeto.set_len(0).and_then(|()| {
+        use std::io::Write;
+        do_projeto.write_all(dono_da_trava(std::process::id(), argumentos).as_bytes())
+    });
+    Ok(do_projeto)
 }
 
 fn segurar_vaga(ajustes: &Ajustes) -> std::io::Result<File> {
@@ -481,10 +499,10 @@ struct Travas {
 
 // Pega o que falta. Dentro de outro comando pesado vivo, nunca a vaga (a memória já conta na de fora,
 // e esperar outra com 1 vaga só seria esperar a si mesmo); a trava do projeto só se for outro projeto.
-fn segurar(ajustes: &Ajustes, travar: Travar, de_fora: Option<&str>) -> std::io::Result<Travas> {
+fn segurar(ajustes: &Ajustes, travar: Travar, de_fora: Option<&str>, argumentos: &[String]) -> std::io::Result<Travas> {
     fs::create_dir_all(&ajustes.pasta_das_travas)?;
     let precisa_do_projeto = travar == Travar::ProjetoEVaga && de_fora != Some(ajustes.projeto.as_str());
-    let do_projeto = if precisa_do_projeto { Some(segurar_projeto(ajustes)?) } else { None };
+    let do_projeto = if precisa_do_projeto { Some(segurar_projeto(ajustes, argumentos)?) } else { None };
     let vaga = if de_fora.is_none() { Some(segurar_vaga(ajustes)?) } else { None };
     Ok(Travas {
         _do_projeto: do_projeto,
@@ -497,7 +515,7 @@ fn segurar(ajustes: &Ajustes, travar: Travar, de_fora: Option<&str>) -> std::io:
 pub fn executar(argumentos: &[String], pasta: &Path, saida: Saida, travar: Travar) -> i32 {
     let ajustes = ajustes_da_maquina(pasta);
     let de_fora = projeto_de_fora();
-    let travas = segurar(&ajustes, travar, de_fora.as_deref());
+    let travas = segurar(&ajustes, travar, de_fora.as_deref(), argumentos);
     if let Err(erro) = &travas {
         eprintln!(
             "[pesado] não consegui a trava em {} ({erro}); seguindo sem ela.",

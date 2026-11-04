@@ -54,8 +54,9 @@ confere a issue (regra 3) e os mapas iniciais (regra 1). Uma sessão aceita uma 
 
 `sh .claude/watchdogs/rodar pesado "<comando>"` para build, dev server, suíte de testes, e2e e build
 nativo; typecheck, lint, `git` e `gh` rodam direto. Um comando pesado por vez em cada projeto, e
-projetos diferentes juntos até as vagas da máquina (ADR 0025). Quem espera vê o motivo
-(`[pesado] ... esperando`) e segue sozinho. Saída 137 com `[pesado] o comando foi morto (SIGKILL)` é o
+projetos diferentes juntos até as vagas da máquina (ADR 0025). Quem espera vê o motivo e,
+na trava do projeto, quem a segura (`[pesado] <projeto> já roda um comando pesado (pid <n>: <comando>)`)
+e segue sozinho. Saída 137 com `[pesado] o comando foi morto (SIGKILL)` é o
 limite de memória da vaga: reduza os workers do comando, nunca suba o teto. O `rodar ci` e o
 `pre-push` usam o mesmo caminho por dentro, com uma vaga e sem a trava do projeto.
 

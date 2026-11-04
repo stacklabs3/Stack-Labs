@@ -11,6 +11,23 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 4.3.0 (2026-11-04)
+
+Ajustes vindos da retro de uma rodada de orquestração do Organiza-ai.
+
+- **Contrato da fatia:** cada teste traz o **dano**, a mudança no código que o deixa vermelho, e
+  cada regra de validação que o diff cria ou muda traz a tabela de **aceitos e recusados**. O
+  revisor aplica o dano de cabeça: teste que continuaria verde não cobre o risco que cita.
+- **Revisor e conferente** revisam o diff inteiro a cada ciclo, também o trecho que um ciclo
+  anterior aprovou: achado deixado para depois gasta um ciclo de correção.
+- **`/orquestrar-issues`:**
+  - no passo 2, avisa quais issues vão pedir autorização do humano (navegador, conector,
+    computador) e pede já;
+  - o estado `integrada` passa a se chamar `na-integracao` (o antigo continua valendo ao retomar), e
+    cada issue aprovada é relatada em três linhas: branch, integração e `main`;
+  - branch já aberta noutra worktree se usa lá (`git -C`), em vez de outra branch ou checkout forçado.
+- **Trava do projeto:** quem espera vê o pid e o comando de quem a segura.
+
 ## 4.2.0 (2026-11-04)
 
 - **Dois projetos rodam juntos na mesma máquina.** A trava global `~/.stacklabs/pesado.lock` deu

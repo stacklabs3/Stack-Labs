@@ -15,8 +15,11 @@ desenho: [ADR 0005](../adr/0005-orquestracao-de-issues-com-subagentes.md) e
    Abra uma janela nova e cole. Num projeto que está
    [adotando o método](adotar-em-projeto-existente.md), a orquestração começa na etapa de planejamento.
 2. O orquestrador te pergunta **quais issues** entram, **o nome da branch de integração**
-   (`integracao/<nome>`) e a base dela. Responda.
-3. Ele trabalha sozinho. Se a janela dele encher, ele mesmo gera o kickoff para continuar numa janela
+   (`integracao/<nome>`) e a base dela, e avisa quais issues vão pedir sua autorização (navegador,
+   conector, computador). Responda e autorize já: pedida no meio da rodada, ela para a issue até você
+   voltar.
+3. Ele trabalha sozinho. A cada issue aprovada, ele diz onde o código está em três linhas: a branch
+   da issue, a de integração e a `main` (que só recebe tudo no fim, pela PR). Se a janela dele encher, ele mesmo gera o kickoff para continuar numa janela
    nova, do ponto onde parou.
 4. No fim da fila, ele mostra a tabela da rodada e pergunta como levar à `main`: **uma PR só** com
    tudo, ou **uma PR por issue**, na ordem. O merge é sempre seu.
@@ -30,7 +33,8 @@ desenho: [ADR 0005](../adr/0005-orquestracao-de-issues-com-subagentes.md) e
 
 Filas que não mexem nos mesmos arquivos podem rodar juntas: abra **um orquestrador por fila**, cada um
 na sua janela, com a sua branch de integração. Os comandos pesados se revezam sozinhos: um por vez em
-cada projeto, e projetos diferentes rodam juntos até as vagas de memória da máquina (2 em 8 GB). Para
+cada projeto (quem espera mostra o pid e o comando de quem está rodando), e projetos diferentes
+rodam juntos até as vagas de memória da máquina (2 em 8 GB). Para
 mudar as vagas, defina `STACKLABS_VAGAS` na máquina.
 
 ## Preparar a máquina para dois projetos
