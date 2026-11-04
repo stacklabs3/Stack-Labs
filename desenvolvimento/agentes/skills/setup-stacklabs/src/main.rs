@@ -1,13 +1,18 @@
 //! Instala ou atualiza o método StackLabs num projeto: modelo-de-projeto, skills da casa e as skills
 //! publicadas do Matt Pocock (sempre da versão mais nova do repositório dele).
 //!
-//! Uso: sh rodar [--destino <pasta>] [--versao <x.y.z>] [--simular] [--sem-labels] [--atualizar-watchdogs] [--adocao]
-//!   --destino              raiz do projeto (padrão: a raiz do git da pasta atual)
-//!   --versao               instala a versão marcada (tag v<x.y.z> do Stack-Labs) em vez da main
-//!   --simular              mostra o que faria, sem escrever nada
-//!   --sem-labels           não cria as labels do método no GitHub
-//!   --atualizar-watchdogs  sobrescreve watchdogs que já existem. SÓ HUMANO (o guarda-bash barra o agente)
-//!   --adocao               projeto que já existia: cria .claude/metodo.json na etapa de observação (/adotar-metodo-stack-labs)
+//! Uso: sh rodar [--destino <pasta>] [--versao <x.y.z>] [--simular] [--sem-labels] [--adocao] [--permitir-regressao]
+//!      sh rodar --conferir-skill | --verificar | --concluir-pr <número>
+//!   --destino             raiz do projeto (padrão: a raiz do git da pasta atual)
+//!   --versao              instala a versão marcada (tag v<x.y.z> do Stack-Labs) em vez da main
+//!   --simular             mostra o que faria, sem escrever nada
+//!   --sem-labels          não cria as labels do método no GitHub
+//!   --adocao              projeto que já existia: cria .claude/metodo.json na etapa de observação (/adotar-metodo-stack-labs)
+//!   --permitir-regressao  aceita --versao anterior à instalada. SÓ HUMANO (o guarda-bash barra o agente)
+//!   --conferir-skill      atualiza as skills de máquina a partir da fonte oficial
+//!   --verificar           confere a instalação do projeto; sai com 1 se algo reprovar
+//!   --concluir-pr         prova que a PR só traz o que a fonte oficial manda, rotula, espera o CI e faz o merge;
+//!                         sai com 3 se a PR ficar para um humano
 //!
 //! Fontes (opcional, para usar um clone local em vez de baixar):
 //!   STACKLABS_ORIGEM=<clone do Stack-Labs>   MATT_ORIGEM=<clone de mattpocock/skills>
@@ -19,15 +24,18 @@ use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Arquivos que o projeto pode ter com conteúdo próprio: nunca sobrescreve, deixa o novo ao lado.
-const ARQUIVOS_PARA_MESCLAR: [&str; 4] = [
-    "AGENTS.md",
-    "CLAUDE.md",
-    ".gitignore",
-    ".claude/settings.json",
-];
+const ARQUIVOS_PARA_MESCLAR: [&str; 2] = ["AGENTS.md", "CLAUDE.md"];
+/// Modelos antigos que o instalador agora mescla sozinho: a sobra `.stacklabs-novo` deles sai.
+const ARQUIVOS_MESCLADOS_PELO_INSTALADOR: [&str; 2] = [".gitignore", ".claude/settings.json"];
+/// Skills que moram na máquina e se atualizam pelo --conferir-skill.
+const SKILLS_DE_MAQUINA: [&str; 3] = ["setup-stacklabs", "adotar-metodo-stack-labs", "auditar-metodo"];
+const URL_DO_STACKLABS: &str = "https://github.com/stacklabs1/Stack-Labs";
+const LABEL_ALTERA_WATCHDOGS: &str = "altera-watchdogs";
+/// Saída do --concluir-pr quando a PR não pode entrar sem uma pessoa.
+const CODIGO_FICA_PARA_HUMANO: i32 = 3;
 /// Seção do `AGENTS.md` que pertence ao projeto: o instalador a carrega de uma versão para a outra.
 const SECAO_DO_PROJETO: &str = "## Regras deste projeto";
-/// Infraestrutura dos watchdogs: só se sobrescreve com --atualizar-watchdogs.
+/// Infraestrutura dos watchdogs: entra inteira ou não entra (a fonte precisa compilar antes).
 const CAMINHOS_DOS_WATCHDOGS: [&str; 5] = [
     ".claude/watchdogs",
     ".claude/githooks",
@@ -37,6 +45,8 @@ const CAMINHOS_DOS_WATCHDOGS: [&str; 5] = [
 ];
 /// Watchdogs antigos (em node), que a versão em Rust de `.claude/watchdogs/` substitui.
 const WATCHDOGS_ANTIGOS: [&str; 2] = [".claude/hooks", ".claude/validador"];
+/// Pastas que ficam idênticas às do modelo: arquivo que saiu da fonte sai do projeto.
+const PASTAS_ESPELHADAS: [&str; 2] = [".claude/watchdogs", ".claude/githooks"];
 /// Pasta de artefatos de compilação do cargo: nunca é copiada, em nenhum nível.
 /// Skills do Matt que o método libera para o agente rodar a cadeia sozinho: sai a linha `disable-model-invocation`.
 const SKILLS_SEM_TRAVA: [&str; 5] = ["wayfinder", "handoff", "to-spec", "to-tickets", "implement"];
@@ -73,8 +83,12 @@ struct Opcoes {
     versao: Option<String>,
     simular: bool,
     sem_labels: bool,
-    atualizar_watchdogs: bool,
     adocao: bool,
+    permitir_regressao: bool,
+    conferir_skill: bool,
+    verificar: bool,
+    concluir_pr: Option<u64>,
+    pasta_das_skills: Option<String>,
 }
 
 // ---------- utilitários ----------
@@ -95,8 +109,19 @@ fn ler_argumentos(argumentos_da_linha: &[String]) -> Resultado<Opcoes> {
             }
             "--simular" => opcoes.simular = true,
             "--sem-labels" => opcoes.sem_labels = true,
-            "--atualizar-watchdogs" => opcoes.atualizar_watchdogs = true,
             "--adocao" => opcoes.adocao = true,
+            "--permitir-regressao" => opcoes.permitir_regressao = true,
+            "--conferir-skill" => opcoes.conferir_skill = true,
+            "--verificar" => opcoes.verificar = true,
+            "--concluir-pr" => {
+                opcoes.concluir_pr = Some(
+                    argumentos
+                        .next()
+                        .and_then(|numero| numero.trim_start_matches('#').parse().ok())
+                        .ok_or("--concluir-pr precisa do número da PR")?,
+                )
+            }
+            "--pasta-das-skills" => opcoes.pasta_das_skills = argumentos.next().cloned(),
             _ => return Err(format!("opção desconhecida: {argumento}")),
         }
     }
@@ -272,6 +297,59 @@ fn mesclar_agents(modelo_novo: &str, antigo: &str) -> Option<String> {
     Some(format!("{}\n\n{}", base.trim_end(), secao_do_projeto))
 }
 
+fn comando_eh_do_metodo(comando: &str) -> bool {
+    [".claude/watchdogs/", ".claude/hooks/", ".claude/validador/"]
+        .iter()
+        .any(|caminho| comando.contains(caminho))
+}
+
+/// O `settings.json` do projeto com os hooks do método trocados pelos do modelo. O que é do projeto
+/// (`permissions`, `env`, hook próprio) fica, e o hook próprio entra depois dos do modelo.
+fn mesclar_settings(modelo: &Value, projeto: &Value) -> Value {
+    let mut mesclado = projeto.clone();
+    let mut hooks_mesclados = modelo["hooks"].as_object().cloned().unwrap_or_default();
+    if let Some(hooks_do_projeto) = projeto["hooks"].as_object() {
+        for (evento, grupos_do_projeto) in hooks_do_projeto {
+            for grupo in grupos_do_projeto.as_array().into_iter().flatten() {
+                let hooks_proprios: Vec<Value> = grupo["hooks"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter(|hook| !comando_eh_do_metodo(hook["command"].as_str().unwrap_or("")))
+                    .cloned()
+                    .collect();
+                if hooks_proprios.is_empty() {
+                    continue;
+                }
+                let mut grupo_proprio = grupo.clone();
+                grupo_proprio["hooks"] = Value::Array(hooks_proprios);
+                let grupos_do_evento = hooks_mesclados.entry(evento.clone()).or_insert_with(|| json!([]));
+                if let Some(lista_de_grupos) = grupos_do_evento.as_array_mut() {
+                    lista_de_grupos.push(grupo_proprio);
+                }
+            }
+        }
+    }
+    if !hooks_mesclados.is_empty() || projeto.get("hooks").is_some() {
+        mesclado["hooks"] = Value::Object(hooks_mesclados);
+    }
+    mesclado
+}
+
+/// As linhas do modelo que faltam no `.gitignore` do projeto.
+fn linhas_que_faltam(modelo: &str, projeto: &str) -> Vec<String> {
+    modelo
+        .lines()
+        .filter(|linha| !linha.trim().is_empty() && !projeto.lines().any(|existente| existente == *linha))
+        .map(str::to_string)
+        .collect()
+}
+
+/// `[4, 1, 0]` de `4.1.0`, para comparar versões número a número.
+fn numeros_da_versao(versao: &str) -> Vec<u64> {
+    versao.split('.').filter_map(|numero| numero.parse().ok()).collect()
+}
+
 fn criar_pasta(pasta: &Path) -> Resultado<()> {
     fs::create_dir_all(pasta).map_err(|erro| format!("{}: {erro}", texto(pasta)))
 }
@@ -308,6 +386,14 @@ fn copiar_arquivo_com_datas(origem: &Path, destino: &Path) -> Resultado<()> {
         .open(destino)
         .and_then(|arquivo| arquivo.set_times(datas))
         .map_err(|erro| format!("{}: {erro}", texto(destino)))
+}
+
+fn marcar_como_recem_alterado(caminho: &Path) -> Resultado<()> {
+    fs::OpenOptions::new()
+        .write(true)
+        .open(caminho)
+        .and_then(|arquivo| arquivo.set_modified(SystemTime::now()))
+        .map_err(|erro| format!("{}: {erro}", texto(caminho)))
 }
 
 /// Copia a pasta inteira, menos as pastas `target/`.
@@ -463,17 +549,16 @@ fn conferir_cargo() -> Resultado<()> {
     }
 }
 
-/// Compila os watchdogs do projeto uma vez, para a primeira sessão não esperar a compilação.
-fn compilar_watchdogs(destino: &Path) -> String {
-    let lancador = destino.join(".claude").join("watchdogs").join("rodar");
+/// Roda `sh <lancador> --version`, que compila os watchdogs se preciso. O erro já vem pronto para o relatório.
+fn compilar_com_lancador(lancador: &Path, pasta_de_trabalho: &Path) -> Result<(), String> {
     let execucao = Command::new("sh")
-        .arg(&lancador)
+        .arg(lancador)
         .arg("--version")
-        .current_dir(destino)
+        .current_dir(pasta_de_trabalho)
         .stdin(Stdio::null())
         .output();
     match execucao {
-        Ok(saida) if saida.status.success() => "COMPILADO .claude/watchdogs".to_string(),
+        Ok(saida) if saida.status.success() => Ok(()),
         Ok(saida) => {
             let erro = String::from_utf8_lossy(&saida.stderr);
             // A primeira linha de erro do cargo diz a causa; sem ela, a última linha da saída de erro.
@@ -484,52 +569,78 @@ fn compilar_watchdogs(destino: &Path) -> String {
                 .unwrap_or("")
                 .trim();
             let codigo = saida.status.code().map(|codigo| codigo.to_string()).unwrap_or_else(|| "sinal".to_string());
-            format!("FALHA     .claude/watchdogs não compilou (sh .claude/watchdogs/rodar --version saiu com {codigo}): {motivo}")
+            Err(format!("FALHA     .claude/watchdogs não compilou (sh .claude/watchdogs/rodar --version saiu com {codigo}): {motivo}"))
         }
-        Err(erro) => format!("FALHA     .claude/watchdogs não compilou (sh .claude/watchdogs/rodar --version): {erro}"),
+        Err(erro) => Err(format!("FALHA     .claude/watchdogs não compilou (sh .claude/watchdogs/rodar --version): {erro}")),
+    }
+}
+
+/// Compila os watchdogs do projeto uma vez, para a primeira sessão não esperar a compilação.
+fn compilar_watchdogs(destino: &Path) -> String {
+    let lancador = destino.join(".claude").join("watchdogs").join("rodar");
+    match compilar_com_lancador(&lancador, destino) {
+        Ok(()) => "COMPILADO .claude/watchdogs".to_string(),
+        Err(linha_de_falha) => linha_de_falha,
+    }
+}
+
+/// Compila a fonte numa pasta à parte antes de tocar no projeto: um watchdog que não compila, instalado,
+/// trava o agente em todo hook, e ele não pode consertar a pasta protegida.
+fn fonte_dos_watchdogs_compila(pasta_do_modelo: &Path, pasta_temporaria: &Path) -> Result<(), String> {
+    let pasta_de_preparo = pasta_temporaria.join("preparo-dos-watchdogs");
+    copiar_pasta(&pasta_do_modelo.join(".claude").join("watchdogs"), &pasta_de_preparo).map_err(|erro| format!("FALHA     {erro}"))?;
+    compilar_com_lancador(&pasta_de_preparo.join("rodar"), &pasta_de_preparo)
+        .map_err(|linha_de_falha| format!("{linha_de_falha}; os watchdogs do projeto ficaram como estavam"))
+}
+
+fn buscar_origem(pasta_temporaria: &Path, clone_local: Option<String>, url_do_repositorio: &str, nome_da_pasta: &str, tag: Option<String>) -> Resultado<PathBuf> {
+    if let Some(clone) = clone_local.filter(|clone| !clone.is_empty()) {
+        return Ok(resolver(&clone));
+    }
+    let pasta_do_clone = pasta_temporaria.join(nome_da_pasta);
+    let pasta_em_texto = texto(&pasta_do_clone);
+    let mut argumentos = vec!["clone", "-q", "--depth", "1"];
+    if let Some(tag) = &tag {
+        argumentos.extend(["--branch", tag.as_str()]);
+    }
+    argumentos.extend([url_do_repositorio, pasta_em_texto.as_str()]);
+    git(&argumentos)?;
+    Ok(pasta_do_clone)
+}
+
+fn destino_das_opcoes(opcoes: &Opcoes) -> Resultado<PathBuf> {
+    match &opcoes.destino {
+        Some(pasta) => Ok(resolver(pasta)),
+        None => Ok(resolver(&git(&["rev-parse", "--show-toplevel"]).map_err(|_| {
+            "a pasta atual não é um repositório git: rode dentro do projeto ou passe --destino <pasta>".to_string()
+        })?)),
     }
 }
 
 // ---------- instalação ----------
 
-fn instalar(opcoes: &Opcoes) -> Resultado<()> {
+/// O relatório de uma instalação e as linhas de cabeçalho que dizem de onde ela veio.
+struct ResultadoDaInstalacao {
+    cabecalho: String,
+    relatorio: Vec<String>,
+}
+
+fn instalar(opcoes: &Opcoes) -> Resultado<ResultadoDaInstalacao> {
     conferir_cargo()?;
-    let destino = match &opcoes.destino {
-        Some(pasta) => resolver(pasta),
-        None => resolver(&git(&["rev-parse", "--show-toplevel"]).map_err(|_| {
-            "a pasta atual não é um repositório git: rode dentro do projeto ou passe --destino <pasta>"
-                .to_string()
-        })?),
-    };
+    let destino = destino_das_opcoes(opcoes)?;
     let pasta_temporaria = PastaTemporaria::criar()?;
     let mut relatorio: Vec<String> = Vec::new();
     let simular = opcoes.simular;
 
-    let buscar_origem = |clone_local: Option<String>,
-                         url_do_repositorio: &str,
-                         nome_da_pasta: &str,
-                         tag: Option<String>|
-     -> Resultado<PathBuf> {
-        if let Some(clone) = clone_local.filter(|clone| !clone.is_empty()) {
-            return Ok(resolver(&clone));
-        }
-        let pasta_do_clone = pasta_temporaria.0.join(nome_da_pasta);
-        let pasta_em_texto = texto(&pasta_do_clone);
-        let mut argumentos = vec!["clone", "-q", "--depth", "1"];
-        if let Some(tag) = &tag {
-            argumentos.extend(["--branch", tag.as_str()]);
-        }
-        argumentos.extend([url_do_repositorio, pasta_em_texto.as_str()]);
-        git(&argumentos)?;
-        Ok(pasta_do_clone)
-    };
     let origem_stacklabs = buscar_origem(
+        &pasta_temporaria.0,
         std::env::var("STACKLABS_ORIGEM").ok(),
-        "https://github.com/stacklabs1/Stack-Labs",
+        URL_DO_STACKLABS,
         "stacklabs",
         opcoes.versao.as_ref().map(|versao| format!("v{versao}")),
     )?;
     let origem_matt = buscar_origem(
+        &pasta_temporaria.0,
         std::env::var("MATT_ORIGEM").ok(),
         "https://github.com/mattpocock/skills",
         "matt",
@@ -545,6 +656,18 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
             return Err(format!(
                 "pediu a versão {pedida}, mas a fonte do Stack-Labs está na {encontrada}"
             ));
+        }
+    }
+    if let (Some(pedida), false) = (&opcoes.versao, opcoes.permitir_regressao) {
+        let arquivo_de_origem = destino.join(".claude").join("skills").join("ORIGEM.json");
+        if arquivo_de_origem.exists() {
+            let origem_instalada = ler_json(&arquivo_de_origem)?;
+            let instalada = origem_instalada["stacklabs"]["versao"].as_str().unwrap_or("");
+            if numeros_da_versao(pedida) < numeros_da_versao(instalada) {
+                return Err(format!(
+                    "a versão {pedida} é anterior à {instalada}, já instalada: voltar afrouxa os watchdogs. Só um humano volta, com --permitir-regressao"
+                ));
+            }
         }
     }
     let pasta_do_modelo = origem_stacklabs
@@ -575,7 +698,17 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
         || WATCHDOGS_ANTIGOS
             .iter()
             .any(|caminho| destino.join(caminho).exists());
-    let aplica_watchdogs = !ja_tem_watchdogs || opcoes.atualizar_watchdogs;
+    let watchdogs_mudam = !pastas_iguais(
+        &pasta_do_modelo.join(".claude").join("watchdogs"),
+        &destino.join(".claude").join("watchdogs"),
+    )?;
+    let mut aplica_watchdogs = true;
+    if ja_tem_watchdogs && watchdogs_mudam && !simular {
+        if let Err(linha_de_falha) = fonte_dos_watchdogs_compila(&pasta_do_modelo, &pasta_temporaria.0) {
+            relatorio.push(linha_de_falha);
+            aplica_watchdogs = false;
+        }
+    }
 
     // Os watchdogs antigos em node saem quando os novos entram.
     if aplica_watchdogs {
@@ -593,7 +726,9 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
     }
 
     let mut copiou_watchdogs = false;
-    for caminho_relativo in listar_arquivos(&pasta_do_modelo)? {
+    let arquivos_do_modelo = listar_arquivos(&pasta_do_modelo)?;
+    for caminho_relativo in &arquivos_do_modelo {
+        let caminho_relativo = caminho_relativo.clone();
         let arquivo_do_modelo = pasta_do_modelo.join(&caminho_relativo);
         let arquivo_do_destino = destino.join(&caminho_relativo);
         if arquivos_iguais(&arquivo_do_modelo, &arquivo_do_destino) {
@@ -601,9 +736,6 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
         }
 
         if caminho_eh_watchdog(&caminho_relativo) && !aplica_watchdogs {
-            relatorio.push(format!(
-                "PULADO    {caminho_relativo} (watchdog ausente ou desatualizado: um humano roda com --atualizar-watchdogs)"
-            ));
             continue;
         }
         if caminho_relativo == "AGENTS.md" && arquivo_do_destino.exists() {
@@ -623,6 +755,37 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
                 }
                 continue;
             }
+        }
+        if caminho_relativo == ".claude/settings.json" && arquivo_do_destino.exists() {
+            let (modelo, projeto) = match (ler_json(&arquivo_do_modelo), ler_json(&arquivo_do_destino)) {
+                (Ok(modelo), Ok(projeto)) => (modelo, projeto),
+                (Err(erro), _) | (_, Err(erro)) => {
+                    relatorio.push(format!("FALHA     .claude/settings.json não é um JSON válido ({erro}): um humano conserta e roda de novo"));
+                    continue;
+                }
+            };
+            let mesclado = mesclar_settings(&modelo, &projeto);
+            if mesclado != projeto {
+                if !simular {
+                    escrever_json(&arquivo_do_destino, &mesclado)?;
+                }
+                relatorio.push("MESCLADO  .claude/settings.json (hooks do modelo; o resto do projeto fica)".to_string());
+            }
+            continue;
+        }
+        if caminho_relativo == ".gitignore" && arquivo_do_destino.exists() {
+            let conteudo_do_projeto = fs::read_to_string(&arquivo_do_destino).map_err(|erro| format!(".gitignore: {erro}"))?;
+            let conteudo_do_modelo = fs::read_to_string(&arquivo_do_modelo).map_err(|erro| format!(".gitignore: {erro}"))?;
+            let novas_linhas = linhas_que_faltam(&conteudo_do_modelo, &conteudo_do_projeto);
+            if !novas_linhas.is_empty() {
+                if !simular {
+                    let separador = if conteudo_do_projeto.is_empty() || conteudo_do_projeto.ends_with('\n') { "" } else { "\n" };
+                    let acrescentado = format!("{conteudo_do_projeto}{separador}{}\n", novas_linhas.join("\n"));
+                    fs::write(&arquivo_do_destino, acrescentado).map_err(|erro| format!(".gitignore: {erro}"))?;
+                }
+                relatorio.push(format!("MESCLADO  .gitignore ({} linhas novas)", novas_linhas.len()));
+            }
+            continue;
         }
         if ARQUIVOS_PARA_MESCLAR.contains(&caminho_relativo.as_str()) && arquivo_do_destino.exists()
         {
@@ -645,8 +808,40 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
         }
         if caminho_relativo.starts_with(".claude/watchdogs/") {
             copiou_watchdogs = true;
+            if !simular {
+                // Fonte com data antiga passaria por "já compilado" no `rodar` e no cargo, e o binário velho ficaria valendo.
+                marcar_como_recem_alterado(&arquivo_do_destino)?;
+            }
         }
         relatorio.push(format!("COPIADO   {caminho_relativo}"));
+    }
+    if aplica_watchdogs {
+        for pasta_espelhada in PASTAS_ESPELHADAS {
+            if !destino.join(pasta_espelhada).exists() {
+                continue;
+            }
+            for arquivo_na_pasta in listar_arquivos(&destino.join(pasta_espelhada))? {
+                let caminho_relativo = format!("{pasta_espelhada}/{arquivo_na_pasta}");
+                if !arquivos_do_modelo.contains(&caminho_relativo) {
+                    if !simular {
+                        remover_pasta(&destino.join(&caminho_relativo))?;
+                    }
+                    if pasta_espelhada == ".claude/watchdogs" {
+                        copiou_watchdogs = true;
+                    }
+                    relatorio.push(format!("REMOVIDO  {caminho_relativo} (saiu da fonte)"));
+                }
+            }
+        }
+    }
+    for arquivo_mesclado in ARQUIVOS_MESCLADOS_PELO_INSTALADOR {
+        let sobra = destino.join(format!("{arquivo_mesclado}.stacklabs-novo"));
+        if sobra.exists() {
+            if !simular {
+                remover_pasta(&sobra)?;
+            }
+            relatorio.push(format!("REMOVIDO  {arquivo_mesclado}.stacklabs-novo (agora o instalador mescla)"));
+        }
     }
     if copiou_watchdogs && !simular {
         relatorio.push(compilar_watchdogs(&destino));
@@ -789,24 +984,18 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
     let destino_em_texto = texto(&destino);
     if git_ou_nulo(&["-C", &destino_em_texto, "config", "--get", "core.hooksPath"]).as_deref()
         != Some(".claude/githooks")
+        && aplica_watchdogs
     {
-        if aplica_watchdogs {
-            if !simular {
-                git(&[
-                    "-C",
-                    &destino_em_texto,
-                    "config",
-                    "core.hooksPath",
-                    ".claude/githooks",
-                ])?;
-            }
-            relatorio.push("PRE-PUSH  ativado (core.hooksPath)".to_string());
-        } else {
-            relatorio.push(
-                "PRE-PUSH  inativo: um humano roda git config core.hooksPath .claude/githooks"
-                    .to_string(),
-            );
+        if !simular {
+            git(&[
+                "-C",
+                &destino_em_texto,
+                "config",
+                "core.hooksPath",
+                ".claude/githooks",
+            ])?;
         }
+        relatorio.push("PRE-PUSH  ativado (core.hooksPath)".to_string());
     }
 
     if !opcoes.sem_labels {
@@ -849,25 +1038,315 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
         Some(Value::String(versao)) => versao.clone(),
         Some(versao) => versao.to_string(),
     };
-    println!("\nMétodo StackLabs em {destino_em_texto}");
     let versao_do_metodo_em_texto = versao_do_metodo
         .as_ref()
         .map_or("sem versão".to_string(), |versao| format!("v{versao}"));
-    println!("Fontes: Stack-Labs {versao_do_metodo_em_texto} ({commit_stacklabs}) · mattpocock/skills {commit_matt} (v{versao_em_texto})");
-    if simular {
+    let cabecalho = format!(
+        "\nMétodo StackLabs em {destino_em_texto}\nFontes: Stack-Labs {versao_do_metodo_em_texto} ({commit_stacklabs}) · mattpocock/skills {commit_matt} (v{versao_em_texto})"
+    );
+    Ok(ResultadoDaInstalacao { cabecalho, relatorio })
+}
+
+fn imprimir_instalacao(opcoes: &Opcoes) -> Resultado<()> {
+    let instalacao = instalar(opcoes)?;
+    println!("{}", instalacao.cabecalho);
+    if opcoes.simular {
         println!("(simulação: nada foi escrito)");
     }
-    if relatorio.is_empty() {
+    if instalacao.relatorio.is_empty() {
         println!("Nada a fazer: o projeto já está em dia.");
     } else {
-        println!("{}", relatorio.join("\n"));
+        println!("{}", instalacao.relatorio.join("\n"));
     }
+    Ok(())
+}
+
+// ---------- skill atualizada ----------
+
+/// Troca o conteúdo da pasta pelo da fonte, mantendo `target/` para não recompilar do zero.
+fn substituir_mantendo_compilacao(pasta_de_origem: &Path, pasta_do_destino: &Path) -> Resultado<()> {
+    if pasta_do_destino.exists() {
+        let entradas = fs::read_dir(pasta_do_destino).map_err(|erro| format!("{}: {erro}", texto(pasta_do_destino)))?;
+        for entrada in entradas {
+            let entrada = entrada.map_err(|erro| erro.to_string())?;
+            if entrada.file_name() != PASTA_DE_COMPILACAO {
+                remover_pasta(&entrada.path())?;
+            }
+        }
+    }
+    copiar_pasta(pasta_de_origem, pasta_do_destino)
+}
+
+fn conferir_skills(opcoes: &Opcoes) -> Resultado<()> {
+    // O binário mora em <skills>/setup-stacklabs/target/release/instalar.
+    let pasta_das_skills = match &opcoes.pasta_das_skills {
+        Some(pasta) => resolver(pasta),
+        None => std::env::current_exe()
+            .map_err(|erro| erro.to_string())?
+            .ancestors()
+            .nth(4)
+            .map(Path::to_path_buf)
+            .ok_or("não achei a pasta das skills a partir do binário")?,
+    };
+    let raiz_do_git = git_ou_nulo(&["-C", &texto(&pasta_das_skills), "rev-parse", "--show-toplevel"]);
+    if raiz_do_git.is_some_and(|raiz| Path::new(&raiz).join("desenvolvimento").join("VERSAO").exists()) {
+        println!("SKILL É A FONTE: rodando de um clone do Stack-Labs, nada a atualizar.");
+        return Ok(());
+    }
+    let pasta_temporaria = PastaTemporaria::criar()?;
+    let origem = match buscar_origem(&pasta_temporaria.0, std::env::var("STACKLABS_ORIGEM").ok(), URL_DO_STACKLABS, "stacklabs", None) {
+        Ok(origem) => origem,
+        Err(erro) => {
+            let primeira_linha = erro.lines().last().unwrap_or("").trim();
+            println!("SKILL NÃO CONFERIDA: sem acesso à fonte oficial ({primeira_linha}).");
+            return Ok(());
+        }
+    };
+    let versao = fs::read_to_string(origem.join("desenvolvimento").join("VERSAO")).unwrap_or_default();
+    let versao = versao.trim();
+    let pasta_das_skills_da_fonte = origem.join("desenvolvimento").join("agentes").join("skills");
+    let mut atualizadas = Vec::new();
+    for nome_da_skill in SKILLS_DE_MAQUINA {
+        let pasta_de_origem = pasta_das_skills_da_fonte.join(nome_da_skill);
+        let pasta_do_destino = pasta_das_skills.join(nome_da_skill);
+        if !pastas_iguais(&pasta_de_origem, &pasta_do_destino)? {
+            substituir_mantendo_compilacao(&pasta_de_origem, &pasta_do_destino)?;
+            atualizadas.push(nome_da_skill);
+        }
+    }
+    if atualizadas.is_empty() {
+        println!("SKILL EM DIA (método v{versao}).");
+    }
+    for nome_da_skill in atualizadas {
+        println!("SKILL ATUALIZADA {nome_da_skill} (método v{versao}).");
+    }
+    Ok(())
+}
+
+// ---------- verificação ----------
+
+fn comando_passa(programa: &str, argumentos: &[&str], pasta: &Path) -> bool {
+    Command::new(programa)
+        .args(argumentos)
+        .current_dir(pasta)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false)
+}
+
+fn problemas_das_skills(destino: &Path) -> Vec<String> {
+    let pasta_das_skills = destino.join(".claude").join("skills");
+    let mut problemas = Vec::new();
+    match subpastas(&pasta_das_skills) {
+        Ok(pastas) => {
+            for pasta_da_skill in pastas {
+                let nome_da_skill = nome_da_pasta(&pasta_da_skill);
+                if nome_da_skill != "prototipo-html" && !pasta_da_skill.join("SKILL.md").exists() {
+                    problemas.push(format!(".claude/skills/{nome_da_skill} não tem SKILL.md"));
+                }
+            }
+        }
+        Err(erro) => problemas.push(erro),
+    }
+    match ler_json(&pasta_das_skills.join("ORIGEM.json")) {
+        Ok(origem) => {
+            for campo in ["skillsDoMatt", "skillsDaCasa"] {
+                if origem[campo].as_array().is_none_or(|skills| skills.is_empty()) {
+                    problemas.push(format!("ORIGEM.json não lista {campo}"));
+                }
+            }
+        }
+        Err(erro) => problemas.push(erro),
+    }
+    problemas
+}
+
+/// As reprovações da instalação do projeto; vazio quer dizer que passou.
+fn verificar_instalacao(destino: &Path) -> Vec<String> {
+    let mut reprovacoes = Vec::new();
+    let lancador = ".claude/watchdogs/rodar";
+    if !comando_passa("sh", &[lancador, "--version"], destino) {
+        reprovacoes.push(format!("sh {lancador} --version falhou: os watchdogs não compilam"));
+    }
+    if !comando_passa("sh", &["-n", ".claude/githooks/pre-push"], destino) {
+        reprovacoes.push(".claude/githooks/pre-push ausente ou com erro de sintaxe".to_string());
+    }
+    for caminho_antigo in WATCHDOGS_ANTIGOS {
+        if destino.join(caminho_antigo).exists() {
+            reprovacoes.push(format!("{caminho_antigo} ainda existe"));
+        }
+    }
+    if git_ou_nulo(&["-C", &texto(destino), "config", "--get", "core.hooksPath"]).as_deref() != Some(".claude/githooks") {
+        reprovacoes.push("core.hooksPath não aponta para .claude/githooks".to_string());
+    }
+    reprovacoes.extend(problemas_das_skills(destino));
+    if destino.join("docs").join("regras-de-codigo.json").exists() {
+        let validacao = Command::new("sh").args([lancador, "validar"]).current_dir(destino).stdin(Stdio::null()).output();
+        let aprovado = validacao.is_ok_and(|saida| String::from_utf8_lossy(&saida.stdout).contains("VALIDADOR: APROVADO"));
+        if !aprovado {
+            reprovacoes.push(format!("o validador reprovou: rode sh {lancador} validar"));
+        }
+    }
+    reprovacoes
+}
+
+fn imprimir_verificacao(opcoes: &Opcoes) -> Resultado<()> {
+    let reprovacoes = verificar_instalacao(&destino_das_opcoes(opcoes)?);
+    if reprovacoes.is_empty() {
+        println!("VERIFICADO: a instalação passou em todas as conferências.");
+        return Ok(());
+    }
+    for reprovacao in &reprovacoes {
+        println!("REPROVADO {reprovacao}");
+    }
+    Err(format!("{} conferências reprovaram", reprovacoes.len()))
+}
+
+// ---------- PR de atualização ----------
+
+fn gh(argumentos: &[&str], pasta: &Path) -> Resultado<String> {
+    let saida = Command::new("gh")
+        .args(argumentos)
+        .current_dir(pasta)
+        .stdin(Stdio::null())
+        .output()
+        .map_err(|erro| format!("gh {}: {erro}", argumentos.join(" ")))?;
+    if !saida.status.success() {
+        return Err(format!("gh {}: {}", argumentos.join(" "), String::from_utf8_lossy(&saida.stderr).trim()));
+    }
+    Ok(String::from_utf8_lossy(&saida.stdout).trim().to_string())
+}
+
+/// Espera o CI da PR. O GitHub pode levar uns segundos para registrar os checks depois do push ou da label.
+fn esperar_ci(numero_em_texto: &str, destino: &Path) -> Resultado<()> {
+    const TENTATIVAS: u32 = 6;
+    const ESPERA_ENTRE_TENTATIVAS: std::time::Duration = std::time::Duration::from_secs(20);
+    let espera = if std::env::var("STACKLABS_SEM_ESPERA").is_ok() { std::time::Duration::ZERO } else { ESPERA_ENTRE_TENTATIVAS };
+    let mut ultimo_erro = String::new();
+    for _ in 0..TENTATIVAS {
+        std::thread::sleep(espera);
+        match gh(&["pr", "checks", numero_em_texto, "--watch"], destino) {
+            Ok(_) => return Ok(()),
+            Err(erro) if erro.contains("no checks reported") => ultimo_erro = erro,
+            Err(erro) => return Err(erro),
+        }
+    }
+    Err(ultimo_erro)
+}
+
+/// O que impede a PR de entrar sem uma pessoa. Tudo o que ela muda precisa ser o que a fonte oficial manda.
+fn impedimentos_da_pr(opcoes: &Opcoes, destino: &Path, numero_em_texto: &str) -> Resultado<Vec<String>> {
+    let mut impedimentos = Vec::new();
+    let destino_em_texto = texto(destino);
+    let dados_da_pr: Value = serde_json::from_str(&gh(
+        &["pr", "view", numero_em_texto, "--json", "state,headRefName,headRefOid,baseRefName"],
+        destino,
+    )?)
+    .map_err(|erro| erro.to_string())?;
+    if dados_da_pr["state"] != "OPEN" {
+        impedimentos.push("a PR não está aberta".to_string());
+    }
+    if !dados_da_pr["headRefName"].as_str().unwrap_or("").starts_with("chore/") {
+        impedimentos.push("a branch da PR não é chore/*".to_string());
+    }
+    if dados_da_pr["headRefOid"].as_str() != git_ou_nulo(&["-C", &destino_em_texto, "rev-parse", "HEAD"]).as_deref() {
+        impedimentos.push("o HEAD local não é o commit da PR".to_string());
+    }
+    if git_ou_nulo(&["-C", &destino_em_texto, "status", "--porcelain"]).is_none_or(|estado| !estado.is_empty()) {
+        impedimentos.push("há mudanças fora do commit".to_string());
+    }
+
+    // Instalar de novo por cima não pode achar nada: o commit já é o que a fonte manda.
+    let simulacao = instalar(&Opcoes { destino: opcoes.destino.clone(), simular: true, sem_labels: true, ..Opcoes::default() })?;
+    impedimentos.extend(simulacao.relatorio.iter().map(|linha| format!("difere da fonte oficial: {linha}")));
+    impedimentos.extend(verificar_instalacao(destino));
+
+    let base = format!("origin/{}", dados_da_pr["baseRefName"].as_str().unwrap_or("main"));
+    git(&["-C", &destino_em_texto, "fetch", "-q", "origin"])?;
+    let arquivo_na_base = |caminho: &str| git_ou_nulo(&["-C", &destino_em_texto, "show", &format!("{base}:{caminho}")]);
+    if arquivo_na_base(".claude/skills/ORIGEM.json").is_none() {
+        impedimentos.push("é uma instalação nova, não uma atualização".to_string());
+    }
+
+    let pasta_temporaria = PastaTemporaria::criar()?;
+    let origem = buscar_origem(&pasta_temporaria.0, std::env::var("STACKLABS_ORIGEM").ok(), URL_DO_STACKLABS, "stacklabs", None)?;
+    let pasta_do_modelo = origem.join("desenvolvimento").join("agentes").join("modelo-de-projeto");
+    let arquivos_do_modelo = listar_arquivos(&pasta_do_modelo)?;
+    let arquivos_da_pr = gh(&["pr", "diff", numero_em_texto, "--name-only"], destino)?;
+    for arquivo_da_pr in arquivos_da_pr.lines().filter(|linha| !linha.is_empty()) {
+        let veio_do_instalador = arquivos_do_modelo.iter().any(|arquivo| arquivo == arquivo_da_pr)
+            || arquivo_da_pr.starts_with(".claude/skills/")
+            || WATCHDOGS_ANTIGOS.iter().chain(PASTAS_ESPELHADAS.iter()).any(|pasta| arquivo_da_pr.starts_with(&format!("{pasta}/")));
+        if !veio_do_instalador {
+            impedimentos.push(format!("{arquivo_da_pr} não vem do instalador"));
+        }
+        if arquivo_da_pr == "CLAUDE.md" {
+            impedimentos.push("CLAUDE.md foi mesclado à mão".to_string());
+        }
+    }
+
+    // A parte que é do projeto não muda numa atualização.
+    let agents_atual = fs::read_to_string(destino.join("AGENTS.md")).unwrap_or_default();
+    let secao_de = |conteudo: &str| conteudo.find(SECAO_DO_PROJETO).map(|inicio| conteudo[inicio..].trim().to_string());
+    if arquivo_na_base("AGENTS.md").and_then(|conteudo| secao_de(&conteudo)) != secao_de(&agents_atual) {
+        impedimentos.push(format!("a seção {SECAO_DO_PROJETO} do AGENTS.md mudou ou foi criada à mão"));
+    }
+    let settings_na_base = arquivo_na_base(".claude/settings.json").unwrap_or_else(|| "{}".to_string());
+    let settings_esperado = serde_json::from_str::<Value>(&settings_na_base)
+        .ok()
+        .zip(ler_json(&pasta_do_modelo.join(".claude").join("settings.json")).ok())
+        .map(|(projeto, modelo)| mesclar_settings(&modelo, &projeto));
+    if settings_esperado != ler_json(&destino.join(".claude").join("settings.json")).ok() {
+        impedimentos.push(".claude/settings.json traz mais do que os hooks do modelo".to_string());
+    }
+    Ok(impedimentos)
+}
+
+fn concluir_pr(opcoes: &Opcoes, numero_da_pr: u64) -> Resultado<()> {
+    let destino = destino_das_opcoes(opcoes)?;
+    let numero_em_texto = numero_da_pr.to_string();
+    let ficar_para_humano = |motivos: &[String]| -> ! {
+        println!("PR #{numero_da_pr} FICA PARA UM HUMANO:");
+        for motivo in motivos {
+            println!("- {motivo}");
+        }
+        std::process::exit(CODIGO_FICA_PARA_HUMANO);
+    };
+    let impedimentos = impedimentos_da_pr(opcoes, &destino, &numero_em_texto)?;
+    if !impedimentos.is_empty() {
+        ficar_para_humano(&impedimentos);
+    }
+    let arquivos_da_pr = gh(&["pr", "diff", &numero_em_texto, "--name-only"], &destino)?;
+    if arquivos_da_pr.lines().any(caminho_eh_watchdog) {
+        gh(&["pr", "edit", &numero_em_texto, "--add-label", LABEL_ALTERA_WATCHDOGS], &destino)?;
+        println!("LABEL     {LABEL_ALTERA_WATCHDOGS}: os watchdogs da PR são idênticos aos da fonte oficial");
+    }
+    if let Err(erro) = esperar_ci(&numero_em_texto, &destino) {
+        ficar_para_humano(&[format!("o CI não ficou verde: {erro}")]);
+    }
+    if let Err(erro) = gh(&["pr", "merge", &numero_em_texto, "--merge"], &destino) {
+        ficar_para_humano(&[format!("o merge falhou: {erro}")]);
+    }
+    println!("MESCLADA  PR #{numero_da_pr}");
     Ok(())
 }
 
 fn main() {
     let argumentos: Vec<String> = std::env::args().skip(1).collect();
-    let resultado = ler_argumentos(&argumentos).and_then(|opcoes| instalar(&opcoes));
+    let resultado = ler_argumentos(&argumentos).and_then(|opcoes| {
+        if opcoes.conferir_skill {
+            conferir_skills(&opcoes)
+        } else if opcoes.verificar {
+            imprimir_verificacao(&opcoes)
+        } else if let Some(numero_da_pr) = opcoes.concluir_pr {
+            concluir_pr(&opcoes, numero_da_pr)
+        } else {
+            imprimir_instalacao(&opcoes)
+        }
+    });
     if let Err(mensagem) = resultado {
         eprintln!("{mensagem}");
         std::process::exit(1);

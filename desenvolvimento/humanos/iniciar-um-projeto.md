@@ -10,8 +10,7 @@ Marque na ordem. Cada passo diz quem faz. Projeto que já está rodando começa 
 - [ ] **Você:** crie o repositório no GitHub da StackLabs e clone ao lado do Stack-Labs.
 - [ ] **Você:** instale a skill `/setup-stacklabs` na sua máquina
       ([instruções](../agentes/README.md#instalar-num-projeto-novo)).
-- [ ] **Você:** rode `/setup-stacklabs` no projeto. O agente mostra o que vai fazer, espera o seu sim,
-      instala o método e as skills e abre a PR `chore/setup-metodo`. Faça o merge.
+- [ ] **Você:** rode `/setup-stacklabs` no projeto. O agente instala o método e as skills e abre a PR `chore/setup-metodo`. Faça o merge.
 - [ ] **Você:** abra uma janela nova do Claude Code com o kickoff que o `/setup-stacklabs` gerou e
       confira o aviso do `sessao-inicio`: setup ✅ e pre-push ✅. Os mapas iniciais aparecem como ❌;
       é o esperado. Pre-push ❌: ative-o ([watchdogs.md](watchdogs.md#ativar-o-pre-push)).

@@ -3,7 +3,15 @@ name: adotar-metodo-stack-labs
 description: Adota o método StackLabs, por etapas, num projeto que já está em execução.
 disable-model-invocation: true
 argument-hint: "(opcional) o que priorizar nesta sessão"
+allowed-tools: Bash(sh ${CLAUDE_SKILL_DIR}/../setup-stacklabs/rodar *)
 ---
+
+Conferência da skill com a fonte oficial, feita agora:
+
+!`sh ${CLAUDE_SKILL_DIR}/../setup-stacklabs/rodar --conferir-skill`
+
+Se a linha acima diz `SKILL ATUALIZADA adotar-metodo-stack-labs`, leia `${CLAUDE_SKILL_DIR}/SKILL.md` de
+novo e siga a versão nova.
 
 Conduz a **adoção** de um projeto que **já existe** e não segue o método, ou segue em partes (ADR
 0006 do método). Projeto novo é o `/setup-stacklabs`. A adoção atravessa várias sessões e avança
