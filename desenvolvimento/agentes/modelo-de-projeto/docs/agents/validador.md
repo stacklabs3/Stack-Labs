@@ -52,8 +52,8 @@ dos 22.
 | `lint-cobre` | `config` (arquivo ou lista), `regras` | A configuração do lint tem as regras delegadas a ele |
 | `mensagem-de-commit` | `padrao` (regex), `base` | Título dos commits desde a base (padrão: a branch padrão do `origin`, `origin/HEAD`; sem ela, `origin/main`) |
 | `ast-grep` | `regras` (arquivo ou lista), `alvos`, `binario` | Padrões de código (TypeScript, JavaScript, Python, Go, Java, Rust, Dart e outras) |
-| `comando` | `executar` (aceita `{arquivos}`) | Qualquer ferramenta: saída diferente de 0 é violação |
-| `revisor` | | Nada: marca a regra como julgamento do revisor |
+| `comando` | `executar` (aceita `{arquivos}`), `antes` (opcional, idem) | Qualquer ferramenta: saída diferente de 0 é violação. Com `antes`, ele roda primeiro; se falhar, a violação começa por `linha de base falhou`, com a saída dele, e o `executar` nem roda |
+| `revisor` | | Nada: marca a regra como julgamento do revisor, que dá o veredito dela em todo parecer |
 | `revisao-por-modelo` | `consultivo` (obrigatório, `true`), `modelo` (padrão `claude-haiku-5-5`), `testes`, `declaracao`, `riscos`, `ignorar`, `tetoUsd` (padrão 0.05), `limiteSegundos` (padrão 120) | Nada no validador. O `ci` pergunta ao modelo, teste a teste, se cada teste alterado desde a base exercita o risco que cita, e lista os suspeitos com o motivo. Consultiva, fora da `cobertura` e não substitui o `teste-cobre-risco` (ADR 0015) |
 
 **`revisao-por-modelo` é opcional.** Para ligá-la, acrescente ao `.json` uma regra do P5 que a tabela
@@ -108,6 +108,10 @@ regra reprovar tudo (pesquisas em `desenvolvimento/research/` do Stack-Labs):
 | Mutação no diff em TS/JS (P5) | `npx stryker run --mutate <fontes alterados, separados por vírgula> --incremental`, com `@stryker-mutator/core@10.0.0` e `thresholds.break` no `stryker.config.json` (não há flag para o limite) |
 | Mutação no diff em Rust (P5) | `git diff origin/main...HEAD > alteracoes.diff && cargo mutants --in-diff alteracoes.diff`, com `cargo-mutants@27.1.0`; sai com 2 se um mutante sobrevive |
 | Mutação no diff em Java (P5) | `mvn test-compile org.pitest:pitest-maven:1.30.0:mutationCoverage -DtargetClasses=<classes do diff> -DmutationThreshold=80 -DwithHistory` (o modo por git do PIT é pago; monte `targetClasses` do diff) |
+
+Na mutação, ponha a suíte dos mesmos arquivos em `antes` (`npx vitest run --changed origin/main`,
+`cargo test`, `mvn -B test`): teste vermelho aparece como `linha de base falhou`, com o nome dele, e
+não como score baixo.
 
 As regras de cada linguagem e o porquê estão no arquivo dela, em
 [principios-de-codigo.md](principios-de-codigo.md).

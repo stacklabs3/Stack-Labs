@@ -13,14 +13,15 @@ eles **ponteiros** (número da issue, nomes das branches, o plano); o conteúdo 
 
 ## Esforço por ciclo
 
-Todos os papéis rodam no modelo `opus`. O esforço vai na chamada de cada subagente:
+O modelo está no arquivo de cada papel (ADR 0026): `sonnet` no `conferente`, `opus` nos outros. O
+esforço vai na chamada de cada subagente:
 
-| Papel | Ciclo 1 | Ciclos de correção |
-|---|---|---|
-| `implementador` | `medium` | `medium` |
-| `revisor` | `low` | `medium` |
-| `conferente` | `low` | `medium` |
-| `diagnosticador` | `medium`, já no primeiro diagnóstico | `medium` |
+| Papel | Modelo | Ciclo 1 | Ciclos de correção |
+|---|---|---|---|
+| `implementador` | `opus` | `medium` | `medium` |
+| `revisor` | `opus` | `low` | `medium` |
+| `conferente` | `sonnet` | `low` | `medium` |
+| `diagnosticador` | `opus` | `medium`, já no primeiro diagnóstico | `medium` |
 
 ## Estado da rodada
 

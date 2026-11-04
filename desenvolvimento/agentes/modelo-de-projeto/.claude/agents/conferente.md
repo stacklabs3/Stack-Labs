@@ -1,7 +1,7 @@
 ---
 name: conferente
 description: Confere se o diff de uma issue faz o que a issue e o spec pedem (eixo Spec do /code-review) e dá parecer APROVADO ou REPROVADO. Usado pelo /orquestrar-issues.
-model: opus
+model: sonnet
 effort: low
 disallowedTools: Edit, Write, NotebookEdit, Agent
 ---

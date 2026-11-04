@@ -45,6 +45,12 @@ caminho).
 - `sh .claude/watchdogs/rodar validar` (o repositório inteiro) termina em `VALIDADOR: APROVADO` e roda no CI do projeto.
   Projeto anterior à ADR 0010 sem `docs/regras-de-codigo.json`: ⚠️ e o ticket que o escreve.
   Quem audita precisa das ferramentas do projeto na máquina: saída 127 é ferramenta ausente, não violação.
+- **Regras sem máquina:** liste cada regra de `docs/regras-de-codigo.json` com `"tipo": "revisor"` e
+  cada regra de `docs/regras-de-codigo.md` sem entrada no `.json`. Nenhuma checagem as cobra: só o
+  revisor. Para cada uma, abra a amostra de 3 PRs mergeadas que tocam o escopo dela e confira se foi
+  cumprida e se o parecer do revisor tem a linha dela. Quebrada ou sem linha: ❌, com a recomendação
+  ao humano entre **automatizar** (o tipo do catálogo que a pegaria, em `docs/agents/validador.md`),
+  **manter no revisor** ou **tirar a regra**.
 
 **Pesquisa antes de recomendar**
 - Todo ticket fechado de grilling, tarefa e pesquisa tem `## Fontes` com link no comentário de resolução.

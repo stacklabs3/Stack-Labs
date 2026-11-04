@@ -14,6 +14,6 @@ valendo, com uma issue ativa por implementador em vez de por sessão.
 desenvolvedor. Cada issue parte dela e volta por merge depois de aprovada, e no fim da fila o
 desenvolvedor decide entre uma PR única e PRs por issue. Merge na `main` nunca é do agente. Cada
 issue tem até dois ciclos de correção, e duas issues devolvidas seguidas param a rodada. Todos os
-papéis usam `opus`, em esforço `low` no primeiro ciclo e `medium` nas correções; o diagnosticador,
+papéis usam `opus` (a [ADR 0026](0026-conferente-em-sonnet.md) passou o `conferente` para `sonnet`), em esforço `low` no primeiro ciclo e `medium` nas correções; o diagnosticador,
 que abre cada correção, já começa em `medium`. O orquestrador passa a rodada adiante no aviso de 450k da smart zone; as outras sessões
 seguem com o limite duro de 550k. Os papéis ficam em `.claude/agents/`, protegidos como os watchdogs.

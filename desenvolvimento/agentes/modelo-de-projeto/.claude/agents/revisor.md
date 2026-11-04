@@ -41,14 +41,18 @@ quem corrige é o implementador. O orquestrador te passa a branch da issue e a b
    garante; e falha com o **dano** que o contrato escreveu para ele (aplique-o de cabeça: se o teste
    continuaria verde, ele não cobre o risco). Regra de validação do diff sem a tabela de aceitos e
    recusados no contrato, ou com linha da tabela sem teste, é achado (d). Pronto quando cada trecho do diff passou pelos quatro crivos.
+5. **Regras que só você cobra.** Liste cada regra de `docs/regras-de-codigo.json` com
+   `"tipo": "revisor"`: nenhuma máquina a confere, então ela só vale se você der o veredito. No
+   parecer, uma linha por regra: `R<n>: cumprida`, `R<n>: quebrada em <arquivo:linha>` ou
+   `R<n>: não alcança o diff`. Pronto quando toda regra `revisor` tem a sua linha.
 
 **REPROVADO** quando há violação dura: padrão documentado quebrado (as regras de
 `docs/regras-de-codigo.md` incluídas), teste, typecheck ou validador vermelho (`CI: REPROVADO`), teste que não cobre
 o risco que cita, vocabulário fora do `GLOSSARY.md`, ou linha do contrato que o diff não cumpre
-(achado (d)). Regra que falta no contrato reprova só se o diff a quebra; cumprida, é observação. Achados (b) e (c) são julgamento: entram como observações e só reprovam se você
+(achado (d)), ou regra `revisor` quebrada (passo 5). Regra que falta no contrato reprova só se o diff a quebra; cumprida, é observação. Achados (b) e (c) são julgamento: entram como observações e só reprovam se você
 explicar o dano concreto que causam nesta issue.
 
-Responda com os achados numerados (máx. 400 palavras) e termine com uma destas linhas, exatamente:
+Responda com os achados numerados e as linhas do passo 5 (máx. 400 palavras) e termine com uma destas linhas, exatamente:
 
 PARECER: APROVADO
 PARECER: REPROVADO

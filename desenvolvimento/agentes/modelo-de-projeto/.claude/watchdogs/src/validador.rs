@@ -445,6 +445,20 @@ fn rodar_no_shell(linha_de_comando: &str, raiz: &Path) -> std::io::Result<std::p
     }
 }
 
+// None quando o comando passa; senão a mensagem com o código de saída e o fim da saída.
+fn falha_do_comando(linha_de_comando: &str, raiz: &Path, como_configurado: &str) -> Option<String> {
+    match rodar_no_shell(linha_de_comando, raiz) {
+        Err(_) => Some(format!("ferramenta não encontrada: {como_configurado}")),
+        Ok(saida) if saida.status.success() => None,
+        Ok(saida) if saida.status.code() == Some(127) => Some(format!("ferramenta não encontrada: {como_configurado}")),
+        Ok(saida) => {
+            let tudo = format!("{}{}", String::from_utf8_lossy(&saida.stdout), String::from_utf8_lossy(&saida.stderr));
+            let codigo = saida.status.code().map(|codigo| codigo.to_string()).unwrap_or_else(|| "null".into());
+            Some(format!("\"{como_configurado}\" saiu com {codigo}:\n{}", ultimas_linhas(&tudo, 15)))
+        }
+    }
+}
+
 fn ultimas_linhas(texto: &str, quantidade: usize) -> String {
     let linhas: Vec<&str> = texto.trim().split('\n').collect();
     linhas[linhas.len().saturating_sub(quantidade)..].join("\n")
@@ -1226,33 +1240,40 @@ pub fn rodar_checagem(tipo: &str, parametros: &Map<String, Value>, contexto: &mu
 
         // Qualquer ferramenta (lint, dependency-cruiser, jscpd, typecheck): saída diferente de 0 é
         // violação. "{arquivos}" no comando vira a lista dos arquivos de código que a checagem lê.
+        // "antes" roda primeiro (a suíte antes da mutação): se falhar, a violação diz que a linha de base
+        // falhou, com a saída dela, e o "executar" não roda; assim teste vermelho não passa por score baixo.
         "comando" => {
             exigir(parametros, &["executar"], tipo)?;
             let executar = parametro_texto(parametros, "executar").unwrap_or("");
-            let mut linha_de_comando = executar.to_string();
-            if linha_de_comando.contains("{arquivos}") {
-                let arquivos = arquivos_de_codigo(contexto, parametros);
-                if arquivos.is_empty() {
-                    return Ok(Vec::new());
+            let mut arquivos_do_comando: Option<String> = None;
+            let mut montar = |comando: &str| -> Option<String> {
+                if !comando.contains("{arquivos}") {
+                    return Some(comando.to_string());
                 }
-                linha_de_comando = linha_de_comando.replace(
-                    "{arquivos}",
-                    &arquivos.iter().map(|caminho| escapar_para_shell(caminho)).collect::<Vec<_>>().join(" "),
-                );
-            }
-            match rodar_no_shell(&linha_de_comando, &raiz) {
-                Err(_) => vec![Violacao::so_mensagem(format!("ferramenta não encontrada: {executar}"))],
-                Ok(saida) if saida.status.success() => Vec::new(),
-                Ok(saida) if saida.status.code() == Some(127) => vec![Violacao::so_mensagem(format!("ferramenta não encontrada: {executar}"))],
-                Ok(saida) => {
-                    let tudo = format!("{}{}", String::from_utf8_lossy(&saida.stdout), String::from_utf8_lossy(&saida.stderr));
-                    let codigo = saida.status.code().map(|codigo| codigo.to_string()).unwrap_or_else(|| "null".into());
-                    vec![Violacao::so_mensagem(format!(
-                        "\"{executar}\" saiu com {codigo}:\n{}",
-                        ultimas_linhas(&tudo, 15)
-                    ))]
+                let lista = arquivos_do_comando.get_or_insert_with(|| {
+                    arquivos_de_codigo(contexto, parametros).iter().map(|caminho| escapar_para_shell(caminho)).collect::<Vec<_>>().join(" ")
+                });
+                (!lista.is_empty()).then(|| comando.replace("{arquivos}", lista))
+            };
+            let antes = parametro_texto(parametros, "antes").filter(|texto| !texto.is_empty());
+            let linha_de_antes = match antes {
+                Some(comando) => match montar(comando) {
+                    Some(linha) => Some(linha),
+                    None => return Ok(Vec::new()),
+                },
+                None => None,
+            };
+            let Some(linha_de_comando) = montar(executar) else {
+                return Ok(Vec::new());
+            };
+            if let (Some(antes), Some(linha)) = (antes, linha_de_antes) {
+                if let Some(falha) = falha_do_comando(&linha, &raiz, antes) {
+                    return Ok(vec![Violacao::so_mensagem(format!(
+                        "linha de base falhou: a suíte ficou vermelha antes de \"{executar}\" rodar; corrija o teste, não o score.\n{falha}"
+                    ))]);
                 }
             }
+            falha_do_comando(&linha_de_comando, &raiz, executar).map(Violacao::so_mensagem).into_iter().collect()
         }
 
         // Padrões de código (TypeScript, JavaScript, Python, Go, Java, Rust e outras), com regras que o
