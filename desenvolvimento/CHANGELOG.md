@@ -34,6 +34,10 @@ Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrad
   copia em vez de compilar.
 - A aprovação guardada do CI leva o hash do binário dos watchdogs: depois de atualizá-los, o push
   roda o CI de novo.
+- **Instalador:** ao atualizar os watchdogs, apaga a compilação anterior do projeto
+  (`.claude/watchdogs/target/`). Antes, com um clone local (`STACKLABS_ORIGEM`), a cópia guardava
+  datas antigas, o cargo religava o artefato velho e o relatório dizia `COMPILADO` com o binário da
+  versão anterior rodando. Copie a skill de novo para `~/.claude/skills` antes de atualizar.
 - Guia humano: *Preparar a máquina para dois projetos* (swap, limite e workers) em
   `humanos/orquestracao.md`. Glossário: **comando pesado** e **vaga**. `docs/agents/watchdogs.md`:
   seção *Rodar um comando pesado* e os limites dela.

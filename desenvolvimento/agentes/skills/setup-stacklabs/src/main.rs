@@ -463,6 +463,20 @@ fn conferir_cargo() -> Resultado<()> {
     }
 }
 
+/// Apaga a compilação anterior dos watchdogs do projeto. A cópia guarda as datas da origem (num clone
+/// local, mais antigas que a compilação), e tanto o `rodar` quanto o cargo decidem recompilar pela
+/// data: o cargo religaria o artefato velho, e o relatório diria COMPILADO com o binário velho rodando
+/// (e o `rodar` o guardaria sob o hash do fonte novo). Sem `target/`, o cargo compila do zero ou o
+/// `rodar` reaproveita o binário guardado pelo hash do fonte.
+fn apagar_compilacao_antiga(destino: &Path) {
+    let _ = fs::remove_dir_all(
+        destino
+            .join(".claude")
+            .join("watchdogs")
+            .join(PASTA_DE_COMPILACAO),
+    );
+}
+
 /// Compila os watchdogs do projeto uma vez, para a primeira sessão não esperar a compilação.
 fn compilar_watchdogs(destino: &Path) -> String {
     let lancador = destino.join(".claude").join("watchdogs").join("rodar");
@@ -649,6 +663,7 @@ fn instalar(opcoes: &Opcoes) -> Resultado<()> {
         relatorio.push(format!("COPIADO   {caminho_relativo}"));
     }
     if copiou_watchdogs && !simular {
+        apagar_compilacao_antiga(&destino);
         relatorio.push(compilar_watchdogs(&destino));
     }
     if !simular {

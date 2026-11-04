@@ -546,3 +546,41 @@ fn falha_das_labels_vai_para_o_relatorio_e_a_instalacao_termina() {
     ));
     assert!(cenario.projeto.join(".claude/skills/ORIGEM.json").exists());
 }
+
+// Risco: a atualização copia o fonte novo com as datas da origem (num clone local, mais antigas que o
+// binário do projeto), o `rodar` não recompila e o binário velho segue rodando com o relatório dizendo
+// COMPILADO.
+#[test]
+fn atualizar_os_watchdogs_apaga_a_compilacao_antiga_antes_de_compilar() {
+    let cenario = Cenario::novo();
+    cenario.relatorio(&[]);
+    let binario_do_projeto = cenario
+        .projeto
+        .join(".claude/watchdogs/target/release/watchdogs");
+    escrever(&binario_do_projeto, "binário da versão anterior");
+
+    // Sem mudança nos watchdogs, o binário fica.
+    cenario.relatorio(&["--atualizar-watchdogs"]);
+    assert!(
+        binario_do_projeto.exists(),
+        "nada mudou: não há o que recompilar"
+    );
+
+    escrever(
+        &cenario.modelo().join(".claude/watchdogs/src/main.rs"),
+        "fn main() { println!(\"nova\"); }\n",
+    );
+    let relatorio = cenario.relatorio(&["--atualizar-watchdogs"]);
+    assert!(
+        relatorio.contains("COPIADO   .claude/watchdogs/src/main.rs\n"),
+        "{relatorio}"
+    );
+    assert!(
+        relatorio.contains("COMPILADO .claude/watchdogs\n"),
+        "{relatorio}"
+    );
+    assert!(
+        !binario_do_projeto.exists(),
+        "o binário velho saiu; o rodar compila o novo"
+    );
+}
