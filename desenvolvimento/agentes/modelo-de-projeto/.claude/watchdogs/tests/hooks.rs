@@ -67,6 +67,9 @@ impl Projeto {
             .current_dir(&self.raiz)
             .env("PATH", caminho)
             .env("CLAUDE_PROJECT_DIR", &self.raiz)
+            // As travas dos comandos pesados ficam na pasta do teste, nunca no ~/.stacklabs da máquina.
+            .env("STACKLABS_TRAVAS", self.raiz.join(".travas-do-teste"))
+            .env_remove("STACKLABS_PESADO")
             .env_remove("STACKLABS_WATCHDOGS")
             .env_remove("STACKLABS_PERMITIR_PUSH_MAIN");
         for (nome, valor) in variaveis {

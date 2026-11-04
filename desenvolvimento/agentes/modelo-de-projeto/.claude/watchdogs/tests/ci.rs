@@ -91,6 +91,9 @@ impl Projeto {
             .current_dir(&self.raiz)
             .env("PATH", caminho)
             .env_remove("STACKLABS_WATCHDOGS")
+            // As travas dos comandos pesados ficam na pasta do teste, nunca no ~/.stacklabs da máquina.
+            .env("STACKLABS_TRAVAS", self.raiz.join(".travas-do-teste"))
+            .env_remove("STACKLABS_PESADO")
             .env_remove("STACKLABS_PERMITIR_PUSH_MAIN")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
