@@ -21,6 +21,10 @@ serde_json = { version = "1", features = ["preserve_order"] }
 sha2 = "0.10"
 toml = { version = "=1.1.8", default-features = false, features = ["std", "parse", "serde"] }
 
+[target.'cfg(unix)'.dependencies]
+# Grupo de processos e repasse de sinais dos comandos pesados (src/trava.rs).
+libc = "0.2"
+
 [profile.release]
 opt-level = 3
 lto = "thin"

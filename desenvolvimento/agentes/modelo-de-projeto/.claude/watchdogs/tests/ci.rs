@@ -92,8 +92,10 @@ impl Projeto {
             .env("PATH", caminho)
             .env_remove("STACKLABS_WATCHDOGS")
             // As travas dos comandos pesados ficam na pasta do teste, nunca no ~/.stacklabs da máquina.
-            .env("STACKLABS_TRAVAS", self.raiz.join(".travas-do-teste"))
+            .env("STACKLABS_TRAVAS", self.raiz.with_extension("travas"))
             .env_remove("STACKLABS_PESADO")
+            // Sem a sonda do systemd: o limite de memória tem testes próprios (tests/trava.rs).
+            .env("STACKLABS_LIMITE_DE_MEMORIA", "desligado")
             .env_remove("STACKLABS_PERMITIR_PUSH_MAIN")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -296,4 +298,70 @@ fn revisao_mostra_o_nome_de_goldentest_e_patroltest() {
     assert_eq!(codigo, 0, "{saida}");
     assert!(saida.contains("test/tela_test.dart:2 RK1 tela de frete (RK1)"), "{saida}");
     assert!(saida.contains("test/tela_test.dart:10 RK2 cupom vencido (RK2)"), "{saida}");
+}
+
+fn pre_push(projeto: &Projeto) -> (i32, String) {
+    projeto.rodar(&["pre-push", "origin"], "refs/heads/issue/7-cupom abc refs/heads/issue/7-cupom def\n", true)
+}
+
+// Risco: o push espera minutos pelo mesmo CI que já passou para exatamente o mesmo conteúdo.
+#[test]
+fn pre_push_nao_repete_o_ci_de_um_conteudo_ja_aprovado() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    let (codigo, saida) = projeto.rodar(&["ci", "--base", "origin/main"], "", true);
+    assert_eq!(codigo, 0, "{saida}");
+    let chamadas_do_ci = projeto.chamadas_ao_claude();
+
+    let (codigo, saida) = pre_push(&projeto);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(
+        saida.contains("já passou no CI local contra origin/main") && !saida.contains("[ci] base"),
+        "{saida}"
+    );
+    assert_eq!(projeto.chamadas_ao_claude(), chamadas_do_ci, "{saida}");
+
+    // Arquivo não commitado também entra no ci: com a árvore suja, o ci roda de novo.
+    projeto.escrever("tests/novo.rs", "#[test]\nfn rk1_frete_zero() {\n    assert_eq!(frete(200), 0);\n}\n");
+    let (_, saida) = pre_push(&projeto);
+    assert!(saida.contains("[ci] base origin/main"), "árvore suja não usa o cache: {saida}");
+
+    // Commit novo é conteúdo novo: roda de novo e grava a aprovação dele.
+    projeto.git(&["add", "-A"]);
+    projeto.git(&["commit", "-q", "-m", "novo teste"]);
+    let (codigo, saida) = pre_push(&projeto);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("[ci] base origin/main"), "commit novo roda o ci: {saida}");
+    assert!(pre_push(&projeto).1.contains("já passou no CI local"), "a aprovação do pre-push também vale");
+
+    // Base que andou muda o que o ci confere: roda de novo.
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "HEAD~1"]);
+    assert!(pre_push(&projeto).1.contains("[ci] base origin/main"), "base nova roda o ci");
+}
+
+// Risco: o push espera a revisão por modelo, que é consultiva e a parte mais lenta do ci.
+#[test]
+fn pre_push_roda_o_ci_sem_a_revisao_por_modelo() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    let (codigo, saida) = pre_push(&projeto);
+    assert_eq!(codigo, 0, "{saida}");
+    assert!(saida.contains("pulada aqui") && saida.contains("CI: APROVADO"), "{saida}");
+    assert_eq!(projeto.chamadas_ao_claude(), 0, "{saida}");
+}
+
+// Risco: um CI reprovado fica gravado como aprovado e o push seguinte passa sem conferir.
+#[test]
+fn ci_reprovado_nao_vira_aprovacao_guardada() {
+    let tabela_com_r4 = tabela_de_cobertura().replace("| E1 | adotado | R3 |", "| E1 | adotado | R3, R4 |");
+    let projeto = Projeto::novo(regras_com_lint_vermelho());
+    projeto.escrever("docs/regras-de-codigo.md", &tabela_com_r4);
+    projeto.git(&["add", "-A"]);
+    projeto.git(&["commit", "-q", "-m", "r4"]);
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    for _ in 0..2 {
+        let (codigo, saida) = pre_push(&projeto);
+        assert_eq!(codigo, 1, "{saida}");
+        assert!(saida.contains("CI: REPROVADO") && !saida.contains("já passou"), "{saida}");
+    }
 }

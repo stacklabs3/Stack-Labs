@@ -1,6 +1,7 @@
 // Git pre-push: a main só recebe merge de PR no GitHub, nunca push direto. Depois, o CI local
 // (ci.rs) contra <remoto>/main: lint, typecheck ou validador vermelho barram o push; na etapa de
-// observação, só avisam. O CI passa pela trava dos comandos pesados (trava.rs).
+// observação, só avisam. O CI roda como comando pesado (trava.rs), sem a revisão por modelo, e não
+// roda quando o mesmo conteúdo já foi aprovado contra a mesma base.
 // Ativação (uma vez por clone): git config core.hooksPath .claude/githooks
 // Escape humano para emergências: STACKLABS_PERMITIR_PUSH_MAIN=1 git push ...
 
@@ -29,7 +30,15 @@ pub fn rodar(argumentos: &[String]) -> i32 {
     }
     let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let base = format!("{nome_do_remoto}/main");
-    if crate::trava::com_trava(&raiz, || ci::executar(&raiz, &base, &mut std::io::stderr())) == 0 {
+    if let Some(chave) = ci::chave_do_conteudo(&raiz, &base).filter(|chave| ci::ja_aprovado(&raiz, chave)) {
+        eprintln!(
+            "[pre-push] este conteúdo já passou no CI local contra {base} (chave {}); push sem rodar de novo.",
+            &chave[..12]
+        );
+        return 0;
+    }
+    let argumentos_do_ci = ["--base".to_string(), base.clone(), "--sem-revisao".to_string()];
+    if ci::rodar_como_pesado(&raiz, &argumentos_do_ci, crate::trava::Saida::NoErro) == 0 {
         return 0;
     }
     if etapa_de_adocao(&raiz) == "observacao" {
