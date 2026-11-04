@@ -1,14 +1,40 @@
 #!/bin/sh
 # Compila os watchdogs na primeira vez e sempre que o fonte muda, e roda o subcomando pedido.
+# O binário de cada versão do fonte fica guardado em ~/.stacklabs/watchdogs/<hash>/: o próximo projeto
+# com o mesmo fonte copia em vez de compilar (um build limpo leva ~25 s e ~0,9 GB). A compilação usa
+# 2 jobs, para não disputar a memória com os comandos pesados (CARGO_BUILD_JOBS troca).
 pasta="$(cd "$(dirname "$0")" && pwd)"
 binario="$pasta/target/release/watchdogs"
 [ -x "$binario.exe" ] && binario="$binario.exe"
 if [ ! -x "$binario" ] || [ -n "$(find "$pasta/src" "$pasta/Cargo.toml" "$pasta/Cargo.lock" -newer "$binario" 2>/dev/null | head -n 1)" ]; then
-  if ! command -v cargo >/dev/null 2>&1; then
-    echo "[watchdogs] cargo não encontrado: instale o Rust (https://rustup.rs) e rode de novo." >&2
-    exit 2
+  versao=""
+  case "$(uname -s)" in
+    MINGW* | MSYS* | CYGWIN*) ;;
+    *)
+      versao="$(cd "$pasta" && {
+        find src -type f | LC_ALL=C sort | while IFS= read -r arquivo; do printf '%s\n' "$arquivo"; cat "$arquivo"; done
+        cat Cargo.toml Cargo.lock
+      } | { sha256sum 2>/dev/null || shasum -a 256 2>/dev/null; } | cut -c1-16)"
+      ;;
+  esac
+  guardado="${STACKLABS_CASA:-$HOME/.stacklabs}/watchdogs/$versao/watchdogs"
+  if [ -n "$versao" ] && [ -x "$guardado" ]; then
+    mkdir -p "$pasta/target/release" && cp "$guardado" "$pasta/target/release/watchdogs.$$" && mv -f "$pasta/target/release/watchdogs.$$" "$pasta/target/release/watchdogs" || {
+      echo "[watchdogs] não consegui copiar $guardado." >&2
+      exit 2
+    }
+    binario="$pasta/target/release/watchdogs"
+  else
+    if ! command -v cargo >/dev/null 2>&1; then
+      echo "[watchdogs] cargo não encontrado: instale o Rust (https://rustup.rs) e rode de novo." >&2
+      exit 2
+    fi
+    CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}" cargo build --release --locked --quiet --manifest-path "$pasta/Cargo.toml" >&2 || { echo "[watchdogs] a compilação falhou." >&2; exit 2; }
+    [ -x "$binario.exe" ] && binario="$binario.exe"
+    # Guardar é otimização: se falhar, o projeto segue com o próprio binário.
+    if [ -n "$versao" ] && mkdir -p "$(dirname "$guardado")" 2>/dev/null; then
+      cp "$binario" "$guardado.$$" 2>/dev/null && mv -f "$guardado.$$" "$guardado" 2>/dev/null || rm -f "$guardado.$$"
+    fi
   fi
-  cargo build --release --locked --quiet --manifest-path "$pasta/Cargo.toml" >&2 || { echo "[watchdogs] a compilação falhou." >&2; exit 2; }
-  [ -x "$binario.exe" ] && binario="$binario.exe"
 fi
 exec "$binario" "$@"

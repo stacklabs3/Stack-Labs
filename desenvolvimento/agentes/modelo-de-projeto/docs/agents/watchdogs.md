@@ -27,7 +27,7 @@ instala o Rust (https://rustup.rs). Testes: `cargo test --release --manifest-pat
 | `vigia-parada` | Stop | O turno só termina com o ponteiro do ticket resolvido em *Decisions so far* | **Bloqueia o fim do turno** |
 | `orquestrar-issues` | Sessão do orquestrador, com os papéis de `.claude/agents/` | Ciclo e limites da [orquestração](orquestracao.md); nunca faz merge na base | **Devolve a issue / para a rodada** |
 | `validador` | CI local (`ci`), CI do projeto, implementador e revisor | As regras de `docs/regras-de-codigo.json` e a cobertura dos 22 princípios e das práticas da linguagem e o registro de riscos contra os testes ([validador.md](validador.md)); o motor é o mesmo binário dos watchdogs, protegido como eles | **Reprova a fatia / o CI** |
-| `pre-push` | `git push` | Recusa push direto para `main`/`master`; depois roda o `ci` contra `<remoto>/main`: lint e typecheck (regras `comando`), o validador e a revisão consultiva por modelo dos testes alterados ([validador.md](validador.md#onde-roda)). Na etapa de observação, o `ci` vermelho só avisa | **Bloqueia o push** |
+| `pre-push` | `git push` | Recusa push direto para `main`/`master`; depois roda o `ci` contra `<remoto>/main`: lint e typecheck (regras `comando`) e o validador, sem a revisão por modelo, e só se o mesmo conteúdo ainda não passou ([validador.md](validador.md#onde-roda)). Na etapa de observação, o `ci` vermelho só avisa | **Bloqueia o push** |
 | `vigia-do-metodo` | GitHub Actions, em toda PR | Branch do método; PR de `issue/<n>-*` com `Closes #<n>` e issue `ready-for-*`; `research/*` nunca entra na `main`; mudança nos watchdogs só com a label `altera-watchdogs` | **Reprova a PR** |
 
 Num projeto em adoção, a etapa de `.claude/metodo.json` decide quais destes bloqueios valem

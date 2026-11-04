@@ -9,6 +9,7 @@ sh .claude/watchdogs/rodar validar --base origin/main  # só o que mudou desde a
 sh .claude/watchdogs/rodar validar                     # o repositório inteiro (auditoria)
 sh .claude/watchdogs/rodar validar --so-cobertura      # só a tabela dos 22 contra o .json (fecha o mapa)
 sh .claude/watchdogs/rodar ci --base origin/main       # o CI local: comandos, validador e revisão por modelo
+sh .claude/watchdogs/rodar ci --sem-revisao           # o mesmo, sem a revisão por modelo (o que o pre-push roda)
 ```
 
 Sai com 0 aprovado, 1 violação, 2 configuração inválida; a última linha é sempre
@@ -141,6 +142,11 @@ ou as violações listadas viraram tickets.
   (base padrão `origin/main`; no `pre-push`, `<remoto>/main`). Roda, em ordem, as regras `comando`
   (lint e typecheck), o resto do validador com `--base` e a `revisao-por-modelo`; reprova só pelas
   duas primeiras. Sem `docs/regras-de-codigo.json`, passa. Termina em `CI: APROVADO` ou `CI: REPROVADO`.
+  Roda como comando pesado (trava do projeto, vaga e limite de memória; ADR 0024). Aprovado com a
+  árvore limpa, grava a aprovação em `.claude/state/ci-aprovado/`, pela árvore do HEAD, o commit da
+  base, as regras e a versão dos watchdogs. O `pre-push` pula a revisão por modelo e não roda o CI
+  quando acha a aprovação do mesmo conteúdo: para o push sair na hora, rode o `ci` contra
+  `origin/main` com a árvore limpa antes.
 - **CI do projeto**, configurado na primeira fatia da primeira fase, junto com o lint:
   `sh .claude/watchdogs/rodar validar --base origin/${{ github.base_ref }}`, com o ast-grep instalado
   no passo anterior quando o `.json` usa `ast-grep` (`npm i -g @ast-grep/cli@0.51.0`). O SDK da

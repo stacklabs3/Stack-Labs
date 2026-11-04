@@ -50,7 +50,9 @@ Todo `git push` roda o CI local do projeto antes de subir
 ([ADR 0015](../adr/0015-ci-local-com-revisao-por-modelo.md)): lint e typecheck, o validador e, se o
 projeto ligou a regra `revisao-por-modelo`, uma revisão dos testes alterados por um modelo barato
 (o Haiku). Você vê três blocos, `[ci] 1/3`, `2/3` e `3/3`, e a última linha `CI: APROVADO` ou
-`CI: REPROVADO`. Só os dois primeiros barram o push.
+`CI: REPROVADO`. Só os dois primeiros barram o push. No push, a revisão por modelo fica de fora (rode
+`sh .claude/watchdogs/rodar ci` para vê-la), e um conteúdo que já passou no CI contra a mesma base
+sobe sem rodar de novo ([ADR 0024](../adr/0024-trava-por-projeto-e-vagas-de-memoria.md)).
 
 A revisão por modelo só aconselha. Uma linha como
 `⚠️  tests/cupom.rs:3 rk2_recusa_cupom_vencido (RK2): não exercita o risco que cita.` diz que o teste

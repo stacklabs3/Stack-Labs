@@ -15,13 +15,22 @@ Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrad
 
 - **Dois projetos rodam juntos na mesma máquina.** A trava global `~/.stacklabs/pesado.lock` deu
   lugar ao subcomando `sh .claude/watchdogs/rodar pesado "<comando>"`: um comando pesado por vez em
-  cada projeto, e projetos diferentes juntos até as vagas de memória da máquina (2 em 8 GB, 5 em
-  16 GB). As travas usam `flock` e soltam sozinhas quando o dono morre
+  cada projeto, e projetos diferentes juntos até as vagas da máquina (2 em 8 GB, 5 em 16 GB)
   ([ADR 0024](adr/0024-trava-por-projeto-e-vagas-de-memoria.md)). Rode o `--atualizar-watchdogs`;
   os watchdogs passam a pedir Rust 1.89.
-- O teto do heap do Node cai de 4096 para 2048 MB (`STACKLABS_HEAP_MB` ajusta).
-- O `rodar ci` e o pre-push pegam a trava sozinhos: o `git push` não precisa mais ser embrulhado.
-- A revisão por modelo do CI abre 2 `claude -p` por vez, não 4.
+- No Linux com systemd de usuário, cada comando pesado roda com o limite de memória da vaga
+  (cgroup): quem passa dele morre sozinho, não a máquina nem o shell do agente.
+- Derrubar o `rodar pesado` derruba todos os processos do comando, e o que ele deixar para trás é
+  encerrado com a trava: nenhum dev server órfão.
+- O heap do Node deixa de ser forçado (era 4096 MB); o pico se controla pelos workers de cada
+  projeto. `STACKLABS_HEAP_MB` liga o teto quando a máquina precisa.
+- **Push mais rápido:** o pre-push não roda a revisão por modelo (ela fica no `rodar ci`) e não roda
+  o CI de novo para um conteúdo já aprovado contra a mesma base.
+- A revisão por modelo abre 1 `claude -p` por vez (eram 4, ~220 MB cada).
+- O binário dos watchdogs fica guardado por versão em `~/.stacklabs/watchdogs/`: o segundo projeto
+  copia em vez de compilar.
+- Guia humano: *Preparar a máquina para dois projetos* (swap, limite e workers) em
+  `humanos/orquestracao.md`.
 
 ## 4.0.0 (2026-11-03)
 

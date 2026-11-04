@@ -49,15 +49,19 @@ sh .claude/watchdogs/rodar pesado "npm run build"
 
 - **Um por vez em cada projeto, e projetos diferentes juntos** até as vagas da máquina (2 em 8 GB).
   Quem espera vê o motivo no terminal e segue sozinho quando a trava solta (ADR 0024).
-- O comando roda com `NODE_OPTIONS=--max-old-space-size=2048`; não troque o teto por um maior.
-- `next dev` segura a trava do projeto enquanto estiver de pé: suba pelo `rodar pesado`, use e
-  derrube.
-- O `rodar ci` e o pre-push já pegam a trava sozinhos: o `git push` vai direto.
+- No Linux com systemd, o comando roda com o limite de memória da vaga. Saída 137 com o aviso
+  `[pesado] o comando foi morto (SIGKILL)` é o limite agindo: reduza os workers do comando
+  (`experimental.cpus` do Next, `--maxWorkers=2` do Jest e do Vitest, `--workers=2` do Playwright),
+  nunca suba o teto por conta própria.
+- `next dev` segura a trava do projeto enquanto estiver de pé: suba pelo `rodar pesado` e derrube-o
+  ao terminar. Derrubar o `rodar pesado` derruba todos os processos do comando.
+- O `rodar ci` e o pre-push já passam pela trava: o `git push` vai direto, e não roda o CI de novo
+  para um conteúdo que ele já aprovou.
 - Leve: typecheck, lint, `git` e `gh` rodam fora dela.
 - O prompt de **todo** subagente que roda comandos (implementador, e os outros papéis se rodarem
   testes, e o brief de cada sessão de issue) traz a frase: "todo comando pesado roda por
-  `sh .claude/watchdogs/rodar pesado \"<comando>\"`: um por vez no projeto, e sem swap dois além das
-  vagas matam a máquina".
+  `sh .claude/watchdogs/rodar pesado "<comando>"`: um por vez no projeto; sem swap, comandos além
+  das vagas matam a máquina".
 
 ## Uma sessão por issue
 
