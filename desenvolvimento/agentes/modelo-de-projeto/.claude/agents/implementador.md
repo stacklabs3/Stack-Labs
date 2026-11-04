@@ -38,7 +38,7 @@ diagnosticador. O `AGENTS.md` vale inteiro.
 **Trava da máquina (obrigatória).** Numa máquina sem swap, builds demais ao mesmo tempo matam tudo,
 inclusive o shell do agente (ADR 0016). Todo comando pesado (build, dev server, suíte de testes, e2e,
 build nativo) roda por `sh .claude/watchdogs/rodar pesado "<comando>"`: um por vez no projeto, outros
-projetos juntos até as vagas da máquina (ADR 0024). O `git push` já passa por ela sozinho. Saída 137
+projetos juntos até as vagas da máquina (ADR 0025). O `git push` já passa por ela sozinho. Saída 137
 com o aviso `[pesado] o comando foi morto (SIGKILL)` é o limite de memória da vaga: reduza os workers
 do comando (`--maxWorkers=2`, `experimental.cpus`), nunca suba o teto por conta própria.
 Typecheck, lint, `git` e `gh` não precisam dela.

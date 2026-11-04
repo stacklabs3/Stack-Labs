@@ -1,4 +1,4 @@
-// Comandos pesados (ADR 0024, emenda a 0016): build, dev server, suíte de testes, e2e, build nativo e
+// Comandos pesados (ADR 0025, emenda a 0016): build, dev server, suíte de testes, e2e, build nativo e
 // o CI local passam por aqui, e nada mais na máquina decide quem roda.
 //
 //   1. Trava do projeto, `stacklabs-<projeto>-<hash do caminho>.lock`: um comando pesado por vez em

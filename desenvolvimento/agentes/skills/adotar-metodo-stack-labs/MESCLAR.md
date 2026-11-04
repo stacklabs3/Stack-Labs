@@ -22,20 +22,15 @@ O modelo é a base; o que o projeto tinha de próprio entra no fim, numa seção
 A primeira linha é `@AGENTS.md`. O resto do arquivo antigo fica abaixo dela, sem o que já está no
 `AGENTS.md`.
 
-## `.gitignore`
+## `.gitignore` e `.claude/settings.json`
 
-Acrescente ao arquivo do projeto as linhas do `.stacklabs-novo` que faltam. Nenhuma linha antiga sai.
-
-## `.claude/settings.json`
-
-Junte os dois JSONs: o bloco `hooks` vem do modelo; `permissions`, `env` e o resto vêm do projeto.
-Hook do projeto que não é do método entra ao lado dos do modelo, no mesmo evento. Com watchdogs já
-ativos, esse arquivo é protegido: entregue o JSON mesclado ao humano para ele gravar.
+O instalador mescla os dois sozinho (linha `MESCLADO`): no `.gitignore` entram as linhas que faltam,
+e no `settings.json` os hooks do método são trocados pelos do modelo e o resto do projeto fica.
 
 ## Watchdogs que o projeto já tinha
 
 Hooks próprios (outro nome, outras regras, como os `APPETITO_*` do appetito_v2) são **substituídos**
-pelos do modelo. Antes de o humano rodar o `--atualizar-watchdogs`:
+pelos do modelo. Antes de rodar o instalador:
 
 1. Leia cada hook antigo e liste o que ele garante.
 2. Para cada garantia, diga se um watchdog do modelo já a cobre e qual.

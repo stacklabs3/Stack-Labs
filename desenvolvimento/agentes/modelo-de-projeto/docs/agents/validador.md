@@ -143,7 +143,7 @@ ou as violações listadas viraram tickets.
   remoto do push). Projeto em que outra branch faz o papel da `main` confere `git remote set-head origin -a`. Roda, em ordem, as regras `comando`
   (lint e typecheck), o resto do validador com `--base` e a `revisao-por-modelo`; reprova só pelas
   duas primeiras. Sem `docs/regras-de-codigo.json`, passa. Termina em `CI: APROVADO` ou `CI: REPROVADO`.
-  Roda como comando pesado (trava do projeto, vaga e limite de memória; ADR 0024). Aprovado com a
+  Roda como comando pesado (trava do projeto, vaga e limite de memória; ADR 0025). Aprovado com a
   árvore limpa, grava a aprovação em `.claude/state/ci-aprovado/`, pela árvore do HEAD, o commit da
   base, as regras e o binário dos watchdogs (atualizar os watchdogs roda o CI de novo). O `pre-push` pula a revisão por modelo e não roda o CI
   quando acha a aprovação do mesmo conteúdo e tudo o que sobe é o HEAD: para o push sair na hora,

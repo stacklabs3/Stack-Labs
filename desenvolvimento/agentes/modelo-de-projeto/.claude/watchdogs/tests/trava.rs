@@ -71,6 +71,7 @@ fn terminou_ate(processo: &mut Child, prazo: Duration) -> Option<i32> {
 }
 
 // Processo vivo cuja linha de comando é exatamente `sleep <segundos>`; espera até 2 s ele sumir.
+#[cfg(target_os = "linux")]
 fn sleep_vivo(segundos: u32) -> bool {
     let procurado = format!("sleep\0{segundos}\0");
     let limite = Instant::now() + Duration::from_secs(2);
@@ -91,6 +92,7 @@ fn sleep_vivo(segundos: u32) -> bool {
     }
 }
 
+#[cfg(target_os = "linux")]
 fn enviar_sigterm(processo: &Child) {
     Command::new("kill").args(["-TERM", &processo.id().to_string()]).status().unwrap();
 }
@@ -208,7 +210,7 @@ fn processo_que_o_comando_deixa_para_tras_e_encerrado_com_a_trava() {
     assert!(!sleep_vivo(3103), "nada fica vivo fora da trava");
 }
 
-// SIGKILL não se intercepta: a trava solta (flock), mas o filho fica. Limite conhecido (ADR 0024).
+// SIGKILL não se intercepta: a trava solta (flock), mas o filho fica. Limite conhecido (ADR 0025).
 #[cfg(target_os = "linux")]
 #[test]
 fn sigkill_no_dono_solta_a_trava() {

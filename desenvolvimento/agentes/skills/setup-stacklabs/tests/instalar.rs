@@ -304,41 +304,10 @@ fn arquivo_proprio_do_projeto_vira_stacklabs_novo() {
 }
 
 #[test]
-fn sem_a_flag_watchdog_e_pulado_e_os_antigos_ficam() {
+fn watchdogs_antigos_saem_e_os_novos_compilam_sem_flag_nenhuma() {
     let cenario = Cenario::novo();
     cenario.com_watchdogs_antigos();
     let relatorio = cenario.relatorio(&[]);
-    let sufixo = "(watchdog ausente ou desatualizado: um humano roda com --atualizar-watchdogs)";
-    for arquivo in [
-        ".claude/settings.json",
-        ".claude/githooks/pre-push",
-        ".claude/watchdogs/rodar",
-    ] {
-        assert!(
-            relatorio.contains(&format!("PULADO    {arquivo} {sufixo}\n")),
-            "{arquivo}:\n{relatorio}"
-        );
-    }
-    assert!(relatorio.contains("COPIADO   AGENTS.md\n"));
-    assert!(!relatorio.contains("REMOVIDA") && !relatorio.contains("COMPILADO"));
-    assert!(relatorio
-        .contains("PRE-PUSH  inativo: um humano roda git config core.hooksPath .claude/githooks"));
-    assert!(cenario
-        .projeto
-        .join(".claude/hooks/guarda-bash.mjs")
-        .exists());
-    assert!(cenario
-        .projeto
-        .join(".claude/validador/validar.mjs")
-        .exists());
-    assert!(!cenario.projeto.join(".claude/watchdogs").exists());
-}
-
-#[test]
-fn com_a_flag_os_watchdogs_antigos_saem_e_os_novos_compilam() {
-    let cenario = Cenario::novo();
-    cenario.com_watchdogs_antigos();
-    let relatorio = cenario.relatorio(&["--atualizar-watchdogs"]);
     assert!(relatorio
         .contains("REMOVIDA  .claude/hooks (watchdogs antigos: agora em .claude/watchdogs)\n"));
     assert!(relatorio
@@ -346,9 +315,275 @@ fn com_a_flag_os_watchdogs_antigos_saem_e_os_novos_compilam() {
     assert!(relatorio.contains("COPIADO   .claude/watchdogs/rodar\n"));
     assert!(relatorio.contains("COMPILADO .claude/watchdogs\n"));
     assert!(relatorio.contains("PRE-PUSH  ativado (core.hooksPath)"));
+    assert!(!relatorio.contains("PULADO"));
     assert!(!cenario.projeto.join(".claude/hooks").exists());
     assert!(!cenario.projeto.join(".claude/validador").exists());
     assert!(cenario.projeto.join(".claude/watchdogs/rodar").exists());
+}
+
+#[test]
+fn atualizacao_troca_watchdogs_existentes_e_tira_o_que_saiu_da_fonte() {
+    let cenario = Cenario::novo();
+    cenario.relatorio(&[]);
+    escrever(&cenario.projeto.join(".claude/watchdogs/src/sobra.rs"), "// saiu da fonte\n");
+    escrever(&cenario.modelo().join(".claude/watchdogs/src/main.rs"), "fn main() { /* novo */ }\n");
+    let relatorio = cenario.relatorio(&[]);
+    assert!(relatorio.contains("COPIADO   .claude/watchdogs/src/main.rs\n"), "{relatorio}");
+    assert!(relatorio.contains("REMOVIDO  .claude/watchdogs/src/sobra.rs (saiu da fonte)\n"), "{relatorio}");
+    assert!(!cenario.projeto.join(".claude/watchdogs/src/sobra.rs").exists());
+    assert!(cenario.relatorio(&[]).contains("Nada a fazer"));
+}
+
+#[test]
+fn fonte_que_nao_compila_nao_toca_nos_watchdogs_do_projeto() {
+    let cenario = Cenario::novo();
+    cenario.relatorio(&[]);
+    let lancador_instalado = fs::read_to_string(cenario.projeto.join(".claude/watchdogs/rodar")).unwrap();
+    escrever(&cenario.modelo().join(".claude/watchdogs/rodar"), &lancador_de_mentira(2));
+    escrever(&cenario.modelo().join(".claude/settings.json"), "{ \"hooks\": { \"Stop\": [] } }\n");
+    let relatorio = cenario.relatorio(&[]);
+    assert!(relatorio.contains("os watchdogs do projeto ficaram como estavam\n"), "{relatorio}");
+    assert_eq!(fs::read_to_string(cenario.projeto.join(".claude/watchdogs/rodar")).unwrap(), lancador_instalado);
+    assert_eq!(fs::read_to_string(cenario.projeto.join(".claude/settings.json")).unwrap(), "{}\n");
+}
+
+#[test]
+fn settings_e_gitignore_do_projeto_sao_mesclados_sem_stacklabs_novo() {
+    let cenario = Cenario::novo();
+    escrever(
+        &cenario.modelo().join(".claude/settings.json"),
+        r#"{ "hooks": { "Stop": [{ "hooks": [{ "type": "command", "command": "sh .claude/watchdogs/rodar hook novo" }] }] } }"#,
+    );
+    escrever(
+        &cenario.projeto.join(".claude/settings.json"),
+        r#"{ "permissions": { "allow": ["Bash(ls)"] }, "hooks": { "Stop": [{ "hooks": [{ "type": "command", "command": "sh .claude/watchdogs/rodar hook velho" }, { "type": "command", "command": "sh meu-hook" }] }] } }"#,
+    );
+    escrever(&cenario.projeto.join(".claude/settings.json.stacklabs-novo"), "{}\n");
+    escrever(&cenario.projeto.join(".gitignore"), "node_modules/");
+    let relatorio = cenario.relatorio(&[]);
+    assert!(relatorio.contains("MESCLADO  .claude/settings.json"), "{relatorio}");
+    assert!(relatorio.contains("MESCLADO  .gitignore (1 linhas novas)"), "{relatorio}");
+    let settings: serde_json::Value = serde_json::from_str(&fs::read_to_string(cenario.projeto.join(".claude/settings.json")).unwrap()).unwrap();
+    assert_eq!(settings["permissions"]["allow"][0], "Bash(ls)");
+    let grupos = settings["hooks"]["Stop"].as_array().unwrap();
+    assert_eq!(grupos.len(), 2);
+    assert_eq!(grupos[0]["hooks"][0]["command"], "sh .claude/watchdogs/rodar hook novo");
+    assert_eq!(grupos[1]["hooks"].as_array().unwrap().len(), 1);
+    assert_eq!(grupos[1]["hooks"][0]["command"], "sh meu-hook");
+    assert!(!cenario.projeto.join(".claude/settings.json.stacklabs-novo").exists());
+    assert_eq!(fs::read_to_string(cenario.projeto.join(".gitignore")).unwrap(), "node_modules/\ntarget/\n");
+    assert!(cenario.relatorio(&[]).contains("Nada a fazer"));
+}
+
+#[test]
+fn versao_anterior_a_instalada_sai_com_erro() {
+    let cenario = Cenario::novo();
+    escrever(&cenario.stacklabs.join("desenvolvimento/VERSAO"), "1.0.0\n");
+    escrever(
+        &cenario.projeto.join(".claude/skills/ORIGEM.json"),
+        r#"{ "stacklabs": { "versao": "2.0.0" }, "skillsDoMatt": [], "skillsDaCasa": [] }"#,
+    );
+    let saida = cenario.rodar(&["--versao", "1.0.0"]);
+    assert!(!saida.status.success());
+    assert!(String::from_utf8_lossy(&saida.stderr).contains("--permitir-regressao"));
+    assert!(cenario.rodar(&["--versao", "1.0.0", "--permitir-regressao"]).status.success());
+}
+
+#[test]
+fn conferir_skill_atualiza_a_pasta_e_mantem_a_compilacao() {
+    let cenario = Cenario::novo();
+    escrever(&cenario.stacklabs.join("desenvolvimento/VERSAO"), "9.9.9\n");
+    escrever(&cenario.stacklabs.join("desenvolvimento/agentes/skills/adotar-metodo-stack-labs/SKILL.md"), "adotar\n");
+    let pasta_das_skills = cenario.raiz.join("skills-da-maquina");
+    escrever(&pasta_das_skills.join("setup-stacklabs/SKILL.md"), "velha\n");
+    escrever(&pasta_das_skills.join("setup-stacklabs/arquivo-que-saiu.md"), "velho\n");
+    escrever(&pasta_das_skills.join("setup-stacklabs/target/release/instalar"), "binário\n");
+    let conferir = || {
+        let saida = Command::new(env!("CARGO_BIN_EXE_instalar"))
+            .args(["--conferir-skill", "--pasta-das-skills", pasta_das_skills.to_str().unwrap()])
+            .env("STACKLABS_ORIGEM", &cenario.stacklabs)
+            .output()
+            .unwrap();
+        assert!(saida.status.success());
+        String::from_utf8(saida.stdout).unwrap()
+    };
+    let primeira = conferir();
+    assert!(primeira.contains("SKILL ATUALIZADA setup-stacklabs (método v9.9.9)"), "{primeira}");
+    assert!(primeira.contains("SKILL ATUALIZADA auditar-metodo"), "{primeira}");
+    assert_eq!(fs::read_to_string(pasta_das_skills.join("setup-stacklabs/SKILL.md")).unwrap(), "setup\n");
+    assert!(!pasta_das_skills.join("setup-stacklabs/arquivo-que-saiu.md").exists());
+    assert!(pasta_das_skills.join("setup-stacklabs/target/release/instalar").exists());
+    assert!(conferir().contains("SKILL EM DIA (método v9.9.9)"));
+}
+
+#[test]
+fn conferir_skill_sem_acesso_a_fonte_avisa_e_nao_falha() {
+    let cenario = Cenario::novo();
+    let pasta_das_skills = cenario.raiz.join("skills-da-maquina");
+    fs::create_dir_all(&pasta_das_skills).unwrap();
+    let saida = Command::new(env!("CARGO_BIN_EXE_instalar"))
+        .args(["--conferir-skill", "--pasta-das-skills", pasta_das_skills.to_str().unwrap()])
+        .env_remove("STACKLABS_ORIGEM")
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_ALLOW_PROTOCOL", "file")
+        .output()
+        .unwrap();
+    assert!(saida.status.success());
+    assert!(String::from_utf8_lossy(&saida.stdout).contains("SKILL NÃO CONFERIDA"));
+}
+
+#[test]
+fn verificar_aprova_a_instalacao_e_reprova_o_que_falta() {
+    let cenario = Cenario::novo();
+    cenario.relatorio(&[]);
+    let verificar = || {
+        Command::new(env!("CARGO_BIN_EXE_instalar"))
+            .args(["--verificar", "--destino", cenario.projeto.to_str().unwrap()])
+            .output()
+            .unwrap()
+    };
+    let aprovada = verificar();
+    assert!(aprovada.status.success(), "{}", String::from_utf8_lossy(&aprovada.stdout));
+    assert!(String::from_utf8_lossy(&aprovada.stdout).contains("VERIFICADO"));
+    fs::remove_file(cenario.projeto.join(".claude/skills/tdd/SKILL.md")).unwrap();
+    let reprovada = verificar();
+    assert!(!reprovada.status.success());
+    assert!(String::from_utf8_lossy(&reprovada.stdout).contains("REPROVADO .claude/skills/tdd não tem SKILL.md"));
+}
+
+/// Projeto com o método instalado na `main` e uma atualização commitada em `chore/atualizar-metodo`,
+/// com um `gh` de mentira que anota as chamadas em `gh.log`.
+fn cenario_de_pr_de_atualizacao() -> Cenario {
+    let cenario = Cenario::novo();
+    let git_no_projeto = |argumentos: &[&str]| {
+        let saida = Command::new("git")
+            .args(["-c", "user.name=teste", "-c", "user.email=teste@teste"])
+            .args(argumentos)
+            .current_dir(&cenario.projeto)
+            .output()
+            .unwrap();
+        assert!(saida.status.success(), "git {argumentos:?}: {}", String::from_utf8_lossy(&saida.stderr));
+    };
+    let remoto = cenario.raiz.join("remoto.git");
+    let criar_remoto = Command::new("git").args(["init", "-q", "--bare", remoto.to_str().unwrap()]).status().unwrap();
+    assert!(criar_remoto.success());
+    git_no_projeto(&["checkout", "-q", "-b", "main"]);
+    git_no_projeto(&["remote", "add", "origin", remoto.to_str().unwrap()]);
+    cenario.relatorio(&[]);
+    escrever(&cenario.projeto.join("AGENTS.md"), "# AGENTS\n\n## Regras deste projeto\n\nRP1\n");
+    git_no_projeto(&["add", "-A"]);
+    git_no_projeto(&["commit", "-q", "-m", "base"]);
+    git_no_projeto(&["push", "-q", "origin", "main"]);
+    git_no_projeto(&["checkout", "-q", "-b", "chore/atualizar-metodo"]);
+    escrever(&cenario.modelo().join(".claude/watchdogs/src/main.rs"), "fn main() { /* novo */ }\n");
+    cenario.relatorio(&[]);
+    git_no_projeto(&["add", "-A"]);
+    git_no_projeto(&["commit", "-q", "-m", "atualiza"]);
+    git_no_projeto(&["fetch", "-q", "origin"]);
+
+    let pasta_do_gh = cenario.raiz.join("bin");
+    escrever(
+        &pasta_do_gh.join("gh"),
+        r#"#!/bin/sh
+echo "$*" >> "$GH_LOG"
+case "$1 $2" in
+  "pr view") printf '{"state":"OPEN","headRefName":"chore/atualizar-metodo","headRefOid":"%s","baseRefName":"main"}' "$(git rev-parse HEAD)" ;;
+  "pr diff") git diff --name-only origin/main...HEAD ;;
+  "pr checks") [ -z "$GH_CI_VERMELHO" ] || { echo 'ci vermelho' >&2; exit 1; } ;;
+esac
+"#,
+    );
+    tornar_executavel(&pasta_do_gh.join("gh"));
+    cenario
+}
+
+fn concluir_pr(cenario: &Cenario, ci_vermelho: bool) -> (Option<i32>, String, String) {
+    let log_do_gh = cenario.raiz.join("gh.log");
+    let caminho = format!("{}:{}", cenario.raiz.join("bin").display(), std::env::var("PATH").unwrap());
+    let mut comando = Command::new(env!("CARGO_BIN_EXE_instalar"));
+    comando
+        .args(["--concluir-pr", "7", "--destino", cenario.projeto.to_str().unwrap()])
+        .current_dir(&cenario.projeto)
+        .env("PATH", caminho)
+        .env("GH_LOG", &log_do_gh)
+        .env("STACKLABS_SEM_ESPERA", "1")
+        .env("STACKLABS_ORIGEM", &cenario.stacklabs)
+        .env("MATT_ORIGEM", &cenario.matt);
+    if ci_vermelho {
+        comando.env("GH_CI_VERMELHO", "1");
+    }
+    let saida = comando.output().unwrap();
+    (
+        saida.status.code(),
+        String::from_utf8_lossy(&saida.stdout).into_owned(),
+        fs::read_to_string(&log_do_gh).unwrap_or_default(),
+    )
+}
+
+#[test]
+fn concluir_pr_identica_a_fonte_rotula_e_faz_o_merge() {
+    let cenario = cenario_de_pr_de_atualizacao();
+    let (codigo, saida, chamadas) = concluir_pr(&cenario, false);
+    assert_eq!(codigo, Some(0), "{saida}");
+    assert!(saida.contains("MESCLADA  PR #7"), "{saida}");
+    assert!(chamadas.contains("pr edit 7 --add-label altera-watchdogs"), "{chamadas}");
+    assert!(chamadas.contains("pr merge 7 --merge"), "{chamadas}");
+}
+
+fn commitar_tudo(cenario: &Cenario) {
+    for argumentos in [vec!["add", "-A"], vec!["-c", "user.name=teste", "-c", "user.email=teste@teste", "commit", "-q", "-m", "mexe"]] {
+        assert!(Command::new("git").args(&argumentos).current_dir(&cenario.projeto).status().unwrap().success());
+    }
+}
+
+fn assert_ficou_para_humano(cenario: &Cenario, motivo: &str) {
+    let (codigo, saida, chamadas) = concluir_pr(cenario, false);
+    assert_eq!(codigo, Some(3), "{saida}");
+    assert!(saida.contains("FICA PARA UM HUMANO"), "{saida}");
+    assert!(saida.contains(motivo), "{saida}");
+    assert!(!chamadas.contains("--add-label") && !chamadas.contains("pr merge"), "{chamadas}");
+}
+
+#[test]
+fn concluir_pr_com_watchdog_alterado_fica_para_humano() {
+    let cenario = cenario_de_pr_de_atualizacao();
+    escrever(&cenario.projeto.join(".claude/watchdogs/src/main.rs"), "fn main() { /* desligado */ }\n");
+    commitar_tudo(&cenario);
+    assert_ficou_para_humano(&cenario, "difere da fonte oficial: COPIADO   .claude/watchdogs/src/main.rs");
+}
+
+#[test]
+fn concluir_pr_com_arquivo_de_fora_fica_para_humano() {
+    let cenario = cenario_de_pr_de_atualizacao();
+    escrever(&cenario.projeto.join("src/app.rs"), "// código de produção\n");
+    commitar_tudo(&cenario);
+    assert_ficou_para_humano(&cenario, "src/app.rs não vem do instalador");
+}
+
+#[test]
+fn concluir_pr_com_secao_do_projeto_alterada_fica_para_humano() {
+    let cenario = cenario_de_pr_de_atualizacao();
+    escrever(&cenario.projeto.join("AGENTS.md"), "# AGENTS do modelo\n\n\n## Regras deste projeto\n\nRP1 alterada\n");
+    commitar_tudo(&cenario);
+    assert_ficou_para_humano(&cenario, "a seção ## Regras deste projeto");
+}
+
+#[test]
+fn concluir_pr_com_hook_a_mais_no_settings_fica_para_humano() {
+    let cenario = cenario_de_pr_de_atualizacao();
+    escrever(&cenario.projeto.join(".claude/settings.json"), r#"{ "disableAllHooks": true }"#);
+    commitar_tudo(&cenario);
+    assert_ficou_para_humano(&cenario, ".claude/settings.json traz mais");
+}
+
+#[test]
+fn concluir_pr_com_ci_vermelho_fica_para_humano_sem_merge() {
+    let cenario = cenario_de_pr_de_atualizacao();
+    let (codigo, saida, chamadas) = concluir_pr(&cenario, true);
+    assert_eq!(codigo, Some(3), "{saida}");
+    assert!(saida.contains("o CI não ficou verde"), "{saida}");
+    assert!(!chamadas.contains("pr merge"), "{chamadas}");
 }
 
 #[test]
@@ -372,7 +607,7 @@ fn falha_da_compilacao_vai_para_o_relatorio_e_a_instalacao_segue() {
 fn simulacao_nao_escreve_nem_compila() {
     let cenario = Cenario::novo();
     cenario.com_watchdogs_antigos();
-    let relatorio = cenario.relatorio(&["--simular", "--atualizar-watchdogs", "--adocao"]);
+    let relatorio = cenario.relatorio(&["--simular", "--adocao"]);
     assert!(relatorio.contains("(simulação: nada foi escrito)\n"));
     assert!(relatorio.contains("ADOÇÃO    .claude/metodo.json criado na etapa observacao\n"));
     assert!(relatorio.contains("REMOVIDA  .claude/hooks"));
@@ -560,7 +795,7 @@ fn atualizar_os_watchdogs_apaga_a_compilacao_antiga_antes_de_compilar() {
     escrever(&binario_do_projeto, "binário da versão anterior");
 
     // Sem mudança nos watchdogs, o binário fica.
-    cenario.relatorio(&["--atualizar-watchdogs"]);
+    cenario.relatorio(&[]);
     assert!(
         binario_do_projeto.exists(),
         "nada mudou: não há o que recompilar"
@@ -570,7 +805,7 @@ fn atualizar_os_watchdogs_apaga_a_compilacao_antiga_antes_de_compilar() {
         &cenario.modelo().join(".claude/watchdogs/src/main.rs"),
         "fn main() { println!(\"nova\"); }\n",
     );
-    let relatorio = cenario.relatorio(&["--atualizar-watchdogs"]);
+    let relatorio = cenario.relatorio(&[]);
     assert!(
         relatorio.contains("COPIADO   .claude/watchdogs/src/main.rs\n"),
         "{relatorio}"

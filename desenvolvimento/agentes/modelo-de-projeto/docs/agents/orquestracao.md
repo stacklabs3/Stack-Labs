@@ -20,7 +20,7 @@ sozinho (o kickoff colado não trava); a fila e a branch continuam decisão do h
   trilhas, e só com filas sem arquivo, contrato ou migração em comum.
 - Em qualquer caso, **todo comando pesado roda por `sh .claude/watchdogs/rodar pesado "<comando>"`**
   (detalhe na skill): um por vez em cada projeto, e projetos diferentes juntos até as vagas de
-  memória da máquina (ADR 0024).
+  memória da máquina (ADR 0025).
 
 ## Os papéis
 

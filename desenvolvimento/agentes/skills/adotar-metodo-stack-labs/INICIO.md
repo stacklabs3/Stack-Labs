@@ -28,11 +28,10 @@ perguntas têm resposta do humano escrita no plano.
 1. `sh <pasta da skill setup-stacklabs>/rodar --adocao --simular` e mostre o relatório.
 2. Com o sim do humano, rode sem `--simular`. O `--adocao` grava `.claude/metodo.json` em
    `observacao`, com a data de hoje, antes de copiar os watchdogs.
-3. Linhas `PULADO` (o projeto já tinha `.claude/hooks/` ou `.claude/watchdogs/`): entregue ao humano
-   o comando `sh <pasta da skill setup-stacklabs>/rodar --adocao --atualizar-watchdogs` e espere que
-   ele rode.
-4. Linhas `MESCLAR`: siga [MESCLAR.md](MESCLAR.md).
-5. Branch `chore/adotar-metodo`, um commit, PR.
+   Hooks antigos que o projeto já tinha saem nessa hora: o humano precisa ter decidido as garantias
+   deles no passo 2 ([MESCLAR.md](MESCLAR.md)).
+3. Linhas `MESCLAR`: siga [MESCLAR.md](MESCLAR.md).
+4. Branch `chore/adotar-metodo`, um commit, PR.
 
 Pronto quando a PR da adoção está aberta e `find . -name '*.stacklabs-novo' -not -path './.git/*'`
 não lista nada. O merge é do humano; depois dele, o próximo ramo é [OBSERVACAO.md](OBSERVACAO.md).

@@ -63,13 +63,14 @@ jobs:
               }
             }
 
-            // 3. Watchdogs só mudam com aval humano explícito (label aplicada por uma pessoa).
+            // 3. Watchdogs só mudam com aval: a label, aplicada por uma pessoa ou pelo --concluir-pr do
+            // setup-stacklabs depois de conferir os arquivos com a fonte oficial (ADR 0024).
             const arquivosAlterados = await github.paginate(github.rest.pulls.listFiles, { ...context.repo, pull_number: pr.number });
             const caminhosDosWatchdogs = /^(\.claude\/(watchdogs|githooks|agents)\/|\.claude\/(settings|metodo)\.json$|\.github\/workflows\/vigia-do-metodo\.yml$)/;
             const alteraWatchdogs = arquivosAlterados.some((arquivo) => caminhosDosWatchdogs.test(arquivo.filename));
             const temAvalHumano = pr.labels.some((label) => label.name === "altera-watchdogs");
             const problemasDosWatchdogs = alteraWatchdogs && !temAvalHumano
-              ? ["a PR altera os watchdogs. Um humano revisa e aplica a label altera-watchdogs."]
+              ? ["a PR altera os watchdogs. Atualização do método: rode o --concluir-pr do setup-stacklabs. Outra mudança: um humano revisa e aplica a label altera-watchdogs."]
               : [];
 
             // Em observação, as regras do método só avisam; mudar os watchdogs exige aval em qualquer etapa.

@@ -48,7 +48,7 @@ sh .claude/watchdogs/rodar pesado "npm run build"
 ```
 
 - **Um por vez em cada projeto, e projetos diferentes juntos** até as vagas da máquina (2 em 8 GB).
-  Quem espera vê o motivo no terminal e segue sozinho quando a trava solta (ADR 0024).
+  Quem espera vê o motivo no terminal e segue sozinho quando a trava solta (ADR 0025).
 - No Linux com systemd, o comando roda com o limite de memória da vaga. Saída 137 com o aviso
   `[pesado] o comando foi morto (SIGKILL)` é o limite agindo: reduza os workers do comando
   (`experimental.cpus` do Next, `--maxWorkers=2` do Jest e do Vitest, `--workers=2` do Playwright),

@@ -153,8 +153,15 @@ pub fn rodar() -> i32 {
     if regex(r"(?i)core\.hooksPath").is_match(&comando) && !regex(r"(?i)git\s+config\s+(--get\s+)?core\.hooksPath\s*($|[;&|\n])").is_match(&comando) {
         bloquear("alterar core.hooksPath desliga o pre-push que protege a main. Só um humano altera.");
     }
-    if regex(r"--atualizar-watchdogs\b").is_match(&comando) {
-        bloquear("--atualizar-watchdogs sobrescreve os watchdogs do projeto. Só um humano roda o setup-stacklabs com essa opção.");
+    // A atualização dos watchdogs é do agente, mas só da fonte oficial e nunca para trás (ADR 0024).
+    if regex(r"--permitir-regressao\b").is_match(&comando) {
+        bloquear("--permitir-regressao volta o método a uma versão anterior e afrouxa os watchdogs. Só um humano roda o setup-stacklabs com essa opção.");
+    }
+    if regex(r"\b(STACKLABS_ORIGEM|MATT_ORIGEM)\b").is_match(&comando) {
+        bloquear("o setup-stacklabs só instala da fonte oficial quando quem roda é o agente. Uma fonte local poderia trazer watchdogs alterados: só um humano usa STACKLABS_ORIGEM ou MATT_ORIGEM.");
+    }
+    if regex(r"gh\s+[^;&|\n]*--add-label[=\s]+[^;&|\n]*altera-watchdogs").is_match(&comando) {
+        bloquear("a label altera-watchdogs é o aval de que a mudança é segura: quem a aplica é um humano ou o --concluir-pr do setup-stacklabs, depois de conferir os arquivos com a fonte oficial.");
     }
     if comando.contains("STACKLABS_PERMITIR_PUSH_MAIN") {
         bloquear("STACKLABS_PERMITIR_PUSH_MAIN é o escape humano do pre-push. O agente não usa.");
