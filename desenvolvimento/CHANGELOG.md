@@ -32,8 +32,11 @@ Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrad
 - A revisão por modelo abre 1 `claude -p` por vez (eram 4, ~220 MB cada).
 - O binário dos watchdogs fica guardado por versão em `~/.stacklabs/watchdogs/`: o segundo projeto
   copia em vez de compilar.
+- A aprovação guardada do CI leva o hash do binário dos watchdogs: depois de atualizá-los, o push
+  roda o CI de novo.
 - Guia humano: *Preparar a máquina para dois projetos* (swap, limite e workers) em
-  `humanos/orquestracao.md`.
+  `humanos/orquestracao.md`. Glossário: **comando pesado** e **vaga**. `docs/agents/watchdogs.md`:
+  seção *Rodar um comando pesado* e os limites dela.
 
 ## 4.0.0 (2026-11-03)
 

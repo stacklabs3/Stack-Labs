@@ -25,6 +25,10 @@ toml = { version = "=1.1.8", default-features = false, features = ["std", "parse
 # Grupo de processos e repasse de sinais dos comandos pesados (src/trava.rs).
 libc = "0.2"
 
+# O ci faz o hash do próprio binário (src/ci.rs); sem otimização, o do binário de teste leva segundos.
+[profile.dev.package.sha2]
+opt-level = 3
+
 [profile.release]
 opt-level = 3
 lto = "thin"

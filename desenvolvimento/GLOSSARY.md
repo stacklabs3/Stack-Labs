@@ -169,6 +169,18 @@ código cumpre o contrato; a correção também, e muda uma linha dele só por e
 não fonte: os documentos continuam a verdade.
 _Evitar_: Plano de implementação, checklist, pré-voo (que é do kickoff)
 
+**Comando pesado**:
+Comando que disputa a memória da máquina: build, dev server, suíte de testes, e2e, build nativo e o
+CI local. Roda por `sh .claude/watchdogs/rodar pesado "<comando>"`, um por vez em cada projeto.
+Typecheck, lint, `git` e `gh` não são.
+_Evitar_: Job, tarefa pesada
+
+**Vaga**:
+A fatia da memória da máquina que um comando pesado ocupa enquanto roda: projetos diferentes rodam
+juntos até o número de vagas, que sai da memória total (2 em 8 GB). No Linux com systemd, é também o
+limite de memória do comando.
+_Evitar_: Slot, worker, trava da máquina
+
 **Vizinho**:
 O arquivo que já existe no projeto, faz o mesmo tipo de coisa que o arquivo que vai nascer ou mudar,
 e que este imita em forma, nomes, tratamento de erro e testes. Cada arquivo do contrato da fatia tem

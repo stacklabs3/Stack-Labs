@@ -39,8 +39,8 @@ não repete validação. Todo comando pesado roda por `sh .claude/watchdogs/roda
   Playwright), e o teto de heap só entra quando a máquina pede (`STACKLABS_HEAP_MB`).
 
 No CI local (emenda a 0015): o `rodar ci` e o pre-push rodam como comando pesado; o CI aprovado com
-a árvore limpa grava a chave do conteúdo (árvore do HEAD, commit da base, regras e versão dos
-watchdogs), e o pre-push que encontra a chave não roda de novo, desde que tudo o que sobe seja
+a árvore limpa grava a chave do conteúdo (árvore do HEAD, commit da base, regras e hash do binário
+dos watchdogs, para watchdogs novos não reaproveitarem a aprovação dos antigos), e o pre-push que encontra a chave não roda de novo, desde que tudo o que sobe seja
 exatamente o HEAD. O pre-push roda sem a revisão por
 modelo, que fica no `rodar ci` à mão, com uma chamada `claude -p` por vez (~220 MB cada, medido).
 

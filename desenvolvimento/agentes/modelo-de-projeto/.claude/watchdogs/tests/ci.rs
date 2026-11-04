@@ -404,3 +404,43 @@ fn dev_server_de_pe_no_projeto_nao_segura_o_push() {
     assert_eq!(codigo, 0, "{saida}");
     assert!(saida.contains("CI: APROVADO"), "{saida}");
 }
+
+// Risco: depois de atualizar os watchdogs com regras mais rígidas, o push reaproveita a aprovação
+// que os antigos deram e sobe sem conferir.
+#[test]
+fn watchdogs_novos_nao_reaproveitam_a_aprovacao_dos_antigos() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["update-ref", "refs/remotes/origin/main", "main"]);
+    assert!(pre_push(&projeto).1.contains("CI: APROVADO"));
+    assert!(pre_push(&projeto).1.contains("já passou no CI local"));
+
+    // Outro binário: o mesmo com um byte a mais no fim, como uma versão nova dos watchdogs.
+    let binario_novo = projeto.raiz.with_extension("watchdogs-novo");
+    let mut conteudo = fs::read(env!("CARGO_BIN_EXE_watchdogs")).unwrap();
+    conteudo.push(0);
+    fs::write(&binario_novo, conteudo).unwrap();
+    Command::new("chmod").arg("+x").arg(&binario_novo).output().unwrap();
+    let linha = format!(
+        "refs/heads/issue/7-cupom {} refs/heads/issue/7-cupom {}\n",
+        sha(&projeto, "HEAD"),
+        "0".repeat(40)
+    );
+    let mut processo = Command::new(&binario_novo)
+        .args(["pre-push", "origin"])
+        .current_dir(&projeto.raiz)
+        .env("PATH", "/usr/bin:/bin")
+        .env("STACKLABS_TRAVAS", projeto.raiz.with_extension("travas"))
+        .env("STACKLABS_LIMITE_DE_MEMORIA", "desligado")
+        .env("STACKLABS_MEMORIA_POR_VAGA_MB", "64")
+        .env_remove("STACKLABS_PESADO")
+        .env_remove("STACKLABS_WATCHDOGS")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    processo.stdin.take().unwrap().write_all(linha.as_bytes()).unwrap();
+    let saida = processo.wait_with_output().unwrap();
+    let tudo = format!("{}{}", String::from_utf8_lossy(&saida.stdout), String::from_utf8_lossy(&saida.stderr));
+    assert!(tudo.contains("[ci] base origin/main") && !tudo.contains("já passou"), "{tudo}");
+}

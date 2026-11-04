@@ -50,6 +50,15 @@ obrigatória (ADR 0022): resposta vazia ou insuficiente libera a leitura direta.
 `sh .claude/watchdogs/rodar ativar-issue <n>`. O `guarda-bash` intercepta o comando antes de ele rodar e
 confere a issue (regra 3) e os mapas iniciais (regra 1). Uma sessão aceita uma única issue.
 
+## Rodar um comando pesado
+
+`sh .claude/watchdogs/rodar pesado "<comando>"` para build, dev server, suíte de testes, e2e e build
+nativo; typecheck, lint, `git` e `gh` rodam direto. Um comando pesado por vez em cada projeto, e
+projetos diferentes juntos até as vagas da máquina (ADR 0024). Quem espera vê o motivo
+(`[pesado] ... esperando`) e segue sozinho. Saída 137 com `[pesado] o comando foi morto (SIGKILL)` é o
+limite de memória da vaga: reduza os workers do comando, nunca suba o teto. O `rodar ci` e o
+`pre-push` usam o mesmo caminho por dentro, com uma vaga e sem a trava do projeto.
+
 ## Quando o GitHub não responde
 
 Os watchdogs que consultam o `gh` **falham fechados**: sem rede ou sem auth, bloqueiam. Peça ao
@@ -124,6 +133,10 @@ quando o humano pede.
   Conta só turnos com issue ativa; planejamento, grilling e revisões por `claude -p` ficam de fora.
   O orçamento padrão é 3M; o humano o calibra em `.claude/metodo.json` (`"orcamentoPorIssue"`)
   olhando as issues já medidas.
+- O `rodar pesado` só limita a memória por cgroup no Linux com systemd de usuário; sem ele (macOS,
+  WSL sem systemd, container), avisa e roda com a trava e as vagas. SIGKILL no próprio `rodar pesado`
+  não se intercepta: a trava solta e o comando segue vivo. Sem terminal, o comando não lê o
+  teclado, e um prompt de senha falha. O cache do `ci` não enxerga o que o git ignora.
 - O `rodar contexto` acha a definição por expressão regular (a palavra que declara e o nome), não
   por tree-sitter: um símbolo gerado por macro ou declarado de forma incomum não aparece. Termo do
   glossário casa pelos 5 primeiros caracteres de cada palavra, o que puxa vizinho de grafia parecida.

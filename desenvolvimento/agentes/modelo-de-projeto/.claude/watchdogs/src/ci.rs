@@ -5,7 +5,7 @@
 //
 // O ci roda como comando pesado (trava.rs): uma vaga e o limite de memória.
 // Aprovado com a árvore limpa, ele grava a aprovação pela chave do conteúdo (árvore do HEAD, commit
-// da base, regras e versão dos watchdogs); o pre-push que encontra a chave não roda de novo.
+// da base, regras e o hash do binário dos watchdogs); o pre-push que encontra a chave não roda de novo.
 //
 // Uso: .claude/watchdogs/rodar ci [--base <ref>] [--sem-revisao]   (base padrão: origin/main)
 // Saída: 0 aprovado, 1 violação, 2 configuração inválida. A última linha é "CI: APROVADO" ou "CI: REPROVADO".
@@ -41,10 +41,13 @@ pub fn chave_do_conteudo(raiz: &Path, base: &str) -> Option<String> {
     }
     let arvore = executar_git(raiz, &["rev-parse", "HEAD^{tree}"])?;
     let commit_da_base = executar_git(raiz, &["rev-parse", "--verify", "--quiet", &format!("{base}^{{commit}}")])?;
+    // A versão do pacote não muda entre versões do método; o binário muda. Watchdogs atualizados com
+    // regras mais rígidas não reaproveitam a aprovação dada pelos antigos.
+    let hash_do_binario = hash_do_proprio_binario()?;
     let mut soma = Sha256::new();
     for parte in [
-        "ci-v1",
-        env!("CARGO_PKG_VERSION"),
+        "ci-v2",
+        hash_do_binario,
         &arvore,
         &commit_da_base,
         &fs::read_to_string(raiz.join(CAMINHO_CONFIG)).unwrap_or_default(),
@@ -54,6 +57,16 @@ pub fn chave_do_conteudo(raiz: &Path, base: &str) -> Option<String> {
         soma.update([0]);
     }
     Some(format!("{:x}", soma.finalize()))
+}
+
+// Calculado uma vez por processo: o pre-push e o ci leem a chave mais de uma vez.
+fn hash_do_proprio_binario() -> Option<&'static str> {
+    static HASH: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    HASH.get_or_init(|| {
+        let binario = fs::read(std::env::current_exe().ok()?).ok()?;
+        Some(format!("{:x}", Sha256::digest(&binario)))
+    })
+    .as_deref()
 }
 
 pub fn ja_aprovado(raiz: &Path, chave: &str) -> bool {

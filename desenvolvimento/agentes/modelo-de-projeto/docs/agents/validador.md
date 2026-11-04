@@ -144,7 +144,7 @@ ou as violações listadas viraram tickets.
   duas primeiras. Sem `docs/regras-de-codigo.json`, passa. Termina em `CI: APROVADO` ou `CI: REPROVADO`.
   Roda como comando pesado (trava do projeto, vaga e limite de memória; ADR 0024). Aprovado com a
   árvore limpa, grava a aprovação em `.claude/state/ci-aprovado/`, pela árvore do HEAD, o commit da
-  base, as regras e a versão dos watchdogs. O `pre-push` pula a revisão por modelo e não roda o CI
+  base, as regras e o binário dos watchdogs (atualizar os watchdogs roda o CI de novo). O `pre-push` pula a revisão por modelo e não roda o CI
   quando acha a aprovação do mesmo conteúdo e tudo o que sobe é o HEAD: para o push sair na hora,
   rode o `ci` contra `origin/main` com a árvore limpa antes. O que o git ignora fica fora da chave.
 - **CI do projeto**, configurado na primeira fatia da primeira fase, junto com o lint:
