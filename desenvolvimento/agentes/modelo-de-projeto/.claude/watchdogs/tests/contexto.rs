@@ -131,6 +131,46 @@ fn skill_escondida_pelo_gitignore_aparece_pelo_nome() {
     );
 }
 
+// Risco: o agente passa uma frase, nada casa e ele lê o código às cegas.
+#[test]
+fn frase_vira_uma_consulta_por_nome() {
+    let repositorio = projeto_do_cupom();
+    let contexto = repositorio.contexto("como aplicar_cupom trata o reembolso_parcial");
+    assert!(contexto.contains("consulta de 2 nomes (aplicar_cupom, reembolso_parcial)"), "{contexto}");
+    assert!(
+        contexto.contains("src/cupom.rs:1 · pub fn aplicar_cupom"),
+        "o nome solto acha a definição:\n{contexto}"
+    );
+    assert!(contexto.contains("sem ligação no repositório: reembolso_parcial"), "{contexto}");
+    assert!(repositorio.contexto("trata o reembolso_parcial").contains("nada ligado a esta consulta"));
+    assert!(
+        !repositorio.contexto("cupom da mesa").contains("consulta de"),
+        "frase sem identificador é texto livre, inteira"
+    );
+}
+
+// Risco: `#n` volta vazio para a issue que ainda está na branch dela ou numa branch de integração.
+#[test]
+fn issue_acha_a_branch_dela_e_o_merge_fora_da_main() {
+    let repositorio = projeto_do_cupom();
+    repositorio.git(&["switch", "-q", "-c", "issue/12-mesa"]);
+    repositorio.escrever("src/mesa.rs", "pub fn abrir_mesa() {}\n");
+    repositorio.commitar("feat: mesa abre sozinha");
+    repositorio.git(&["switch", "-q", "main"]);
+    let contexto = repositorio.contexto("#12");
+    assert!(contexto.contains("src/mesa.rs"), "a branch issue/12-* não entrou:\n{contexto}");
+
+    repositorio.git(&["switch", "-q", "-c", "integracao/salao"]);
+    repositorio.git(&["switch", "-q", "-c", "outra"]);
+    repositorio.escrever("src/conta.rs", "pub fn fechar_conta() {}\n");
+    repositorio.commitar("feat: fecha a conta");
+    repositorio.git(&["switch", "-q", "integracao/salao"]);
+    repositorio.git(&["merge", "-q", "--no-ff", "outra", "-m", "Merge issue/13-conta (#13)"]);
+    repositorio.git(&["switch", "-q", "main"]);
+    let contexto = repositorio.contexto("#13");
+    assert!(contexto.contains("src/conta.rs"), "o merge na integração não entrou:\n{contexto}");
+}
+
 // A consulta da issue 176 do Organiza-ai devolvia só dois termos do glossário; o implementador fez 47
 // buscas antes da primeira edição. Agora ela leva aos arquivos, aos testes, à ADR e ao risco.
 fn projeto_da_fila() -> Repositorio {

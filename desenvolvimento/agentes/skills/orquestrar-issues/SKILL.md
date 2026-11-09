@@ -87,7 +87,19 @@ sh .claude/watchdogs/rodar pesado "npm run build"
   o checkout deixa duas versões da mesma issue.
 - O brief traz a regra da trava da máquina (seção acima), com a frase pronta.
 - O brief e o prompt de **todo** subagente trazem a frase: "antes de abrir arquivos, rode
-  `sh .claude/watchdogs/rodar contexto <consulta>` e leia a resposta; vazia ou insuficiente, leia direto".
+  `sh .claude/watchdogs/rodar contexto <nome>` com **um nome por consulta** (função, tipo, arquivo,
+  termo do glossário ou `#issue`; várias consultas, nunca uma frase) e leia a resposta; vazia ou
+  insuficiente, leia direto".
+- O brief e o prompt do implementador trazem a frase: "a worktree nasce sem dependências, sem `.env`
+  e sem código gerado: antes do primeiro type-check ou teste, rode
+  `sh .claude/skills/orquestrar-issues/preparar-worktree.sh [<pastas que a issue toca>]`; as
+  dependências se instalam na worktree, nunca por symlink para o checkout principal". Pelo symlink,
+  a worktree lê os pacotes locais do checkout principal e a mudança da issue some do type-check e
+  dos testes. O script roda o `.claude/preparar-worktree.sh` do projeto quando ele existe (os passos
+  próprios: código gerado, ordem dos pacotes) e, sem ele, instala pelo lockfile de cada pasta e
+  copia o `.env` que falta; o cabeçalho do script mostra o que o do projeto faz.
+- O brief e o prompt do implementador trazem a frase: "edite código com Edit e Write: o
+  `guarda-edicao` (issue ativa e contrato) só vê essas ferramentas".
 
 ## Passos
 

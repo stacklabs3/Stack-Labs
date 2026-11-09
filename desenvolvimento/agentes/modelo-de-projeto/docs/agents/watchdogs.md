@@ -17,10 +17,10 @@ instala o Rust (https://rustup.rs). Testes: `cargo test --release --manifest-pat
 | `vigia-prompt` | UserPromptSubmit | Mede o contexto: avisa em 450k e exige `/nova-sessao` a partir de 550k. Em sessão de grilling, relembra a **linguagem simples** a cada resposta do humano. Com a issue ativa acima do orçamento, relembra o custo | Injeta alerta |
 | `vigia-skill` | PostToolUse `Skill` | Quando uma skill de grilling carrega, marca o grilling na sessão e injeta a regra de linguagem simples (regra 10) | Injeta contexto |
 | `guarda-edicao` | PreToolUse `Write\|Edit\|NotebookEdit` | Protege os watchdogs, aplica a smart zone e só libera código de produção com issue ativa, fora da `main` e depois do **contrato da fatia** publicado na issue (regra 24, [contrato-da-fatia.md](contrato-da-fatia.md)); os caminhos livres da regra 3 passam. O contrato é procurado uma vez por sessão e por subagente e fica no estado | **Bloqueia** |
-| `guarda-bash` | PreToolUse `Bash` | Protege os watchdogs; ativa issue (uma por sessão ou por subagente, e uma por comando) só com os **cinco mapas iniciais** criados e Protótipo, Arquitetura, Fases e Regras de código fechados, e nunca um `spec`; exige claim antes de comentar ou fechar ticket; exige comentário de resolução **com `## Fontes`** em grilling, tarefa e pesquisa; um ticket de decisão por sessão; barra commit na `main`, push forçado, `--no-verify`, mudança no `core.hooksPath`, `STACKLABS_PERMITIR_PUSH_MAIN`, fonte local do instalador (`STACKLABS_ORIGEM`, `MATT_ORIGEM`), `--permitir-regressao` e a label `altera-watchdogs` aplicada direto | **Bloqueia** |
+| `guarda-bash` | PreToolUse `Bash` | Protege os watchdogs pelo **alvo da escrita** (o destino de `>`, `>>`, `tee`, `cp`, `mv`, `rm`, `sed -i`, `find -delete`, `sh -c` e da gravação por `python` ou `node`): ler um protegido, gravar no `$TMPDIR` ou citá-lo no texto de um heredoc passa (ADR 0027); ativa issue (uma por sessão ou por subagente, e uma por comando) só com os **cinco mapas iniciais** criados e Protótipo, Arquitetura, Fases e Regras de código fechados, e nunca um `spec`; exige claim antes de comentar ou fechar ticket; exige comentário de resolução **com `## Fontes`** em grilling, tarefa e pesquisa; um ticket de decisão por sessão; barra commit na `main`, push forçado, `--no-verify`, mudança no `core.hooksPath`, `STACKLABS_PERMITIR_PUSH_MAIN`, fonte local do instalador (`STACKLABS_ORIGEM`, `MATT_ORIGEM`), `--permitir-regressao` e a label `altera-watchdogs` aplicada direto | **Bloqueia** |
 | `guarda-contexto` | PreToolUse `Read\|Grep\|Glob`, e o `guarda-bash` para `cat`, `head`, `tail`, `less`, `sed`, `grep` e `rg` | Código só se lê depois de uma consulta `rodar contexto` da sessão ou do subagente; a primeira leitura fora dos citados recebe aviso. Passam livres os caminhos da regra 3, os de `caminhosLivres`, documento e configuração por extensão (`.md`, `.json`, `.yaml`, `.toml`...), `*.config.*` e arquivo oculto | **Bloqueia** |
-| `vigia-teste` | PostToolUse `Write\|Edit\|MultiEdit` | No teste que acabou de ser editado, roda as regras do P5 de `docs/regras-de-codigo.json`: teste sem `RK<n>` ou com risco fora do registro, sem afirmação, com afirmação trivial, desligado ou focado ([riscos.md](riscos.md)). Projeto sem `docs/regras-de-codigo.json` passa; na etapa de observação, só avisa | **Devolve ao agente para corrigir** |
-| `vigia-codigo` | PostToolUse `Write\|Edit\|MultiEdit` | No código que acabou de ser editado, roda as regras de `docs/regras-de-codigo.json` fora do P5 que têm forma fixa (`ast-grep`, `termo-evitado`, `todo-sem-issue`) e devolve cada violação com a regra de onde nasceu; `comando` (lint, typecheck) fica para o `ci`. Projeto sem `docs/regras-de-codigo.json` passa; na etapa de observação, só avisa | **Devolve ao agente para corrigir** |
+| `vigia-teste` | PostToolUse `Write\|Edit\|MultiEdit\|Bash` | No teste que acabou de ser editado (também por `sed -i`, heredoc ou `python`, pelo alvo da escrita), roda as regras do P5 de `docs/regras-de-codigo.json`: teste sem `RK<n>` ou com risco fora do registro, sem afirmação, com afirmação trivial, desligado ou focado ([riscos.md](riscos.md)). Projeto sem `docs/regras-de-codigo.json` passa; na etapa de observação, só avisa | **Devolve ao agente para corrigir** |
+| `vigia-codigo` | PostToolUse `Write\|Edit\|MultiEdit\|Bash` | No código que acabou de ser editado (também pelo Bash, como o `vigia-teste`), roda as regras de `docs/regras-de-codigo.json` fora do P5 que têm forma fixa (`ast-grep`, `termo-evitado`, `todo-sem-issue`) e devolve cada violação com a regra de onde nasceu; `comando` (lint, typecheck) fica para o `ci`. Projeto sem `docs/regras-de-codigo.json` passa; na etapa de observação, só avisa | **Devolve ao agente para corrigir** |
 | `vigia-saida` | PostToolUse `Bash\|Read\|Grep\|Glob\|WebFetch` | Saída de ferramenta acima de 20k caracteres (uns 5k tokens) pede filtro da próxima vez: trecho com `offset`/`limit`, `grep`/`tail`, padrão mais estreito ou subagente | Injeta alerta |
 | `vigia-agente` | PreToolUse `Agent\|Task` | Subagente de busca (`Explore`, `claude-code-guide`) lançado sem `model` recebe o lembrete de usar haiku ou sonnet | Injeta alerta |
 | `vigia-custo` | Stop e SubagentStop | Soma o uso de tokens de cada turno, da sessão e dos subagentes, na issue ativa, em `.claude/state/custos/issue-<n>.json`. Ao cruzar o **orçamento por issue**, avisa o humano; dali em diante o `vigia-prompt` relembra o agente a cada prompt. Relatório: `sh .claude/watchdogs/rodar custo [<n>]`, que vai na Evidence da PR | Avisa o humano |
@@ -40,14 +40,17 @@ método. Arquivo ausente é o estado normal: siga sem procurá-lo.
 
 ## Consultar o contexto
 
-`sh .claude/watchdogs/rodar contexto <símbolo | termo | caminho | #issue>` liga a consulta ao que o
+`sh .claude/watchdogs/rodar contexto <símbolo | termo | caminho | #issue>`, **um nome por consulta**, liga a consulta ao que o
 projeto já escreveu sobre ela e devolve cada ligação com `caminho:linha`: onde o símbolo é definido,
 os arquivos de código e os testes que tratam dos termos da consulta (cada teste com o código que ele
 testa), os termos do `GLOSSARY.md`, as ADRs que os citam, os riscos `RK<n>` dos testes achados e do
 registro, quem o chama, os arquivos que mudam junto e as issues do histórico. Quando o projeto tem
 `docs/mapa-do-codigo.md`, a resposta termina apontando para ele. Uma consulta em texto livre
-(`preferencia de ambiente cartao da entrada`) já leva aos arquivos da fatia. Uma `#issue` traz os arquivos dos
-commits que a citam. Tudo sai do repositório e do git a cada chamada, sem modelo e sem índice
+(`preferencia de ambiente cartao da entrada`) já leva aos arquivos da fatia. Frase com identificadores (`snake_case`,
+`camelCase`, caminho, `#issue`) vira uma consulta por identificador, até 6, com as respostas juntas e os
+sem ligação numa linha: o identificador solto acha a definição, quem chama e o que muda junto. Uma
+`#issue` traz os arquivos dos commits que a citam em qualquer branch (cada merge contra o primeiro
+pai) e os da branch `issue/<n>-*` que ainda não entrou. Tudo sai do repositório e do git a cada chamada, sem modelo e sem índice
 guardado, então não envelhece (ADR 0018). Uma consulta cujo texto é o nome de arquivo ou de pasta
 traz esses arquivos, inclusive em `.claude/skills/`. Leia a resposta antes de abrir arquivos e abra só
 os trechos citados; `--limite <n>` muda as 5 ligações por seção (código e testes mostram o triplo). A regra 23 torna a consulta
@@ -150,6 +153,10 @@ quando o humano pede.
   WSL sem systemd, container), avisa e roda com a trava e as vagas. SIGKILL no próprio `rodar pesado`
   não se intercepta: a trava solta e o comando segue vivo. Sem terminal, o comando não lê o
   teclado, e um prompt de senha falha. O cache do `ci` não enxerga o que o git ignora.
+- O `guarda-bash` e os vigias leem o comando com um leitor de shell pequeno: o caminho montado numa
+  variável (`p = '.claude/agents/x'; open(p, 'w')`) não aparece como alvo. Script que grava e cita
+  um caminho protegido, e `xargs` ou `find -exec` que gravam num comando que cita um, são barrados
+  pelo texto.
 - O `rodar contexto` acha a definição por expressão regular (a palavra que declara e o nome), não
   por tree-sitter: um símbolo gerado por macro ou declarado de forma incomum não aparece. Termo do
   glossário casa pelos 5 primeiros caracteres de cada palavra, o que puxa vizinho de grafia parecida.

@@ -11,6 +11,32 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 4.6.0 (2026-11-09)
+
+Ajustes vindos da retro das sessões de issue do Excurfly.
+
+- **`guarda-bash` pelo alvo da escrita** ([ADR 0027](adr/0027-watchdogs-pelo-alvo-da-escrita.md)): barra
+  o comando que grava, move ou apaga um caminho protegido, não o que só o cita. Passam
+  `rodar ci > "$TMPDIR/log"`, o heredoc cujo texto cita `.claude/agents` e o `python` que grava
+  `.claude/orquestracao/*.json`; passam a barrar `rm -rf .claude`, `bash -c "rm …"` e `find … -delete`.
+- **`vigia-codigo` e `vigia-teste` também no Bash:** o arquivo gravado por `sed -i`, heredoc ou
+  `python` volta com a regra quebrada na hora, como no Edit. O `.claude/settings.json` ganha o
+  `Bash` nos dois. A constituição (regra 24) e o implementador mandam editar código com Edit e
+  Write, porque o `guarda-edicao` só vê essas ferramentas.
+- **`rodar contexto` com um nome por consulta:** frase com identificadores vira uma consulta por
+  identificador, com as respostas juntas e os sem ligação numa linha; frase sem identificador segue
+  como o texto livre da 4.5.0. O `#issue` acha os commits que o citam em qualquer branch e a branch `issue/<n>-*` que ainda não entrou: antes
+  só via o primeiro pai do HEAD e voltava vazio para a issue integrada numa `integracao/*`. A regra 23,
+  os quatro papéis e a `/orquestrar-issues` dizem "um nome por consulta".
+- **Worktree de issue pronta:** a `/orquestrar-issues` traz o `preparar-worktree.sh`, que o
+  implementador roda antes do primeiro type-check ou teste. Ele roda o `.claude/preparar-worktree.sh`
+  do projeto, se houver, ou instala pelo lockfile de cada pasta, troca o `node_modules` em symlink
+  para o checkout principal por instalação e copia o `.env` que falta.
+- **Push por URL:** o `pre-push` acha o remoto de mesma URL (ou o `origin`) e compara com a branch
+  padrão dele, em vez de `https://…/main`, que não existe. O `issue-tracker.md` manda `git push origin <branch>`.
+- **Subprojeto com `CLAUDE.md`:** `docs/agents/subprojetos.md` registra o padrão do monorepo: a raiz
+  manda ler o `CLAUDE.md` do subprojeto com Read, e ele é índice, com o detalhe em `docs/agents/`.
+
 ## 4.5.0 (2026-11-09)
 
 Ajustes vindos da retro de 10 sessões do Organiza-ai: o `rodar contexto` rodou 28 vezes e só devolveu

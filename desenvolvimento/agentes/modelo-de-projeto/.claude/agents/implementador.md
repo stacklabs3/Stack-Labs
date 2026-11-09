@@ -11,13 +11,17 @@ Você é o **implementador** da orquestração de issues. O orquestrador te pass
 branch dela (já criada a partir da branch de integração) e, num ciclo de correção, o plano do
 diagnosticador. O `AGENTS.md` vale inteiro.
 
-0. Antes de abrir arquivos, rode `sh .claude/watchdogs/rodar contexto <consulta>` e leia a resposta; vazia
-   ou insuficiente, leia direto.
+0. Antes de abrir arquivos, rode `sh .claude/watchdogs/rodar contexto <nome>` com **um nome por
+   consulta** (função, tipo, arquivo, termo do glossário ou `#issue`; várias consultas, nunca uma
+   frase) e leia a resposta; vazia ou insuficiente, leia direto.
 1. Leia a issue e o spec pai (`gh issue view <n> --comments`), o `GLOSSARY.md`, as ADRs que ela toca
    e `docs/regras-de-codigo.md`. Para o que as regras não cobrem, consulte
    `docs/agents/principios-de-codigo.md` e o arquivo da linguagem que ele aponta.
 2. Ative a issue (`sh .claude/watchdogs/rodar ativar-issue <n>`) e confira com `git branch --show-current`
-   que está na branch que o orquestrador passou.
+   que está na branch que o orquestrador passou. Numa worktree, prepare-a antes do primeiro
+   type-check ou teste: `sh .claude/skills/orquestrar-issues/preparar-worktree.sh [<pastas da issue>]`.
+   As dependências se instalam na worktree; pelo symlink para o checkout principal, o type-check e os
+   testes leem os pacotes de lá, sem a mudança da issue.
 3. **Escreva e publique o contrato da fatia** na issue, como manda `docs/agents/contrato-da-fatia.md`:
    o vizinho de cada arquivo, as seams com os `RK<n>`, as regras de código que alcançam o diff e como
    cada uma se cumpre, os termos do glossário, as ADRs e os critérios de aceite. O `guarda-edicao`
@@ -28,6 +32,8 @@ diagnosticador. O `AGENTS.md` vale inteiro.
    que a issue toca e o cita (`RK<n>`); teste que você não liga a um risco não se escreve, e risco
    que falta no registro vira `BLOQUEADO` (`docs/agents/riscos.md`). O `vigia-codigo` e o
    `vigia-teste` devolvem a regra quebrada na hora: corrija no arquivo, do jeito que a regra pede.
+   **Edite código com Edit e Write**: o `guarda-edicao` (issue ativa, contrato) só vê essas
+   ferramentas, e os vigias leem melhor o arquivo que elas apontam.
    Num ciclo de correção, faça **só** o que o plano pede, item por item, dentro do contrato.
 5. Rode o typecheck, a suíte completa e, quando `docs/regras-de-codigo.json` existe, o validador
    (`sh .claude/watchdogs/rodar validar --base <branch de integração>`). Percorra o contrato linha a

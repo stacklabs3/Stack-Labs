@@ -33,6 +33,7 @@ ideia grande demais para uma sessão
 - **Arquitetura do código existente:** `/improve-codebase-architecture`, com o vocabulário do `/codebase-design`.
 - **Fechamento:** `/pr` para o corpo da PR e `/retro` para os ajustes do ambiente.
 - **Documento que outro agente vai ler** (`AGENTS.md`, `docs/`, `docs/regras-de-codigo.md`, skill): `/writing-for-agents`.
+- **Subprojeto com `CLAUDE.md` próprio** (monorepo): [docs/agents/subprojetos.md](docs/agents/subprojetos.md).
 - **Dúvida sobre qual skill usar:** `/ask-matt`.
 
 ## Regras duras
@@ -119,9 +120,10 @@ ideia grande demais para uma sessão
     ([docs/agents/adocao.md](docs/agents/adocao.md)).
 
 ### 9. Contexto antes de ler
-23. **[W]** **Antes de abrir arquivos de código, rode `sh .claude/watchdogs/rodar contexto <consulta>`**
-    e leia a resposta: uma vez por sessão e por subagente. Vazia ou insuficiente, leia direto
-    ([docs/agents/watchdogs.md](docs/agents/watchdogs.md#consultar-o-contexto)).
+23. **[W]** **Antes de abrir arquivos de código, rode `sh .claude/watchdogs/rodar contexto <nome>`**
+    e leia a resposta: uma vez por sessão e por subagente. **Um nome por consulta** (função, tipo,
+    arquivo, termo do glossário ou `#issue`): várias consultas, nunca uma frase. Vazia ou
+    insuficiente, leia direto ([docs/agents/watchdogs.md](docs/agents/watchdogs.md#consultar-o-contexto)).
 
 ### 10. Contrato antes do código
 24. **[W]** **Antes da primeira linha de código de uma issue, publique nela o `## Contrato da fatia`**:
@@ -129,7 +131,8 @@ ideia grande demais para uma sessão
     alcançam, os termos do glossário, as ADRs e os critérios de aceite, cada um com o documento de onde
     veio ([docs/agents/contrato-da-fatia.md](docs/agents/contrato-da-fatia.md)). O código cumpre o
     contrato; a correção também, e muda uma linha dele só por escrito. O `vigia-codigo` devolve a
-    regra de código quebrada a cada edição.
+    regra de código quebrada a cada edição. **Código se edita com Edit e Write**: o `guarda-edicao`
+    só vê essas ferramentas.
 
 ## Agent skills
 

@@ -162,6 +162,17 @@ fn bash_barra_o_que_desliga_os_watchdogs() {
         "STACKLABS_ORIGEM=/tmp/clone sh rodar",
         "MATT_ORIGEM=/tmp/clone sh rodar",
         "gh pr edit 7 --add-label altera-watchdogs",
+        "echo x > .claude/agents/implementador.md",
+        "cat <<'EOF' > .claude/settings.json\n{}\nEOF",
+        "python3 - <<'EOF'\nopen('.claude/agents/revisor.md', 'w').write('')\nEOF",
+        "bash -c \"rm .claude/watchdogs/rodar\"",
+        "cp /tmp/pre-push .claude/githooks/pre-push",
+        "find .claude/watchdogs -name '*.rs' -delete",
+        "echo '{}' | tee .claude/metodo.json",
+        "git checkout -- .claude/settings.json",
+        "mv .claude/agents /tmp/papeis",
+        "rm -rf .claude",
+        "ls .claude/watchdogs/src | xargs rm",
     ] {
         let (codigo, _, erro) = projeto.bash(comando);
         assert_eq!(codigo, 2, "{comando} deveria ser barrado");
@@ -174,6 +185,11 @@ fn bash_barra_o_que_desliga_os_watchdogs() {
         ".claude/watchdogs/rodar validar --base origin/main",
         "sh ~/.claude/skills/setup-stacklabs/rodar",
         "sh ~/.claude/skills/setup-stacklabs/rodar --concluir-pr 7",
+        // A retro do excurfly: ler os watchdogs, citar um protegido no texto, gravar o estado da orquestração.
+        "sh .claude/watchdogs/rodar ci --base origin/dev > \"$TMPDIR/ci2025.log\" 2>&1",
+        "cat > .scratch/brief-issue.md <<'EOF'\nOs papéis ficam em .claude/agents; não mexa em .claude/watchdogs.\nEOF",
+        "python3 - <<'EOF'\nimport json\nestado = json.load(open('.claude/orquestracao/fila.json'))\nopen('.claude/orquestracao/fila.json', 'w').write(json.dumps(estado))\nEOF",
+        "cp .claude/agents/revisor.md /tmp/revisor.md",
     ] {
         assert_eq!(projeto.bash(comando).0, 0, "{comando} deveria passar");
     }
@@ -353,6 +369,39 @@ fn vigia_codigo_devolve_a_regra_quebrada_no_arquivo_editado() {
         saida.contains("additionalContext") && !saida.contains("\"decision\""),
         "na observação só avisa: {saida}"
     );
+}
+
+// Risco: o agente edita código por `sed -i` ou `python` e a regra quebrada só volta no validador.
+#[test]
+fn vigia_codigo_confere_tambem_o_arquivo_gravado_pelo_bash() {
+    let projeto = Projeto::novo("issue/7-x");
+    let escrever = |caminho: &str, conteudo: &str| {
+        let destino = projeto.raiz.join(caminho);
+        fs::create_dir_all(destino.parent().unwrap()).unwrap();
+        fs::write(destino, conteudo).unwrap();
+    };
+    escrever("GLOSSARY.md", "**Comanda**:\nO pedido da mesa.\n_Evitar_: Ticket\n");
+    escrever(
+        "docs/regras-de-codigo.json",
+        &json!({ "versao": 1, "projeto": { "codigo": ["src/**"] }, "regras": [
+            { "id": "R1", "principio": "E1", "texto": "Nome usa a língua do glossário", "verificacao": { "tipo": "termo-evitado" } }
+        ] })
+        .to_string(),
+    );
+    escrever("src/comanda.ts", "export const ticketAberto = 1;\n");
+    let bash = |comando: &str| {
+        projeto.rodar(
+            &["hook", "vigia-codigo"],
+            &json!({ "session_id": "s1", "cwd": projeto.raiz.to_string_lossy(), "tool_name": "Bash", "tool_input": { "command": comando } }).to_string(),
+            &[],
+        )
+    };
+    let (_, saida, _) = bash("sed -i '' 's/comanda/ticket/' src/comanda.ts");
+    assert!(saida.contains("\"decision\":\"block\"") && saida.contains("src/comanda.ts"), "{saida}");
+    let (_, saida, _) = bash("cd src && python3 - <<'EOF'\nopen('comanda.ts', 'w').write('export const ticketAberto = 2;')\nEOF");
+    assert!(saida.contains("src/comanda.ts"), "o cd conta para o caminho relativo: {saida}");
+    assert_eq!(bash("cat src/comanda.ts").1, "", "Bash que só lê passa calado");
+    assert_eq!(bash("echo x > /tmp/fora-do-projeto.ts").1, "", "fora do projeto passa");
 }
 
 #[test]

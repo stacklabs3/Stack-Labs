@@ -10,8 +10,25 @@ use crate::comum::{base_do_remoto, etapa_de_adocao, executar_git};
 use std::io::Read;
 use std::path::PathBuf;
 
+// O git passa o nome do remoto, ou a URL quando o push é por URL (`git push https://… <branch>`). Por URL,
+// a base vira o remoto configurado com aquela URL, e sem nenhum, o `origin`: `https://…/HEAD` não existe.
+pub fn remoto_do_push(raiz: &std::path::Path, nome_ou_url: &str) -> String {
+    let remotos = executar_git(raiz, &["remote"]).unwrap_or_default();
+    if remotos.lines().any(|remoto| remoto == nome_ou_url) {
+        return nome_ou_url.to_string();
+    }
+    let sem_git = |url: &str| url.trim_end_matches('/').trim_end_matches(".git").to_string();
+    remotos
+        .lines()
+        .find(|remoto| executar_git(raiz, &["remote", "get-url", remoto]).is_some_and(|url| sem_git(&url) == sem_git(nome_ou_url)))
+        .unwrap_or("origin")
+        .to_string()
+}
+
 pub fn rodar(argumentos: &[String]) -> i32 {
-    let nome_do_remoto = argumentos.first().map(String::as_str).unwrap_or("origin");
+    let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let nome_do_remoto = remoto_do_push(&raiz, argumentos.first().map(String::as_str).unwrap_or("origin"));
+    let nome_do_remoto = nome_do_remoto.as_str();
     if std::env::var("STACKLABS_PERMITIR_PUSH_MAIN").as_deref() == Ok("1") {
         eprintln!("[pre-push] STACKLABS_PERMITIR_PUSH_MAIN=1: push para a main liberado por um humano.");
         return 0;
@@ -28,7 +45,6 @@ pub fn rodar(argumentos: &[String]) -> i32 {
             return 1;
         }
     }
-    let raiz = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let base = base_do_remoto(&raiz, nome_do_remoto);
     // O cache vale para o conteúdo do HEAD: só quando tudo o que sobe é exatamente o HEAD.
     let shas_enviados: Vec<&str> = linhas_do_push
