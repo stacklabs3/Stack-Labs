@@ -130,3 +130,81 @@ fn skill_escondida_pelo_gitignore_aparece_pelo_nome() {
         "skill não apareceu:\n{contexto}"
     );
 }
+
+// A consulta da issue 176 do Organiza-ai devolvia só dois termos do glossário; o implementador fez 47
+// buscas antes da primeira edição. Agora ela leva aos arquivos, aos testes, à ADR e ao risco.
+fn projeto_da_fila() -> Repositorio {
+    let repositorio = Repositorio::novo();
+    repositorio.escrever(
+        "GLOSSARY.md",
+        "## Language\n\n**Entrada**:\nO lugar do Cliente na Fila.\n\n**Preferência de ambiente**:\nSalão ou varanda.\n\n**Mesa**:\nOnde o cliente senta.\n",
+    );
+    repositorio.escrever(
+        "docs/adr/0007-ambiente.md",
+        "# Ambiente é preferência, não promessa\n\nA preferência de ambiente vai para a Equipe.\n",
+    );
+    repositorio.escrever(
+        "docs/riscos.md",
+        "| Risco | O que dá errado | Dano | Onde | Origem | Situação |\n|---|---|---|---|---|---|\n| RK43 | A Preferência de ambiente do Cliente não chega à Equipe | mesa errada | Fila | #176 | |\n| RK9 | Publicação segue depois de uma falha | deploy quebrado | Publicar | #80 | |\n",
+    );
+    repositorio.escrever("docs/mapa-do-codigo.md", "# Mapa do código\n");
+    repositorio.escrever("docs/conferencia/176.md", "preferencia de ambiente no cartao da entrada\n");
+    repositorio.escrever("prototipos/fila/cartao-da-entrada.jsx", "export const preferencia = 'ambiente';\n");
+    repositorio.escrever(
+        "src/modulos/fila/telas/cartao-da-entrada.tsx",
+        "import { PreferenciaDeAmbiente } from './preferencia-de-ambiente';\nexport function CartaoDaEntrada() { return <PreferenciaDeAmbiente />; }\n",
+    );
+    repositorio.escrever(
+        "src/modulos/fila/telas/preferencia-de-ambiente.tsx",
+        "export function PreferenciaDeAmbiente() { return 'salão'; }\n",
+    );
+    repositorio.escrever("src/modulos/fila/estado.ts", "export const estadoDaFila = 'aberta';\n");
+    repositorio.escrever(
+        "src/app/equipe/fila/preferencia-de-ambiente.test.tsx",
+        "import { CartaoDaEntrada } from '@/modulos/fila/telas/cartao-da-entrada';\n// RK43\nit('mostra a preferência de ambiente no cartão da entrada', () => {});\n",
+    );
+    repositorio.escrever("comandos/publicar.test.ts", "// RK9\nit('para na primeira falha', () => {});\n");
+    repositorio.commitar("feat(fila): preferência de ambiente no cartão (#176)");
+    repositorio
+}
+
+#[test]
+fn texto_livre_traz_codigo_testes_adr_risco_e_mapa_do_codigo() {
+    let repositorio = projeto_da_fila();
+    let contexto = repositorio.contexto("preferencia de ambiente cartao da entrada");
+    for esperado in [
+        "  código:",
+        "src/modulos/fila/telas/cartao-da-entrada.tsx · nome: cartao, entrada",
+        "src/modulos/fila/telas/preferencia-de-ambiente.tsx · nome: preferencia, ambiente",
+        "  testes:",
+        "src/app/equipe/fila/preferencia-de-ambiente.test.tsx · nome: preferencia, ambiente",
+        "testa src/modulos/fila/telas/cartao-da-entrada.tsx",
+        "GLOSSARY.md:6 · Preferência de ambiente",
+        "docs/adr/0007-ambiente.md · Ambiente é preferência, não promessa",
+        "src/app/equipe/fila/preferencia-de-ambiente.test.tsx:3 · RK43 A Preferência de ambiente do Cliente não chega à Equipe",
+        "#176 · feat(fila): preferência de ambiente no cartão (#176)",
+        "mapa do código: docs/mapa-do-codigo.md",
+    ] {
+        assert!(contexto.contains(esperado), "faltou \"{esperado}\" em:\n{contexto}");
+    }
+    for fora in ["docs/conferencia/176.md", "prototipos/fila", "src/modulos/fila/estado.ts", "RK9", "Mesa"] {
+        assert!(!contexto.contains(fora), "entrou \"{fora}\", que não trata da consulta:\n{contexto}");
+    }
+}
+
+#[test]
+fn secoes_de_arquivos_respeitam_o_limite() {
+    let repositorio = projeto_da_fila();
+    for numero in 0..40 {
+        repositorio.escrever(&format!("src/modulos/fila/entrada-{numero}.ts"), "export const valor = 1;\n");
+    }
+    repositorio.commitar("muitas entradas");
+    let contexto = repositorio.contexto("entrada na fila");
+    let linhas_de_codigo = contexto
+        .lines()
+        .skip_while(|linha| linha.trim() != "código:")
+        .skip(1)
+        .take_while(|linha| linha.starts_with("    "))
+        .count();
+    assert_eq!(linhas_de_codigo, 15, "a seção de código passou do limite:\n{contexto}");
+}
