@@ -54,13 +54,153 @@ fn caminho_entre_aspas(partes: &regex::Captures) -> String {
         .unwrap_or_default()
 }
 
-// A consulta de um trecho que chama o `rodar contexto`, sem aspas, sem --limite e sem o resto do cano.
-fn consulta_do_trecho(trecho: &str) -> Option<String> {
-    let partes = regex(r#"^\s*(?:sh\s+)?(?:"[^"]*|\S*)\.claude/watchdogs/rodar"?\s+contexto\s+([^|]+)"#).captures(trecho)?;
-    let mut palavras = Vec::new();
+// Um comando do shell em trechos (separados por &&, ||, ;, & e quebra de linha fora de aspas), cada
+// trecho em comandos do cano (| fora de aspas) e cada comando em palavras, já sem as aspas. O que está
+// entre aspas é argumento: `gh issue comment --body "cat src/a.ts"` não lê código, e o `\|` de um
+// padrão do grep não parte o cano. O corpo de um heredoc e o comentário ficam de fora.
+pub(crate) fn trechos_do_shell(comando: &str) -> Vec<Vec<Vec<String>>> {
+    let mut trechos: Vec<Vec<Vec<String>>> = Vec::new();
+    let mut cano: Vec<Vec<String>> = Vec::new();
+    let mut palavras: Vec<String> = Vec::new();
+    let mut palavra = String::new();
+    let mut palavra_aberta = false;
+    let mut fins_de_heredoc: Vec<String> = Vec::new();
+    let letras: Vec<char> = comando.chars().collect();
+    let mut posicao = 0;
+    let fechar_palavra = |palavra: &mut String, palavra_aberta: &mut bool, palavras: &mut Vec<String>| {
+        if *palavra_aberta {
+            palavras.push(std::mem::take(palavra));
+            *palavra_aberta = false;
+        }
+    };
+    let fechar_comando = |palavras: &mut Vec<String>, cano: &mut Vec<Vec<String>>| {
+        if !palavras.is_empty() {
+            cano.push(std::mem::take(palavras));
+        }
+    };
+    let fechar_trecho = |cano: &mut Vec<Vec<String>>, trechos: &mut Vec<Vec<Vec<String>>>| {
+        if !cano.is_empty() {
+            trechos.push(std::mem::take(cano));
+        }
+    };
+    while posicao < letras.len() {
+        let letra = letras[posicao];
+        match letra {
+            '\'' => {
+                palavra_aberta = true;
+                posicao += 1;
+                while posicao < letras.len() && letras[posicao] != '\'' {
+                    palavra.push(letras[posicao]);
+                    posicao += 1;
+                }
+            }
+            '"' => {
+                palavra_aberta = true;
+                posicao += 1;
+                while posicao < letras.len() && letras[posicao] != '"' {
+                    if letras[posicao] == '\\' && posicao + 1 < letras.len() {
+                        posicao += 1;
+                    }
+                    palavra.push(letras[posicao]);
+                    posicao += 1;
+                }
+            }
+            '\\' => {
+                palavra_aberta = true;
+                if let Some(proxima) = letras.get(posicao + 1).filter(|proxima| **proxima != '\n') {
+                    palavra.push(*proxima);
+                }
+                posicao += 1;
+            }
+            '#' if !palavra_aberta => {
+                while posicao + 1 < letras.len() && letras[posicao + 1] != '\n' {
+                    posicao += 1;
+                }
+            }
+            ' ' | '\t' => fechar_palavra(&mut palavra, &mut palavra_aberta, &mut palavras),
+            '|' | ';' | '&' | '\n' => {
+                fechar_palavra(&mut palavra, &mut palavra_aberta, &mut palavras);
+                let dobrado = letras.get(posicao + 1) == Some(&letra) && letra != '\n';
+                // `2>&1` e `&>` são redirecionamento, não separador.
+                let redirecionamento = letra == '&' && (letras.get(posicao.wrapping_sub(1)) == Some(&'>') || letras.get(posicao + 1) == Some(&'>'));
+                if redirecionamento {
+                    palavra.push(letra);
+                    palavra_aberta = true;
+                    posicao += 1;
+                    continue;
+                }
+                fechar_comando(&mut palavras, &mut cano);
+                if letra != '|' || dobrado {
+                    fechar_trecho(&mut cano, &mut trechos);
+                }
+                if dobrado {
+                    posicao += 1;
+                }
+                if letra == '\n' {
+                    // As linhas do heredoc são texto que vai para o comando, não comandos.
+                    for fim_do_heredoc in std::mem::take(&mut fins_de_heredoc) {
+                        while posicao + 1 < letras.len() {
+                            let fim_da_linha = letras[posicao + 1..]
+                                .iter()
+                                .position(|letra_da_linha| *letra_da_linha == '\n')
+                                .map(|tamanho| posicao + 1 + tamanho)
+                                .unwrap_or(letras.len());
+                            let linha: String = letras[posicao + 1..fim_da_linha].iter().collect();
+                            posicao = fim_da_linha;
+                            if linha.trim() == fim_do_heredoc {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            '<' if letras.get(posicao + 1) == Some(&'<') && letras.get(posicao + 2) != Some(&'<') => {
+                fechar_palavra(&mut palavra, &mut palavra_aberta, &mut palavras);
+                posicao += 2;
+                if letras.get(posicao) == Some(&'-') {
+                    posicao += 1;
+                }
+                while letras.get(posicao) == Some(&' ') {
+                    posicao += 1;
+                }
+                let mut fim_do_heredoc = String::new();
+                while posicao < letras.len() && !matches!(letras[posicao], ' ' | '\t' | '\n' | ';' | '|' | '&' | '>' | ')') {
+                    if !matches!(letras[posicao], '\'' | '"' | '\\') {
+                        fim_do_heredoc.push(letras[posicao]);
+                    }
+                    posicao += 1;
+                }
+                palavras.push(format!("<<{fim_do_heredoc}"));
+                if !fim_do_heredoc.is_empty() {
+                    fins_de_heredoc.push(fim_do_heredoc);
+                }
+                continue;
+            }
+            outra_letra => {
+                palavra_aberta = true;
+                palavra.push(outra_letra);
+            }
+        }
+        posicao += 1;
+    }
+    fechar_palavra(&mut palavra, &mut palavra_aberta, &mut palavras);
+    fechar_comando(&mut palavras, &mut cano);
+    fechar_trecho(&mut cano, &mut trechos);
+    trechos
+}
+
+// A consulta de um trecho que chama o `rodar contexto`, sem --limite e sem o resto do cano.
+fn consulta_do_trecho(trecho: &[Vec<String>]) -> Option<String> {
+    let palavras = trecho.first()?;
+    let posicao_do_rodar = palavras.iter().position(|palavra| palavra.ends_with(".claude/watchdogs/rodar"))?;
+    let antes_do_rodar_so_sh = palavras[..posicao_do_rodar].iter().all(|palavra| palavra == "sh");
+    if !antes_do_rodar_so_sh || palavras.get(posicao_do_rodar + 1).map(String::as_str) != Some("contexto") {
+        return None;
+    }
+    let mut partes_da_consulta = Vec::new();
     let mut proxima_eh_limite = false;
-    for palavra in partes[1].split_whitespace() {
-        if palavra.contains('>') {
+    for palavra in &palavras[posicao_do_rodar + 2..] {
+        if palavra.contains('>') || palavra.starts_with('<') {
             break;
         }
         if proxima_eh_limite {
@@ -68,36 +208,115 @@ fn consulta_do_trecho(trecho: &str) -> Option<String> {
         } else if palavra == "--limite" {
             proxima_eh_limite = true;
         } else {
-            palavras.push(palavra.trim_matches(['"', '\'']));
+            partes_da_consulta.push(palavra.as_str());
         }
     }
-    let consulta = palavras.join(" ");
+    let consulta = partes_da_consulta.join(" ");
     (!consulta.is_empty()).then_some(consulta)
 }
 
-// O primeiro caminho que exige consulta entre os que um cat, sed ou grep do trecho lê. Só conta palavra
-// que existe no disco: o padrão do grep e o script do sed não existem, e `git log | grep x` lê do cano.
-fn codigo_lido_no_trecho(trecho: &str, pasta_base: &Path, diretorio_projeto: &Path, ajustes: &AjustesDoProjeto) -> Option<String> {
+// Opções que levam o valor na palavra seguinte, por comando: o valor não é caminho.
+fn opcao_leva_valor(verbo: &str, opcao: &str) -> bool {
+    let opcoes_com_valor: &[&str] = match verbo {
+        "grep" | "egrep" => &[
+            "-A",
+            "-B",
+            "-C",
+            "-m",
+            "-e",
+            "-f",
+            "--regexp",
+            "--file",
+            "--max-count",
+            "--include",
+            "--exclude",
+            "--exclude-dir",
+        ],
+        "rg" => &[
+            "-A",
+            "-B",
+            "-C",
+            "-m",
+            "-e",
+            "-f",
+            "-g",
+            "-t",
+            "-T",
+            "--regexp",
+            "--file",
+            "--glob",
+            "--type",
+            "--type-not",
+            "--max-count",
+        ],
+        "sed" => &["-e", "-f", "--expression", "--file"],
+        "head" | "tail" => &["-n", "-c", "--lines", "--bytes"],
+        _ => &[],
+    };
+    opcoes_com_valor.contains(&opcao)
+}
+
+// O padrão vem numa opção (`grep -e x`, `sed -e s/a/b/`, `sed -f roteiro`): aí não há padrão posicional.
+fn padrao_veio_em_opcao(verbo: &str, opcao: &str) -> bool {
+    matches!(verbo, "grep" | "egrep" | "rg" | "sed")
+        && (matches!(opcao, "-e" | "-f" | "--regexp" | "--file" | "--expression")
+            || opcao.starts_with("--regexp=")
+            || opcao.starts_with("--expression=")
+            || (opcao.starts_with("-e") && opcao.len() > 2 && verbo != "sed"))
+}
+
+// O primeiro caminho que exige consulta entre os que um cat, sed ou grep do trecho lê. Só conta caminho
+// de arquivo ou pasta que existe no disco, dentro do projeto e fora do .gitignore: o padrão do grep e o
+// script do sed são o primeiro argumento e nunca contam, e `git log | grep x` lê do cano.
+fn codigo_lido_no_trecho(trecho: &[Vec<String>], pasta_base: &Path, diretorio_projeto: &Path, ajustes: &AjustesDoProjeto) -> Option<String> {
     let verbo_de_leitura = regex(r"^(cat|head|tail|less|sed|e?grep|rg)$");
-    for (posicao_no_cano, comando_do_cano) in trecho.split('|').enumerate() {
-        let mut palavras = comando_do_cano.split_whitespace();
-        let Some(verbo) = palavras.next().filter(|verbo| verbo_de_leitura.is_match(verbo)) else {
+    for (posicao_no_cano, palavras_do_comando) in trecho.iter().enumerate() {
+        let Some(verbo) = palavras_do_comando.first().map(String::as_str).filter(|verbo| verbo_de_leitura.is_match(verbo)) else {
             continue;
         };
-        let argumentos: Vec<&str> = palavras.take_while(|palavra| !palavra.contains('>') && !palavra.starts_with("<<")).collect();
+        let argumentos: Vec<&str> = palavras_do_comando[1..]
+            .iter()
+            .map(String::as_str)
+            .take_while(|palavra| !palavra.contains('>') && !palavra.starts_with('<'))
+            .collect();
         let eh_recursivo = verbo == "rg"
             || argumentos
                 .iter()
                 .any(|argumento| regex(r"^(-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)$").is_match(argumento));
-        let mut caminhos_lidos: Vec<PathBuf> = argumentos
+        let mut espera_padrao = matches!(verbo, "grep" | "egrep" | "rg" | "sed");
+        let mut posicionais: Vec<&str> = Vec::new();
+        let mut pular_proxima = false;
+        let mut fim_das_opcoes = false;
+        for argumento in &argumentos {
+            if pular_proxima {
+                pular_proxima = false;
+                continue;
+            }
+            if !fim_das_opcoes && *argumento == "--" {
+                fim_das_opcoes = true;
+                continue;
+            }
+            if !fim_das_opcoes && argumento.starts_with('-') && argumento.len() > 1 {
+                if padrao_veio_em_opcao(verbo, argumento) {
+                    espera_padrao = false;
+                }
+                pular_proxima = opcao_leva_valor(verbo, argumento);
+                continue;
+            }
+            if espera_padrao {
+                espera_padrao = false;
+                continue;
+            }
+            posicionais.push(argumento);
+        }
+        let mut caminhos_lidos: Vec<PathBuf> = posicionais
             .iter()
-            .filter(|argumento| !argumento.starts_with('-'))
-            .map(|argumento| argumento.trim_matches(['"', '\'']).split('*').next().unwrap_or(""))
+            .map(|argumento| argumento.split('*').next().unwrap_or(""))
             .filter(|caminho| !caminho.is_empty())
             .map(|caminho| pasta_base.join(caminho))
             .filter(|caminho| caminho.exists())
             .collect();
-        if caminhos_lidos.is_empty() && eh_recursivo && posicao_no_cano == 0 {
+        if posicionais.is_empty() && eh_recursivo && posicao_no_cano == 0 && pasta_base.is_dir() {
             caminhos_lidos.push(pasta_base.to_path_buf());
         }
         for caminho_lido in caminhos_lidos {
@@ -109,12 +328,25 @@ fn codigo_lido_no_trecho(trecho: &str, pasta_base: &Path, diretorio_projeto: &Pa
             } else {
                 caminho_relativo
             };
-            if caminho_exige_consulta(&caminho_com_barra, ajustes) {
+            if caminho_exige_consulta(&caminho_com_barra, ajustes) && !ignorado_pelo_git(diretorio_projeto, &caminho_com_barra) {
                 return Some(caminho_com_barra);
             }
         }
     }
     None
+}
+
+// node_modules/, build/ e o que mais o .gitignore esconde não é código do projeto.
+fn ignorado_pelo_git(diretorio_projeto: &Path, caminho_relativo: &str) -> bool {
+    !caminho_relativo.is_empty()
+        && std::process::Command::new("git")
+            .args(["check-ignore", "-q", "--", caminho_relativo.trim_end_matches('/')])
+            .current_dir(diretorio_projeto)
+            .stdin(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .map(|situacao| situacao.success())
+            .unwrap_or(false)
 }
 
 pub fn rodar() -> i32 {
@@ -179,11 +411,11 @@ pub fn rodar() -> i32 {
     // Cada trecho vale na ordem: `rodar contexto x && cat x` passa, `cat x && rodar contexto x` não.
     let chave_do_leitor = chave_do_agente(&entrada_hook);
     let ajustes_do_projeto = ler_ajustes_do_projeto(&diretorio_projeto);
-    let cd_inicial = regex(r#"^\s*cd\s+("([^"]+)"|'([^']+)'|(\S+))\s*$"#);
     let mut pasta_do_trecho = pasta_de_trabalho.clone();
-    for trecho in &trechos_do_comando {
-        if let Some(partes) = cd_inicial.captures(trecho) {
-            pasta_do_trecho = pasta_do_trecho.join(caminho_entre_aspas(&partes));
+    for trecho in &trechos_do_shell(&comando) {
+        let eh_cd = trecho.len() == 1 && trecho[0].len() == 2 && trecho[0][0] == "cd";
+        if eh_cd {
+            pasta_do_trecho = pasta_do_trecho.join(&trecho[0][1]);
         } else if let Some(consulta) = consulta_do_trecho(trecho) {
             registrar_consulta(&diretorio_projeto, &id_sessao, &chave_do_leitor, &consulta);
         } else if !agente_ja_consultou(&ler_estado_sessao(&diretorio_projeto, &id_sessao), &chave_do_leitor) {

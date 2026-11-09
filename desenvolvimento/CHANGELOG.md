@@ -11,6 +11,21 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 4.5.0 (2026-11-09)
+
+Ajustes vindos da retro de 10 sessões do Organiza-ai: o `rodar contexto` rodou 28 vezes e só devolveu
+termos do glossário, e o implementador seguiu com 47 buscas antes da primeira edição.
+
+- **`rodar contexto` navega o código:** por termo da consulta, devolve as seções `código` e `testes`
+  (cada teste com o código que testa), as ADRs que citam o termo do glossário, os riscos `RK<n>` dos
+  testes achados e do registro, as issues desses arquivos e, quando o projeto tem, o ponteiro ao
+  `docs/mapa-do-codigo.md`. Código e testes mostram o triplo do `--limite` (15 por padrão).
+- **Guarda-bash sem falso positivo:** o comando é lido com as aspas, o cano e o heredoc do shell. Só
+  conta como leitura de código um caminho que existe, dentro do projeto, fora do `.gitignore` e do
+  `.claude/`; o padrão do `grep`, o script do `sed` e o texto entre aspas de um `gh` ficam de fora.
+- **`.claude/metodo.json` é opcional:** o `docs/agents/watchdogs.md` diz que a ausência é a etapa
+  `completo` com os ajustes no padrão.
+
 ## 4.4.0 (2026-11-04)
 
 - **Conferente em Sonnet** ([ADR 0026](adr/0026-conferente-em-sonnet.md)), para poupar o limite

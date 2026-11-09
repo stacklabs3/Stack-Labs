@@ -1,10 +1,12 @@
 // Grafo do método por consulta (ADR 0018): liga um símbolo, termo, arquivo ou issue ao que o projeto
-// já escreve sobre ele (glossário, ADRs, riscos e testes, issues) e a quem o chama ou muda junto.
+// já escreve sobre ele (glossário, ADRs, riscos e testes, issues), a quem o chama ou muda junto e aos
+// arquivos de código e testes que tratam dos termos da consulta.
 // Tudo sai do repositório e do git a cada execução, sem modelo e sem índice guardado: nada envelhece.
 // Uso: .claude/watchdogs/rodar contexto <símbolo | termo | caminho | #issue> [--limite <n>]
 
+use crate::comum::{caminho_eh_livre_sem_issue, ler_ajustes_do_projeto};
 use crate::riscos::{declaracao_padrao, ler_registro, testes_do_arquivo, TESTES_PADRAO};
-use crate::validador::casa_algum;
+use crate::validador::{casa_algum, glob_para_regex};
 use regex::Regex;
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
@@ -22,6 +24,26 @@ const MAXIMO_ARQUIVOS_POR_COMMIT: usize = 50;
 
 // Arquivos em foco mostrados na resposta; os demais entram na conta e aparecem só no total.
 const ARQUIVOS_EM_FOCO_MOSTRADOS: usize = 10;
+
+// Seções de arquivos (código e testes) mostram mais linhas que as outras: são o mapa da navegação.
+const MULTIPLICADOR_DO_LIMITE_DE_ARQUIVOS: usize = 3;
+
+// Arquivos de código cujas issues entram quando a consulta é texto livre, sem arquivo em foco.
+const ARQUIVOS_PARA_AS_ISSUES: usize = 5;
+
+// Testes citados por risco; os demais aparecem só na conta.
+const TESTES_MOSTRADOS_POR_RISCO: usize = 3;
+
+// Arquivo maior que isso é dado ou código gerado: fica fora da busca por termos.
+const TAMANHO_MAXIMO_LIDO: u64 = 256 * 1024;
+
+// Palavras de ligação com 3 letras ou mais: não dizem do que a consulta trata.
+const PALAVRAS_DE_LIGACAO: [&str; 16] = [
+    "com", "das", "dos", "nas", "nos", "num", "numa", "para", "pela", "pelo", "por", "que", "sem", "uma", "and", "the",
+];
+
+// O mapa do código do projeto: onde mora cada camada de uma fatia e o vizinho para imitar.
+pub const MAPA_DO_CODIGO: &str = "docs/mapa-do-codigo.md";
 
 // Extensões de documento: entram como glossário, ADR e risco, nunca como definição ou chamada.
 const EXTENSOES_DE_DOCUMENTO: [&str; 4] = ["md", "txt", "csv", "json"];
@@ -66,6 +88,47 @@ fn radical(palavra: &str) -> String {
     palavra.chars().take(5).collect()
 }
 
+// Minúsculas sem acento: "Cartão" casa `cartao-da-entrada.tsx`.
+fn sem_acentos(texto: &str) -> String {
+    texto
+        .to_lowercase()
+        .chars()
+        .map(|letra| match letra {
+            'á' | 'à' | 'â' | 'ã' | 'ä' => 'a',
+            'é' | 'è' | 'ê' | 'ë' => 'e',
+            'í' | 'ì' | 'î' | 'ï' => 'i',
+            'ó' | 'ò' | 'ô' | 'õ' | 'ö' => 'o',
+            'ú' | 'ù' | 'û' | 'ü' => 'u',
+            'ç' => 'c',
+            outra_letra => outra_letra,
+        })
+        .collect()
+}
+
+// Os termos que dizem do que a consulta trata, cada um com o radical sem acento.
+struct TermoDaConsulta {
+    palavra: String,
+    radical: String,
+}
+
+fn termos_da_consulta(partes: &[String]) -> Vec<TermoDaConsulta> {
+    let mut termos: Vec<TermoDaConsulta> = Vec::new();
+    for parte in partes {
+        let parte_sem_acento = sem_acentos(parte);
+        if PALAVRAS_DE_LIGACAO.contains(&parte_sem_acento.as_str()) {
+            continue;
+        }
+        let radical_da_parte = radical(&parte_sem_acento);
+        if !termos.iter().any(|termo| termo.radical == radical_da_parte) {
+            termos.push(TermoDaConsulta {
+                palavra: parte_sem_acento,
+                radical: radical_da_parte,
+            });
+        }
+    }
+    termos
+}
+
 pub struct Ligacao {
     pub rotulo: String,
     pub local: String,
@@ -79,6 +142,7 @@ pub struct Secao {
 pub struct Contexto {
     pub consulta: String,
     pub arquivos_em_foco: Vec<String>,
+    pub mapa_do_codigo: Option<String>,
     pub secoes: Vec<Secao>,
 }
 
@@ -117,8 +181,9 @@ fn arquivos_com_o_nome(arquivos_do_repositorio: &[String], consulta: &str) -> Ve
 // Os arquivos que a resposta cita, sem linha: o guarda-contexto avisa quando a leitura sai deles.
 pub fn arquivos_citados(contexto_montado: &Contexto) -> Vec<String> {
     let mut citados = contexto_montado.arquivos_em_foco.clone();
+    citados.extend(contexto_montado.mapa_do_codigo.clone());
     for ligacao in contexto_montado.secoes.iter().flat_map(|secao| &secao.ligacoes) {
-        for local in ligacao.local.split(", ").filter(|local| !local.starts_with('#')) {
+        for local in ligacao.local.split(", ").filter(|local| !local.starts_with('#') && !local.starts_with('+')) {
             let caminho = local.split(':').next().unwrap_or("").to_string();
             if !citados.contains(&caminho) {
                 citados.push(caminho);
@@ -199,21 +264,69 @@ pub fn montar_contexto(raiz: &Path, consulta: &str, limite_por_secao: usize) -> 
         citacoes_procuradas.push(consulta.to_string());
     }
 
+    let termos_definidos = termos_do_glossario(raiz, &arquivos_do_repositorio, &partes);
+    // Num texto livre, o termo do glossário que a consulta usa também liga a ADR e o risco que o citam.
+    let nomes_dos_termos: Vec<String> = if numero_issue.is_none() && !eh_caminho {
+        termos_definidos.iter().map(|termo| termo.rotulo.clone()).collect()
+    } else {
+        Vec::new()
+    };
+    // O risco vem do teste dos arquivos achados; o termo do glossário citado em teste ligaria quase todos.
+    let citacoes_dos_testes = citacoes_procuradas.clone();
+    citacoes_procuradas.extend(nomes_dos_termos.iter().cloned());
+
+    // Os arquivos que tratam dos termos da consulta, menos os que já estão em foco.
+    let limite_de_arquivos = limite_por_secao * MULTIPLICADOR_DO_LIMITE_DE_ARQUIVOS;
+    let (codigo_dos_termos, testes_dos_termos) = if numero_issue.is_none() && !eh_caminho {
+        let termos = termos_da_consulta(&partes);
+        // Código é o que se edita só com issue: docs/, prototipos/, .scratch/ e .claude/ ficam de fora.
+        let ajustes = ler_ajustes_do_projeto(raiz);
+        let candidatos: Vec<String> = arquivos_do_repositorio
+            .iter()
+            .filter(|caminho| !arquivos_em_foco.contains(caminho) && !caminho.starts_with(".claude/") && !caminho_eh_livre_sem_issue(caminho, &ajustes))
+            .cloned()
+            .collect();
+        arquivos_dos_termos(raiz, &candidatos, &termos, limite_de_arquivos)
+    } else {
+        (Vec::new(), Vec::new())
+    };
+    let mut arquivos_dos_riscos = arquivos_em_foco.clone();
+    arquivos_dos_riscos.extend(testes_dos_termos.iter().map(|teste| teste.local.clone()));
+
     let mut secoes = vec![Secao {
         titulo: "definido em",
         ligacoes: definicoes,
     }];
+    let arquivos_para_as_issues: Vec<String> = if arquivos_em_foco.is_empty() {
+        codigo_dos_termos
+            .iter()
+            .take(ARQUIVOS_PARA_AS_ISSUES)
+            .map(|codigo| codigo.local.clone())
+            .collect()
+    } else {
+        arquivos_em_foco.clone()
+    };
+    secoes.push(Secao {
+        titulo: "código",
+        ligacoes: codigo_dos_termos,
+    });
+    secoes.push(Secao {
+        titulo: "testes",
+        ligacoes: testes_dos_termos,
+    });
     secoes.push(Secao {
         titulo: "termos do glossário",
-        ligacoes: termos_do_glossario(raiz, &arquivos_do_repositorio, &partes),
+        ligacoes: termos_definidos,
     });
     secoes.push(Secao {
         titulo: "decisões (ADR)",
         ligacoes: adrs_que_citam(raiz, &arquivos_do_repositorio, &citacoes_procuradas),
     });
+    let mut riscos = riscos_ligados(raiz, &arquivos_do_repositorio, &citacoes_dos_testes, &arquivos_dos_riscos);
+    riscos.extend(riscos_do_registro_que_citam(raiz, &nomes_dos_termos, &riscos));
     secoes.push(Secao {
         titulo: "riscos e testes",
-        ligacoes: riscos_ligados(raiz, &arquivos_do_repositorio, &citacoes_procuradas, &arquivos_em_foco),
+        ligacoes: riscos,
     });
     if eh_simbolo {
         secoes.push(Secao {
@@ -228,15 +341,22 @@ pub fn montar_contexto(raiz: &Path, consulta: &str, limite_por_secao: usize) -> 
     if numero_issue.is_none() {
         secoes.push(Secao {
             titulo: "issues",
-            ligacoes: issues_dos_arquivos(raiz, &arquivos_em_foco),
+            ligacoes: issues_dos_arquivos(raiz, &arquivos_para_as_issues),
         });
     }
     for secao in &mut secoes {
-        secao.ligacoes.truncate(limite_por_secao);
+        let limite_da_secao = if matches!(secao.titulo, "código" | "testes") {
+            limite_de_arquivos
+        } else {
+            limite_por_secao
+        };
+        secao.ligacoes.truncate(limite_da_secao);
     }
+    let mapa_do_codigo = raiz.join(MAPA_DO_CODIGO).is_file().then(|| MAPA_DO_CODIGO.to_string());
     Contexto {
         consulta: consulta.to_string(),
         arquivos_em_foco,
+        mapa_do_codigo,
         secoes,
     }
 }
@@ -285,6 +405,188 @@ fn arquivos_da_issue(raiz: &Path, numero_issue: &str) -> Vec<String> {
     arquivos_da_issue
 }
 
+// O nome do arquivo sem as extensões: `cartao-da-entrada.test.tsx` vira `cartao-da-entrada`.
+fn nome_base(caminho: &str) -> String {
+    let nome_arquivo = caminho.rsplit('/').next().unwrap_or(caminho);
+    nome_arquivo.split('.').next().unwrap_or(nome_arquivo).to_string()
+}
+
+fn pasta_do_arquivo(caminho: &str) -> &str {
+    caminho.rsplit_once('/').map(|(pasta, _)| pasta).unwrap_or("")
+}
+
+struct ArquivoDosTermos {
+    caminho: String,
+    termos_no_caminho: Vec<String>,
+    termos_no_texto: Vec<String>,
+}
+
+impl ArquivoDosTermos {
+    // O termo no caminho pesa mais que no texto: `telas/cartao-da-entrada.tsx` trata da entrada, um
+    // arquivo que só cita `entrada` passa por ela.
+    fn pontuacao(&self) -> usize {
+        3 * self.termos_no_caminho.len() + self.termos_no_texto.len()
+    }
+
+    fn rotulo(&self) -> String {
+        let mut partes_do_rotulo = Vec::new();
+        if !self.termos_no_caminho.is_empty() {
+            partes_do_rotulo.push(format!("nome: {}", self.termos_no_caminho.join(", ")));
+        }
+        let so_no_texto: Vec<&String> = self.termos_no_texto.iter().filter(|termo| !self.termos_no_caminho.contains(termo)).collect();
+        if !so_no_texto.is_empty() {
+            partes_do_rotulo.push(format!(
+                "texto: {}",
+                so_no_texto.iter().map(|termo| termo.as_str()).collect::<Vec<_>>().join(", ")
+            ));
+        }
+        partes_do_rotulo.join("; ")
+    }
+}
+
+// Arquivos de código e testes que tratam dos termos da consulta, os mais ligados primeiro. Sem termo no
+// caminho, o texto precisa de dois termos (ou do único que a consulta tem). Cada teste vem ao lado do
+// código que testa: mesmo nome na mesma pasta, ou o teste que importa o arquivo.
+fn arquivos_dos_termos(raiz: &Path, candidatos: &[String], termos: &[TermoDaConsulta], limite_de_arquivos: usize) -> (Vec<Ligacao>, Vec<Ligacao>) {
+    if termos.is_empty() {
+        return (Vec::new(), Vec::new());
+    }
+    let padroes_de_teste: Vec<Regex> = TESTES_PADRAO.iter().map(|padrao| glob_para_regex(padrao)).collect();
+    let eh_teste = |caminho: &str| padroes_de_teste.iter().any(|padrao| padrao.is_match(caminho));
+    let termos_exigidos_no_texto = termos.len().min(2);
+    let mut achados: Vec<ArquivoDosTermos> = Vec::new();
+    let mut textos_dos_testes: HashMap<String, String> = HashMap::new();
+    for caminho in candidatos.iter().filter(|caminho| !eh_documento(caminho)) {
+        let caminho_completo = raiz.join(caminho);
+        let pequeno = fs::metadata(&caminho_completo).map(|dados| dados.len() <= TAMANHO_MAXIMO_LIDO).unwrap_or(false);
+        if !pequeno {
+            continue;
+        }
+        let Ok(texto_arquivo) = fs::read_to_string(&caminho_completo) else { continue };
+        let caminho_sem_acento = sem_acentos(caminho);
+        let texto_sem_acento = sem_acentos(&texto_arquivo);
+        let termos_no_caminho: Vec<String> = termos
+            .iter()
+            .filter(|termo| caminho_sem_acento.contains(&termo.radical))
+            .map(|termo| termo.palavra.clone())
+            .collect();
+        let termos_no_texto: Vec<String> = termos
+            .iter()
+            .filter(|termo| texto_sem_acento.contains(&termo.radical))
+            .map(|termo| termo.palavra.clone())
+            .collect();
+        if eh_teste(caminho) {
+            textos_dos_testes.insert(caminho.clone(), texto_arquivo);
+        }
+        if termos_no_caminho.is_empty() && termos_no_texto.len() < termos_exigidos_no_texto {
+            continue;
+        }
+        achados.push(ArquivoDosTermos {
+            caminho: caminho.clone(),
+            termos_no_caminho,
+            termos_no_texto,
+        });
+    }
+    achados.sort_by(|primeiro, segundo| segundo.pontuacao().cmp(&primeiro.pontuacao()).then(primeiro.caminho.cmp(&segundo.caminho)));
+    let (testes_achados, codigo_achado): (Vec<ArquivoDosTermos>, Vec<ArquivoDosTermos>) = achados.into_iter().partition(|achado| eh_teste(&achado.caminho));
+    let codigo_mostrado: Vec<ArquivoDosTermos> = codigo_achado.into_iter().take(limite_de_arquivos).collect();
+
+    // Para cada teste: o primeiro código mostrado que ele testa e os termos que ele mesmo tem.
+    let mut codigo_testado: HashMap<String, (usize, String)> = HashMap::new();
+    for (posicao_do_codigo, codigo) in codigo_mostrado.iter().enumerate() {
+        let nome_do_codigo = nome_base(&codigo.caminho);
+        let pasta_do_codigo = pasta_do_arquivo(&codigo.caminho);
+        // `page`, `acao` e `index` existem em toda pasta: a importação só vale com a pasta junto.
+        let pasta_e_nome = format!("{}/{nome_do_codigo}", pasta_do_codigo.rsplit('/').next().unwrap_or(""));
+        let importacoes = [format!("{pasta_e_nome}\""), format!("{pasta_e_nome}'")];
+        for (caminho_teste, texto_teste) in &textos_dos_testes {
+            let mesmo_nome = nome_base(caminho_teste) == nome_do_codigo && pasta_do_arquivo(caminho_teste) == pasta_do_codigo;
+            let importa = importacoes.iter().any(|importacao| texto_teste.contains(importacao.as_str()));
+            if mesmo_nome || importa {
+                codigo_testado
+                    .entry(caminho_teste.clone())
+                    .or_insert((posicao_do_codigo, codigo.caminho.clone()));
+            }
+        }
+    }
+    let mut testes_pontuados: Vec<(usize, usize, Ligacao)> = Vec::new();
+    let mut caminhos_dos_testes = BTreeSet::new();
+    for teste in testes_achados {
+        caminhos_dos_testes.insert(teste.caminho.clone());
+        let testado = codigo_testado.get(&teste.caminho);
+        let posicao_do_codigo = testado.map(|(posicao, _)| *posicao).unwrap_or(usize::MAX);
+        let mut rotulo = teste.rotulo();
+        if let Some((_, caminho_do_codigo)) = testado {
+            rotulo = format!("{rotulo}; testa {caminho_do_codigo}");
+        }
+        testes_pontuados.push((teste.pontuacao(), posicao_do_codigo, Ligacao { rotulo, local: teste.caminho }));
+    }
+    for (caminho_teste, (posicao_do_codigo, caminho_do_codigo)) in codigo_testado {
+        if caminhos_dos_testes.insert(caminho_teste.clone()) {
+            testes_pontuados.push((
+                0,
+                posicao_do_codigo,
+                Ligacao {
+                    rotulo: format!("testa {caminho_do_codigo}"),
+                    local: caminho_teste,
+                },
+            ));
+        }
+    }
+    testes_pontuados.sort_by(|primeiro, segundo| {
+        segundo
+            .0
+            .cmp(&primeiro.0)
+            .then(primeiro.1.cmp(&segundo.1))
+            .then(primeiro.2.local.cmp(&segundo.2.local))
+    });
+    let testes: Vec<Ligacao> = testes_pontuados.into_iter().take(limite_de_arquivos).map(|(_, _, ligacao)| ligacao).collect();
+    let codigo = codigo_mostrado
+        .into_iter()
+        .map(|achado| Ligacao {
+            rotulo: achado.rotulo(),
+            local: achado.caminho,
+        })
+        .collect();
+    (codigo, testes)
+}
+
+// Riscos do registro docs/riscos.md cuja linha cita um termo do glossário da consulta, além dos que
+// os testes já trouxeram.
+fn riscos_do_registro_que_citam(raiz: &Path, nomes_dos_termos: &[String], riscos_dos_testes: &[Ligacao]) -> Vec<Ligacao> {
+    if nomes_dos_termos.is_empty() {
+        return Vec::new();
+    }
+    let caminho_registro = "docs/riscos.md";
+    let texto_registro = fs::read_to_string(raiz.join(caminho_registro)).unwrap_or_default();
+    let linhas_do_registro: Vec<&str> = texto_registro.lines().collect();
+    let (riscos_do_registro, _) = ler_registro(&texto_registro);
+    let termos_sem_acento: Vec<String> = nomes_dos_termos.iter().map(|nome| sem_acentos(nome)).collect();
+    let mut riscos = Vec::new();
+    for risco in riscos_do_registro {
+        let ja_veio = riscos_dos_testes.iter().any(|ligacao| ligacao.rotulo.starts_with(&format!("{} ", risco.id)));
+        let linha_registro = linhas_do_registro.get(risco.linha as usize - 1).copied().unwrap_or("");
+        let linha_sem_acento = sem_acentos(linha_registro);
+        let Some(termo_citado) = nomes_dos_termos
+            .iter()
+            .zip(&termos_sem_acento)
+            .find(|(_, termo_sem_acento)| linha_sem_acento.contains(termo_sem_acento.as_str()))
+            .map(|(nome, _)| nome)
+        else {
+            continue;
+        };
+        if ja_veio {
+            continue;
+        }
+        let descricao = linha_registro.split('|').nth(2).unwrap_or("").trim();
+        riscos.push(Ligacao {
+            rotulo: format!("{} {descricao} (cita {termo_citado})", risco.id),
+            local: format!("{caminho_registro}:{}", risco.linha),
+        });
+    }
+    riscos
+}
+
 // Termos do GLOSSARY.md (linhas "**Termo**:") que partilham um radical com a consulta.
 fn termos_do_glossario(raiz: &Path, arquivos_do_repositorio: &[String], partes: &[String]) -> Vec<Ligacao> {
     let radicais_da_consulta: BTreeSet<String> = partes.iter().map(|parte| radical(parte)).collect();
@@ -327,14 +629,14 @@ fn adrs_que_citam(raiz: &Path, arquivos_do_repositorio: &[String], citacoes_proc
     if citacoes_procuradas.is_empty() {
         return Vec::new();
     }
-    let citacoes_minusculas: Vec<String> = citacoes_procuradas.iter().map(|citacao| citacao.to_lowercase()).collect();
+    let citacoes_minusculas: Vec<String> = citacoes_procuradas.iter().map(|citacao| sem_acentos(citacao)).collect();
     let mut adrs = Vec::new();
     for caminho in arquivos_do_repositorio
         .iter()
         .filter(|caminho| caminho.contains("adr/") && caminho.ends_with(".md"))
     {
         let Ok(texto_adr) = fs::read_to_string(raiz.join(caminho)) else { continue };
-        let texto_minusculo = texto_adr.to_lowercase();
+        let texto_minusculo = sem_acentos(&texto_adr);
         if citacoes_minusculas.iter().any(|citacao| texto_minusculo.contains(citacao)) {
             adrs.push(Ligacao {
                 rotulo: primeira_linha_util(&texto_adr),
@@ -343,7 +645,7 @@ fn adrs_que_citam(raiz: &Path, arquivos_do_repositorio: &[String], citacoes_proc
         }
     }
     // A ADR que tem a consulta no título decide sobre ela; a que só a cita no corpo vem depois.
-    let cita_no_titulo = |adr: &Ligacao| citacoes_minusculas.iter().any(|citacao| adr.rotulo.to_lowercase().contains(citacao));
+    let cita_no_titulo = |adr: &Ligacao| citacoes_minusculas.iter().any(|citacao| sem_acentos(&adr.rotulo).contains(citacao));
     adrs.sort_by_key(|adr| !cita_no_titulo(adr));
     adrs
 }
@@ -364,7 +666,11 @@ fn riscos_ligados(raiz: &Path, arquivos_do_repositorio: &[String], citacoes_proc
     };
     let mut testes_por_risco: HashMap<String, Vec<String>> = HashMap::new();
     let mut ordem_dos_riscos: Vec<String> = Vec::new();
-    for caminho in arquivos_do_repositorio.iter().filter(|caminho| casa_algum(caminho, &padroes_de_teste)) {
+    // Os arquivos em foco vêm primeiro, na ordem em que a resposta os mostra: o risco deles abre a seção.
+    let ordem_dos_testes = arquivos_em_foco
+        .iter()
+        .chain(arquivos_do_repositorio.iter().filter(|caminho| !arquivos_em_foco.contains(caminho)));
+    for caminho in ordem_dos_testes.filter(|caminho| casa_algum(caminho, &padroes_de_teste)) {
         let Some(declaracao) = declaracao_padrao(caminho) else { continue };
         let Ok(texto_teste) = fs::read_to_string(raiz.join(caminho)) else { continue };
         let toca_a_consulta = arquivos_em_foco.contains(caminho) || citacoes_procuradas.iter().any(|citacao| texto_teste.contains(citacao.as_str()));
@@ -383,7 +689,11 @@ fn riscos_ligados(raiz: &Path, arquivos_do_repositorio: &[String], citacoes_proc
     ordem_dos_riscos
         .into_iter()
         .map(|id_risco| {
-            let testes_do_risco = testes_por_risco.remove(&id_risco).unwrap_or_default();
+            let todos_os_testes = testes_por_risco.remove(&id_risco).unwrap_or_default();
+            let mut testes_do_risco: Vec<String> = todos_os_testes.iter().take(TESTES_MOSTRADOS_POR_RISCO).cloned().collect();
+            if todos_os_testes.len() > TESTES_MOSTRADOS_POR_RISCO {
+                testes_do_risco.push(format!("+{} testes", todos_os_testes.len() - TESTES_MOSTRADOS_POR_RISCO));
+            }
             match descricao_do_risco(&id_risco) {
                 Some((descricao, linha)) => Ligacao {
                     rotulo: format!("{id_risco} {descricao} ({caminho_registro}:{linha})"),
@@ -518,14 +828,20 @@ pub fn formatar(contexto_montado: &Contexto) -> String {
         };
         linhas.push(format!("  arquivos: {mostrados}{sufixo}"));
     }
+    let tem_ligacao = linhas.len() > 1 || contexto_montado.secoes.iter().any(|secao| !secao.ligacoes.is_empty());
     for secao in contexto_montado.secoes.iter().filter(|secao| !secao.ligacoes.is_empty()) {
         linhas.push(format!("  {}:", secao.titulo));
         for ligacao in &secao.ligacoes {
             linhas.push(format!("    {} · {}", ligacao.local, ligacao.rotulo));
         }
     }
-    if linhas.len() == 1 {
+    if !tem_ligacao {
         linhas.push("  nada ligado a esta consulta no repositório.".into());
+    }
+    if let Some(mapa_do_codigo) = &contexto_montado.mapa_do_codigo {
+        linhas.push(format!(
+            "  mapa do código: {mapa_do_codigo} · onde mora cada camada de uma fatia e o vizinho para imitar"
+        ));
     }
     linhas.join("\n")
 }

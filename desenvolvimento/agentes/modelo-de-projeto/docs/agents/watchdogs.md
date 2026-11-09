@@ -31,18 +31,26 @@ instala o Rust (https://rustup.rs). Testes: `cargo test --release --manifest-pat
 | `vigia-do-metodo` | GitHub Actions, em toda PR | Branch do método; PR de `issue/<n>-*` com `Closes #<n>` e issue `ready-for-*`; `research/*` nunca entra na `main`; mudança nos watchdogs só com a label `altera-watchdogs`, de um humano ou do `--concluir-pr` do `/setup-stacklabs` | **Reprova a PR** |
 
 Num projeto em adoção, a etapa de `.claude/metodo.json` decide quais destes bloqueios valem
-([adocao.md](adocao.md)). Sem o arquivo, vale tudo.
+([adocao.md](adocao.md)).
+
+**`.claude/metodo.json` é opcional.** O modelo de projeto não o traz e o `/setup-stacklabs` não o
+cria: ele só existe quando o humano grava uma etapa de adoção ou os *Ajustes do projeto*. Sem o
+arquivo, o projeto está na etapa `completo` (todo bloqueio vale) e cada ajuste fica no padrão do
+método. Arquivo ausente é o estado normal: siga sem procurá-lo.
 
 ## Consultar o contexto
 
 `sh .claude/watchdogs/rodar contexto <símbolo | termo | caminho | #issue>` liga a consulta ao que o
 projeto já escreveu sobre ela e devolve cada ligação com `caminho:linha`: onde o símbolo é definido,
-os termos do `GLOSSARY.md`, as ADRs que o citam, os riscos `RK<n>` dos testes que o tocam, quem o
-chama, os arquivos que mudam junto e as issues do histórico. Uma `#issue` traz os arquivos dos
+os arquivos de código e os testes que tratam dos termos da consulta (cada teste com o código que ele
+testa), os termos do `GLOSSARY.md`, as ADRs que os citam, os riscos `RK<n>` dos testes achados e do
+registro, quem o chama, os arquivos que mudam junto e as issues do histórico. Quando o projeto tem
+`docs/mapa-do-codigo.md`, a resposta termina apontando para ele. Uma consulta em texto livre
+(`preferencia de ambiente cartao da entrada`) já leva aos arquivos da fatia. Uma `#issue` traz os arquivos dos
 commits que a citam. Tudo sai do repositório e do git a cada chamada, sem modelo e sem índice
 guardado, então não envelhece (ADR 0018). Uma consulta cujo texto é o nome de arquivo ou de pasta
 traz esses arquivos, inclusive em `.claude/skills/`. Leia a resposta antes de abrir arquivos e abra só
-os trechos citados; `--limite <n>` muda as 5 ligações por seção. A regra 23 torna a consulta
+os trechos citados; `--limite <n>` muda as 5 ligações por seção (código e testes mostram o triplo). A regra 23 torna a consulta
 obrigatória (ADR 0022): resposta vazia ou insuficiente libera a leitura direta.
 
 ## Ativar uma issue
@@ -117,8 +125,11 @@ quando o humano pede.
   roda só as regras de forma fixa no arquivo editado: o lint, o typecheck e as checagens do
   repositório inteiro continuam no `ci`.
 - O `guarda-contexto` confere que a consulta foi chamada, não que a resposta foi lida. O registro
-  acontece antes de o comando rodar. Leitura dentro de script, por `awk`, `git show` ou `python` não é
-  vista. A regra 23 cobre esse caso.
+  acontece antes de o comando rodar. No Bash, só conta como leitura um caminho que existe, dentro do
+  projeto, fora do `.gitignore` e do `.claude/`, passado a `cat`, `head`, `tail`, `less`, `sed`,
+  `grep` ou `rg`: texto entre aspas (o `--body` de um `gh`), o padrão do `grep`, o script do `sed` e o
+  corpo de um heredoc ficam de fora. Leitura dentro de script, por `awk`, `git show`, `$(...)` ou
+  `python` não é vista. A regra 23 cobre esse caso.
 - A regra de fontes confere que a seção e o link existem, não que a fonte sustenta a recomendação.
   Isso é do humano no grilling e do `/auditar-metodo`.
 - Grilling com o humano respondendo e TDD não dão para checar por máquina.
@@ -142,5 +153,8 @@ quando o humano pede.
 - O `rodar contexto` acha a definição por expressão regular (a palavra que declara e o nome), não
   por tree-sitter: um símbolo gerado por macro ou declarado de forma incomum não aparece. Termo do
   glossário casa pelos 5 primeiros caracteres de cada palavra, o que puxa vizinho de grafia parecida.
+  Os arquivos de código casam pelo mesmo radical, sem acento, no caminho (peso 3) e no texto (peso 1),
+  só fora dos caminhos livres da regra 3 e do `.claude/`; o teste "ao lado" é o de mesmo nome na pasta
+  ou o que importa `<pasta>/<nome>` do arquivo.
   O "muda junto" usa os últimos 2.000 commits, ignora commit com mais de 50 arquivos e some quando
   há mais de 10 arquivos em foco (uma issue larga muda junto com tudo).
