@@ -459,3 +459,24 @@ fn ci_e_pre_push_comparam_com_a_branch_padrao_do_remoto() {
     assert_eq!(codigo, 0, "{saida}");
     assert!(saida.contains("[ci] base origin/dev"), "{saida}");
 }
+
+// Risco: o push por URL faz o pre-push comparar com uma base que não existe e ler o repositório inteiro.
+#[test]
+fn push_por_url_compara_com_a_base_do_remoto_de_mesma_url() {
+    let projeto = Projeto::novo(regras_com_revisao());
+    projeto.git(&["remote", "add", "origin", "https://github.com/org/proj.git"]);
+    projeto.git(&["update-ref", "refs/remotes/origin/dev", "main"]);
+    projeto.git(&["symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/dev"]);
+    assert_eq!(watchdogs::pre_push::remoto_do_push(&projeto.raiz, "https://github.com/org/proj"), "origin");
+    assert_eq!(watchdogs::pre_push::remoto_do_push(&projeto.raiz, "https://outro.example/x.git"), "origin");
+
+    let (_, saida) = projeto.rodar(
+        &["pre-push", "https://github.com/org/proj.git", "https://github.com/org/proj.git"],
+        "refs/heads/issue/7-cupom abc refs/heads/issue/7-cupom def\n",
+        true,
+    );
+    assert!(
+        saida.contains("[ci] base origin/dev") && !saida.contains("https://github.com/org/proj.git/"),
+        "{saida}"
+    );
+}

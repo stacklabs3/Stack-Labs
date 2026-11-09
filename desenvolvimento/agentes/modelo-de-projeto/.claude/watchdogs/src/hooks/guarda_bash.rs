@@ -5,6 +5,7 @@
 
 use super::guarda_contexto::{agente_ja_consultou, caminho_exige_consulta, motivo_sem_consulta, registrar_consulta};
 use crate::comum::*;
+use crate::escrita_por_bash::analisar as analisar_escrita;
 use regex::Regex;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
@@ -52,6 +53,21 @@ fn caminho_entre_aspas(partes: &regex::Captures) -> String {
         .or_else(|| partes.get(4))
         .map(|parte| parte.as_str().to_string())
         .unwrap_or_default()
+}
+
+fn texto_cita_protegido(texto_do_comando: &str) -> bool {
+    regex(r"\.claude/(watchdogs|githooks|agents|metodo\.json|settings\.json|state)|\.github/workflows/vigia-do-metodo\.yml").is_match(texto_do_comando)
+}
+
+// Alvo protegido: o próprio caminho, algo dentro dele, a pasta que o contém (`rm -rf .claude`) ou um
+// curinga sobre ela (`rm .claude/*`).
+fn alvo_eh_protegido(alvo: &str) -> bool {
+    let sem_barra_final = alvo.trim_end_matches('/');
+    texto_cita_protegido(alvo)
+        || [".claude", ".github", ".github/workflows"]
+            .iter()
+            .any(|pasta| sem_barra_final == *pasta || sem_barra_final.ends_with(&format!("/{pasta}")))
+        || regex(r"(^|/)\.(claude|github)/(workflows/)?[*?\[{]").is_match(alvo)
 }
 
 // A consulta de um trecho que chama o `rodar contexto`, sem aspas, sem --limite e sem o resto do cano.
@@ -126,23 +142,21 @@ pub fn rodar() -> i32 {
     let id_sessao = texto(&entrada_hook["session_id"]).to_string();
     let comando = texto(&entrada_hook["tool_input"]["command"]).to_string();
     let separador_de_trechos = regex(r"&&|\|\||;|\n");
-    let trechos_do_comando: Vec<&str> = separador_de_trechos.split(&comando).collect();
+    // O corpo de um heredoc é texto, não comando: `cat > brief.md <<EOF` que cita um cat no texto não lê nada.
+    let comando_sem_heredocs = analisar_escrita(&comando).texto_sem_heredocs;
+    let trechos_do_comando: Vec<&str> = separador_de_trechos.split(&comando_sem_heredocs).collect();
     let pasta_de_trabalho: PathBuf = match entrada_hook["cwd"].as_str() {
         Some(cwd) if !cwd.is_empty() => PathBuf::from(cwd),
         _ => diretorio_projeto.clone(),
     };
 
     // ---------- W1: os watchdogs não se desligam por Bash ----------
-    let sem_redirecionamento_inofensivo = regex(r"\d*>\s*/dev/null")
-        .replace_all(&regex(r"\d*>&\d+").replace_all(&comando, ""), "")
-        .to_string();
-    let caminho_protegido = regex(r"\.claude/(watchdogs|githooks|agents|metodo\.json|settings\.json|state)|\.github/workflows/vigia-do-metodo\.yml");
-    let verbo_mutante =
-        regex(r"(>|\brm\b|\bmv\b|\bcp\b|sed\s+-i|perl\s+-[a-z]*i|\btee\b|\bchmod\b|\btruncate\b|\bln\b|\bunlink\b|git\s+(checkout|restore|rm|stash)\b)");
-    if separador_de_trechos
-        .split(&sem_redirecionamento_inofensivo)
-        .any(|trecho| caminho_protegido.is_match(trecho) && verbo_mutante.is_match(trecho))
-    {
+    // Decide pelo alvo da escrita (ADR 0027): ler os watchdogs, gravar no $TMPDIR ou citar um caminho
+    // protegido no texto de um heredoc passa; gravar, mover ou apagar um protegido, não.
+    let analise_da_escrita = analisar_escrita(&comando);
+    let script_grava_protegido = analise_da_escrita.scripts_que_gravam.iter().any(|script| texto_cita_protegido(script));
+    let alvo_desconhecido_protegido = analise_da_escrita.alvo_desconhecido && texto_cita_protegido(&analise_da_escrita.texto_sem_heredocs);
+    if analise_da_escrita.escritas.iter().any(|escrita| alvo_eh_protegido(&escrita.alvo)) || script_grava_protegido || alvo_desconhecido_protegido {
         bloquear("o comando altera .claude/watchdogs, .claude/githooks, .claude/agents, .claude/metodo.json, .claude/settings.json, .claude/state ou o vigia-do-metodo do CI. Só um humano altera a infraestrutura dos watchdogs.");
     }
 

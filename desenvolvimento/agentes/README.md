@@ -22,6 +22,7 @@ agentes/
 │   │   ├── validador.md               o formato de regras-de-codigo.json, o catálogo e como refinar
 │   │   ├── riscos.md                  o registro de riscos e o que faz um teste valer (ADR 0014)
 │   │   ├── contrato-da-fatia.md       o contrato publicado na issue antes do código (ADR 0023)
+│   │   ├── subprojetos.md             o CLAUDE.md de subprojeto como índice (monorepo)
 │   │   ├── issue-tracker.md · triage-labels.md · domain.md   (setup das skills do Matt)
 │   ├── .claude/                watchdogs/: os hooks do Claude Code, o pre-push e o validador de regras
 │   │                           de código, num crate Rust compilado em cada máquina (ADRs 0010 e 0011),

@@ -24,7 +24,7 @@ Três camadas barram; o `/auditar-metodo` confere depois.
 | "exige uma issue ativa" | Ative uma issue `ready-for-*` com `sh .claude/watchdogs/rodar ativar-issue <n>`, ou passe por `/to-tickets` |
 | "ainda não tem o contrato da fatia" | O agente publica o comentário `## Contrato da fatia` na issue antes de escrever código. Você não faz nada, a não ser ler o contrato se quiser |
 | "quebra regra de código" (`vigia-codigo`) | O agente acabou de editar um arquivo que quebra uma regra do `docs/regras-de-codigo.md`; a mensagem diz qual. Ele corrige na hora |
-| "exige a consulta de contexto" | O agente roda `sh .claude/watchdogs/rodar contexto <consulta>` antes de abrir código; resposta vazia libera a leitura. Você não faz nada |
+| "exige a consulta de contexto" | O agente roda `sh .claude/watchdogs/rodar contexto <nome>`, um nome por consulta, antes de abrir código; resposta vazia libera a leitura. Você não faz nada |
 | "seria fechado sem ## Fontes" | A decisão precisa citar a pesquisa ou a fonte primária |
 | "não foi reivindicado" | O ticket precisa de responsável antes do trabalho |
 | "o comando ativa mais de uma issue" | Uma issue por sessão: ative uma e abra outra janela para a próxima |

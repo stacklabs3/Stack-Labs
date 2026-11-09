@@ -4,7 +4,7 @@
 // O guarda-bash registra a consulta e usa as mesmas regras para cat, sed e grep.
 
 use crate::comum::*;
-use crate::contexto::{arquivos_citados, montar_contexto, LIMITE_PADRAO_POR_SECAO};
+use crate::contexto::{arquivos_citados, montar_contextos, LIMITE_PADRAO_POR_SECAO};
 use serde_json::{json, Value};
 use std::path::Path;
 
@@ -44,7 +44,10 @@ pub fn motivo_sem_consulta(caminho_relativo: &str) -> String {
 
 // Soma a consulta ao que o agente já consultou. O aviso volta a valer para a nova lista de citados.
 pub fn registrar_consulta(diretorio_projeto: &Path, id_sessao: &str, chave_agente: &str, consulta: &str) {
-    let citados_agora = arquivos_citados(&montar_contexto(diretorio_projeto, consulta, LIMITE_PADRAO_POR_SECAO));
+    let citados_agora: Vec<String> = montar_contextos(diretorio_projeto, consulta, LIMITE_PADRAO_POR_SECAO)
+        .iter()
+        .flat_map(arquivos_citados)
+        .collect();
     let mut estado_sessao = ler_estado_sessao(diretorio_projeto, id_sessao);
     let registro_anterior = &estado_sessao["consultasDeContexto"][chave_agente];
     let mut consultas: Vec<Value> = registro_anterior["consultas"].as_array().cloned().unwrap_or_default();

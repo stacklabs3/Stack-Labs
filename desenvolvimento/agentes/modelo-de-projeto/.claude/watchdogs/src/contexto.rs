@@ -2,6 +2,8 @@
 // já escreve sobre ele (glossário, ADRs, riscos e testes, issues) e a quem o chama ou muda junto.
 // Tudo sai do repositório e do git a cada execução, sem modelo e sem índice guardado: nada envelhece.
 // Uso: .claude/watchdogs/rodar contexto <símbolo | termo | caminho | #issue> [--limite <n>]
+// Várias palavras viram uma consulta por nome, e as respostas saem juntas: a frase inteira não casa
+// com nada, o nome solto casa com a definição, quem chama e o que muda junto.
 
 use crate::riscos::{declaracao_padrao, ler_registro, testes_do_arquivo, TESTES_PADRAO};
 use crate::validador::casa_algum;
@@ -128,7 +130,7 @@ pub fn arquivos_citados(contexto_montado: &Contexto) -> Vec<String> {
     citados
 }
 
-pub fn montar_contexto(raiz: &Path, consulta: &str, limite_por_secao: usize) -> Contexto {
+fn listar_arquivos_do_repositorio(raiz: &Path) -> Vec<String> {
     let mut arquivos_do_repositorio: Vec<String> = git(raiz, &["ls-files", "--cached", "--others", "--exclude-standard"])
         .unwrap_or_default()
         .lines()
@@ -136,6 +138,69 @@ pub fn montar_contexto(raiz: &Path, consulta: &str, limite_por_secao: usize) -> 
         .map(String::from)
         .collect();
     somar_arquivos_da_pasta(raiz, ".claude/skills", &mut arquivos_do_repositorio);
+    arquivos_do_repositorio
+}
+
+// Palavras que não nomeiam nada no código: ficam de fora quando a consulta é uma frase.
+const PALAVRAS_SEM_NOME: [&str; 40] = [
+    "com", "para", "pra", "que", "como", "quando", "onde", "qual", "quais", "uma", "uns", "umas", "dos", "das", "nos", "nas", "pelo", "pela", "sem", "por",
+    "mais", "não", "nao", "seu", "sua", "isso", "este", "esta", "esse", "essa", "the", "and", "for", "with", "from", "how", "what", "where", "when", "into",
+];
+
+// Mais nomes que isto numa consulta é uma frase longa: as respostas viram ruído.
+const MAXIMO_DE_NOMES_POR_CONSULTA: usize = 6;
+
+// Os nomes de uma consulta: ela inteira quando é um nome, um caminho ou uma issue; numa frase, cada
+// palavra que pode nomear algo (identificador, caminho, #issue, termo do glossário).
+pub fn nomes_da_consulta(consulta: &str, arquivos_do_repositorio: &[String]) -> Vec<String> {
+    let consulta = consulta.trim();
+    if !consulta.contains(char::is_whitespace) || arquivos_do_repositorio.iter().any(|caminho| caminho == consulta) {
+        return vec![consulta.to_string()];
+    }
+    let mut nomes: Vec<String> = Vec::new();
+    for palavra in consulta.split_whitespace() {
+        let nome = palavra
+            .trim_matches(|letra: char| matches!(letra, '"' | '\'' | '`' | ',' | ';' | ':' | '(' | ')' | '?' | '!'))
+            .trim_end_matches('.');
+        let eh_issue = nome
+            .strip_prefix('#')
+            .is_some_and(|numero| !numero.is_empty() && numero.chars().all(|letra| letra.is_ascii_digit()));
+        let letras_do_nome = nome.chars().filter(|letra| letra.is_alphanumeric()).count();
+        let pode_nomear = eh_issue || (letras_do_nome >= 3 && !PALAVRAS_SEM_NOME.contains(&nome.to_lowercase().as_str()));
+        if pode_nomear && !nomes.iter().any(|existente| existente == nome) {
+            nomes.push(nome.to_string());
+        }
+    }
+    // Identificador (snake_case, camelCase, caminho, #issue) nomeia com certeza: havendo algum, a
+    // palavra comum ("trata", "sessão") só traria ruído e tempo.
+    let eh_identificador = |nome: &String| {
+        let letras: Vec<char> = nome.chars().collect();
+        nome.contains(['_', '/', '#', '.']) || letras.windows(2).any(|par| par[0].is_lowercase() && par[1].is_uppercase())
+    };
+    if nomes.iter().any(eh_identificador) {
+        nomes.retain(eh_identificador);
+    }
+    nomes.truncate(MAXIMO_DE_NOMES_POR_CONSULTA);
+    if nomes.is_empty() {
+        nomes.push(consulta.to_string());
+    }
+    nomes
+}
+
+// Uma resposta por nome da consulta (`nomes_da_consulta`), com a lista de arquivos lida uma vez só.
+pub fn montar_contextos(raiz: &Path, consulta: &str, limite_por_secao: usize) -> Vec<Contexto> {
+    let arquivos_do_repositorio = listar_arquivos_do_repositorio(raiz);
+    nomes_da_consulta(consulta, &arquivos_do_repositorio)
+        .iter()
+        .map(|nome| montar_contexto_com_arquivos(raiz, nome, limite_por_secao, arquivos_do_repositorio.clone()))
+        .collect()
+}
+
+pub fn montar_contexto(raiz: &Path, consulta: &str, limite_por_secao: usize) -> Contexto {
+    montar_contexto_com_arquivos(raiz, consulta, limite_por_secao, listar_arquivos_do_repositorio(raiz))
+}
+
+fn montar_contexto_com_arquivos(raiz: &Path, consulta: &str, limite_por_secao: usize, arquivos_do_repositorio: Vec<String>) -> Contexto {
     let numero_issue = consulta
         .strip_prefix('#')
         .filter(|numero| !numero.is_empty() && numero.chars().all(|letra| letra.is_ascii_digit()));
@@ -268,16 +333,48 @@ fn achar_definicoes(raiz: &Path, simbolo: &str, arquivos_do_repositorio: &[Strin
     definicoes
 }
 
-// Arquivos dos commits que citam a issue (o merge da PR com "Closes #n" ou o "(#n)" do squash).
+// Arquivos da issue: os dos commits que a citam em qualquer branch (o merge da PR com "Closes #n", o
+// "(#n)" do squash, o merge da issue numa branch de integração), cada merge comparado com o primeiro pai,
+// e os da branch `issue/<n>-*` que ainda não entrou, comparada com a base de onde saiu.
 fn arquivos_da_issue(raiz: &Path, numero_issue: &str) -> Vec<String> {
     let padrao_issue = format!("#{numero_issue}([^0-9]|$)");
-    let saida = git(
+    let mut saida = git(
         raiz,
-        &["log", "-E", "--grep", &padrao_issue, "--name-only", "--format=", "-m", "--first-parent"],
+        &[
+            "log",
+            "--all",
+            "-E",
+            "--grep",
+            &padrao_issue,
+            "--name-only",
+            "--format=",
+            "--diff-merges=first-parent",
+        ],
     )
     .unwrap_or_default();
+    let padrao_da_branch = format!("issue/{numero_issue}-*");
+    let branches_da_issue = git(
+        raiz,
+        &[
+            "for-each-ref",
+            "--format=%(refname)",
+            &format!("refs/heads/{padrao_da_branch}"),
+            &format!("refs/remotes/*/{padrao_da_branch}"),
+        ],
+    )
+    .unwrap_or_default();
+    let base_padrao = ["refs/remotes/origin/HEAD", "main", "master"]
+        .into_iter()
+        .find(|base| git(raiz, &["rev-parse", "--verify", "--quiet", base]).is_some());
+    for branch in branches_da_issue.lines().filter(|branch| !branch.is_empty()) {
+        let Some(base) = base_padrao.and_then(|base| git(raiz, &["merge-base", base, branch])) else {
+            continue;
+        };
+        saida.push_str(&git(raiz, &["diff", "--name-only", base.trim(), branch]).unwrap_or_default());
+    }
+    // Sem exigir o arquivo no disco: a branch da issue pode não estar no checkout de quem consulta.
     let mut arquivos_da_issue: Vec<String> = Vec::new();
-    for caminho in saida.lines().filter(|caminho| !caminho.is_empty() && raiz.join(caminho).is_file()) {
+    for caminho in saida.lines().filter(|caminho| !caminho.is_empty()) {
         if !arquivos_da_issue.iter().any(|existente| existente == caminho) {
             arquivos_da_issue.push(caminho.to_string());
         }
@@ -499,6 +596,33 @@ fn issues_dos_arquivos(raiz: &Path, arquivos_em_foco: &[String]) -> Vec<Ligacao>
     issues
 }
 
+// Uma resposta por nome; os nomes sem ligação saem numa linha só, no fim.
+pub fn formatar_varios(contextos: &[Contexto]) -> String {
+    if let [unico] = contextos {
+        return formatar(unico);
+    }
+    let nada_ligado =
+        |contexto_montado: &Contexto| contexto_montado.arquivos_em_foco.is_empty() && contexto_montado.secoes.iter().all(|secao| secao.ligacoes.is_empty());
+    let nomes: Vec<&str> = contextos.iter().map(|contexto_montado| contexto_montado.consulta.as_str()).collect();
+    let mut blocos = vec![format!(
+        "consulta de {} nomes ({}): uma resposta por nome. Da próxima vez, um nome por consulta.",
+        contextos.len(),
+        nomes.join(", ")
+    )];
+    blocos.extend(contextos.iter().filter(|contexto_montado| !nada_ligado(contexto_montado)).map(formatar));
+    let sem_ligacao: Vec<&str> = contextos
+        .iter()
+        .filter(|contexto_montado| nada_ligado(contexto_montado))
+        .map(|contexto_montado| contexto_montado.consulta.as_str())
+        .collect();
+    if sem_ligacao.len() == contextos.len() {
+        blocos.push("  nada ligado a esta consulta no repositório.".into());
+    } else if !sem_ligacao.is_empty() {
+        blocos.push(format!("sem ligação no repositório: {}", sem_ligacao.join(", ")));
+    }
+    blocos.join("\n\n")
+}
+
 pub fn formatar(contexto_montado: &Contexto) -> String {
     let mut linhas = vec![format!("contexto de {}", contexto_montado.consulta)];
     if !contexto_montado.arquivos_em_foco.is_empty() {
@@ -557,6 +681,6 @@ pub fn rodar(argumentos: &[String]) -> i32 {
         eprintln!("o contexto roda dentro de um repositório git");
         return 2;
     };
-    println!("{}", formatar(&montar_contexto(Path::new(&raiz), consulta.trim(), limite_por_secao)));
+    println!("{}", formatar_varios(&montar_contextos(Path::new(&raiz), consulta.trim(), limite_por_secao)));
     0
 }

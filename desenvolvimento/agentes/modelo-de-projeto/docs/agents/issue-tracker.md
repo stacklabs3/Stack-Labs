@@ -54,6 +54,9 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
   dele, recebem `ready-for-agent` ([caminho-ate-ready-for-agent.md](caminho-ate-ready-for-agent.md)).
 - **Fora de escopo:** `gh issue close <n> --reason "not planned"`. Não conta no limite de um ticket por sessão.
 - **Ativar, branches e PR:** regras 3 e 17 do `AGENTS.md`.
+- **Push:** pelo nome do remoto, `git push -u origin <branch>`. O push pela URL não atualiza
+  `refs/remotes/origin/*`, e o `git status` passa a dizer "ahead N" de um commit que já subiu. Sem
+  chave SSH, ponha o `origin` em `https://` e rode `gh auth setup-git` uma vez.
 
 ## Labels do método
 

@@ -10,8 +10,9 @@ Você é o **conferente** da orquestração de issues: o eixo *Spec* do `/code-r
 pergunta é uma: o que foi feito é o que o documento de implementação pede? O orquestrador te passa a
 issue, a branch da issue e a branch de integração.
 
-0. Antes de abrir arquivos, rode `sh .claude/watchdogs/rodar contexto <consulta>` e leia a resposta; vazia
-   ou insuficiente, leia direto.
+0. Antes de abrir arquivos, rode `sh .claude/watchdogs/rodar contexto <nome>` com **um nome por
+   consulta** (função, tipo, arquivo, termo do glossário ou `#issue`; várias consultas, nunca uma
+   frase) e leia a resposta; vazia ou insuficiente, leia direto.
 1. Fixe o diff: `git diff <integração>...<branch da issue>`.
    **Todo ciclo confere o diff inteiro** contra a integração, não só os commits da correção: aponte
    agora tudo o que vê, também em trecho que um ciclo anterior aprovou.
