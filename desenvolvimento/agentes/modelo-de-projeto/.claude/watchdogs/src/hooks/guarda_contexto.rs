@@ -21,9 +21,11 @@ fn nome_tem_extensao_livre(caminho: &str) -> bool {
     EXTENSOES_LIVRES.contains(&extensao) || nome_arquivo.contains(".config.") || nome_arquivo.starts_with('.')
 }
 
-// `caminho_relativo` vazio é a raiz do projeto; pasta chega terminada em "/".
+// `caminho_relativo` vazio é a raiz do projeto; pasta chega terminada em "/". O .claude/ é a
+// infraestrutura do método (skills, watchdogs, agentes), não código do projeto: a consulta não o explica.
 pub fn caminho_exige_consulta(caminho_relativo: &str, ajustes: &AjustesDoProjeto) -> bool {
-    caminho_relativo.is_empty() || !(caminho_eh_livre_sem_issue(caminho_relativo, ajustes) || nome_tem_extensao_livre(caminho_relativo))
+    caminho_relativo.is_empty()
+        || !(caminho_relativo.starts_with(".claude/") || caminho_eh_livre_sem_issue(caminho_relativo, ajustes) || nome_tem_extensao_livre(caminho_relativo))
 }
 
 pub fn agente_ja_consultou(estado_sessao: &Value, chave_agente: &str) -> bool {

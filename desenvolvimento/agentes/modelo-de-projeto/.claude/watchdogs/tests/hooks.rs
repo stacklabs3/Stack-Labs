@@ -770,6 +770,51 @@ fn bash_trata_cat_sed_e_grep_em_codigo_como_leitura() {
     assert_eq!(projeto.bash("cat src/pedido.rs").0, 0);
 }
 
+// Casos reais da retro do Organiza-ai: comandos que não liam código e foram barrados antes da consulta.
+#[test]
+fn bash_so_conta_como_leitura_um_caminho_de_codigo_que_o_comando_le() {
+    let projeto = projeto_com_codigo();
+    fs::create_dir_all(projeto.raiz.join(".claude/skills/setup-stacklabs")).unwrap();
+    fs::write(projeto.raiz.join(".claude/skills/ORIGEM.json"), "{}\n").unwrap();
+    fs::write(projeto.raiz.join(".claude/skills/setup-stacklabs/Cargo.toml"), "[package]\n").unwrap();
+    fs::create_dir_all(projeto.raiz.join("node_modules/biblioteca")).unwrap();
+    fs::write(projeto.raiz.join("node_modules/biblioteca/index.js"), "module.exports = 1;\n").unwrap();
+    fs::write(projeto.raiz.join(".gitignore"), "node_modules/\n").unwrap();
+    for comando in [
+        "gh pr view 185 --json state,mergeCommit; gh issue view 160 --json state,labels,assignees",
+        "gh pr view 185 --comments | tail -40",
+        "git commit -m \"fix: corrige o cupom\n\ncat src/cupom.rs mostra o valor\"",
+        "git status --short | grep -vE 'node_modules|src|tsbuildinfo'",
+        "grep -rn 'src/cupom.rs' docs",
+        "cat .claude/skills/ORIGEM.json | head -30",
+        "grep -rn -i '\"versao\"\\|\"version\"' .claude/skills/setup-stacklabs/Cargo.toml 2>/dev/null",
+        "cat node_modules/biblioteca/index.js",
+        "python3 - <<'FIM'\ncat src/cupom.rs\nFIM",
+        "echo 'cat src/cupom.rs'",
+    ] {
+        let (codigo_saida, _, motivo) = projeto.bash(comando);
+        assert_eq!(codigo_saida, 0, "barrou: {comando}\n{motivo}");
+    }
+}
+
+#[test]
+fn bash_aponta_o_arquivo_de_codigo_que_o_comando_le_de_fato() {
+    let projeto = projeto_com_codigo();
+    for (comando, caminho_lido) in [
+        ("grep -rn -B3 -A15 'fn aplicar\\|fn finalizar' src/cupom.rs | head -60", "src/cupom.rs"),
+        ("gh pr view 185 --json state; grep -n \"cupom\" src/pedido.rs", "src/pedido.rs"),
+        ("grep -e cupom src/cupom.rs", "src/cupom.rs"),
+        ("sed -n '1,5p' src/pedido.rs", "src/pedido.rs"),
+    ] {
+        let (codigo_saida, _, motivo) = projeto.bash(comando);
+        assert_eq!(codigo_saida, 2, "passou sem consulta: {comando}");
+        assert!(
+            motivo.contains(&format!("ler \"{caminho_lido}\"")),
+            "apontou outro caminho em {comando}: {motivo}"
+        );
+    }
+}
+
 #[test]
 fn etapa_de_observacao_nao_exige_consulta() {
     let projeto = projeto_com_codigo();

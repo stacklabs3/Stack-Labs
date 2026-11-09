@@ -11,7 +11,7 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
-## 4.5.0 (2026-11-09)
+## 4.6.0 (2026-11-09)
 
 Ajustes vindos da retro das sessões de issue do Excurfly.
 
@@ -23,9 +23,9 @@ Ajustes vindos da retro das sessões de issue do Excurfly.
   `python` volta com a regra quebrada na hora, como no Edit. O `.claude/settings.json` ganha o
   `Bash` nos dois. A constituição (regra 24) e o implementador mandam editar código com Edit e
   Write, porque o `guarda-edicao` só vê essas ferramentas.
-- **`rodar contexto` com um nome por consulta:** a frase vira uma consulta por identificador (ou por
-  palavra, sem identificador), com as respostas juntas e os nomes sem ligação numa linha. O `#issue`
-  acha os commits que o citam em qualquer branch e a branch `issue/<n>-*` que ainda não entrou: antes
+- **`rodar contexto` com um nome por consulta:** frase com identificadores vira uma consulta por
+  identificador, com as respostas juntas e os sem ligação numa linha; frase sem identificador segue
+  como o texto livre da 4.5.0. O `#issue` acha os commits que o citam em qualquer branch e a branch `issue/<n>-*` que ainda não entrou: antes
   só via o primeiro pai do HEAD e voltava vazio para a issue integrada numa `integracao/*`. A regra 23,
   os quatro papéis e a `/orquestrar-issues` dizem "um nome por consulta".
 - **Worktree de issue pronta:** a `/orquestrar-issues` traz o `preparar-worktree.sh`, que o
@@ -36,6 +36,21 @@ Ajustes vindos da retro das sessões de issue do Excurfly.
   padrão dele, em vez de `https://…/main`, que não existe. O `issue-tracker.md` manda `git push origin <branch>`.
 - **Subprojeto com `CLAUDE.md`:** `docs/agents/subprojetos.md` registra o padrão do monorepo: a raiz
   manda ler o `CLAUDE.md` do subprojeto com Read, e ele é índice, com o detalhe em `docs/agents/`.
+
+## 4.5.0 (2026-11-09)
+
+Ajustes vindos da retro de 10 sessões do Organiza-ai: o `rodar contexto` rodou 28 vezes e só devolveu
+termos do glossário, e o implementador seguiu com 47 buscas antes da primeira edição.
+
+- **`rodar contexto` navega o código:** por termo da consulta, devolve as seções `código` e `testes`
+  (cada teste com o código que testa), as ADRs que citam o termo do glossário, os riscos `RK<n>` dos
+  testes achados e do registro, as issues desses arquivos e, quando o projeto tem, o ponteiro ao
+  `docs/mapa-do-codigo.md`. Código e testes mostram o triplo do `--limite` (15 por padrão).
+- **Guarda-bash sem falso positivo:** o comando é lido com as aspas, o cano e o heredoc do shell. Só
+  conta como leitura de código um caminho que existe, dentro do projeto, fora do `.gitignore` e do
+  `.claude/`; o padrão do `grep`, o script do `sed` e o texto entre aspas de um `gh` ficam de fora.
+- **`.claude/metodo.json` é opcional:** o `docs/agents/watchdogs.md` diz que a ausência é a etapa
+  `completo` com os ajustes no padrão.
 
 ## 4.4.0 (2026-11-04)
 
