@@ -11,6 +11,19 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 4.6.1 (2026-11-12)
+
+Ajustes vindos da validação da documentação do Excurfly, onde o projeto já roda assim.
+
+- **Implementador roda os testes afetados**, não a suíte completa: a suíte roda uma vez, no CI da
+  PR.
+- **Implementador usa a trava do projeto:** o comando pesado vai pela trava que o `AGENTS.md` do
+  projeto define em *Regras deste projeto*; sem ela, pelo `rodar pesado`.
+- **Revisor só lê o diff:** não roda a suíte nem o `rodar ci`. Com isso, a revisão por modelo dos
+  testes (ADR 0015) sai do caminho do revisor e fica para quem roda o `rodar ci` à mão.
+- **`rodar contexto`:** o "chamado por" deixa de fora `.scratch/`, `.claude/` e os demais caminhos
+  livres, como o índice dos termos já fazia.
+
 ## 4.6.0 (2026-11-09)
 
 Ajustes vindos da retro das sessões de issue do Excurfly.

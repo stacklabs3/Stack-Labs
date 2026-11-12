@@ -23,9 +23,8 @@ quem corrige é o implementador. O orquestrador te passa a branch da issue e a b
    **Todo ciclo revisa o diff inteiro** contra a integração, não só os commits da correção: um
    achado que você deixa para o ciclo seguinte gasta um ciclo de correção. Aponte agora tudo o que
    vê, também em trecho que um ciclo anterior aprovou.
-3. Rode a suíte de testes e o CI local: `sh .claude/watchdogs/rodar ci --base <integração>` (lint,
-   typecheck, validador e, se o projeto a ligou, a revisão por modelo dos testes alterados). Sem
-   `docs/regras-de-codigo.json`, rode o typecheck à mão.
+3. **Você só lê o diff.** Testes, typecheck e validador já rodaram no implementador, e a suíte
+   completa roda no CI da PR; rodar de novo aqui gasta a máquina sem achado novo.
 4. Para cada trecho do diff, aponte: (a) cada violação de padrão documentado, citando o arquivo e a
    regra; (b) cada princípio da casa que o diff quebra e que `docs/regras-de-codigo.md` não cobre,
    citando o ID (E1, P3, S...), exceto os que o projeto afastou (o E1 vale sempre: nome de uma letra
@@ -34,9 +33,7 @@ quem corrige é o implementador. O orquestrador te passa a branch da issue e a b
    `docs/regras-de-codigo.md` que alcança o diff e falta no contrato, citando a regra. Padrão
    documentado vence os princípios, e os princípios vencem a lista de base.
    Deixe para o lint e para o validador o que eles já garantem. Em cada teste do diff, confira
-   também o que a máquina não vê (regra 15, `docs/agents/riscos.md`), começando pelos suspeitos que
-   o `ci` listou com ⚠️ na revisão por modelo: confirme ou descarte cada um lendo o teste, porque a
-   lista é consultiva e o veredito é seu. Em todos: ele exercita o risco que cita;
+   também o que a máquina não vê (regra 15, `docs/agents/riscos.md`): ele exercita o risco que cita;
    o esperado vem de um exemplo e não recalcula o código; afirma estado ou resposta, e só confere
    chamada de mock na seam com o que não é nosso; não testa getter, framework nem o que o compilador
    garante; e falha com o **dano** que o contrato escreveu para ele (aplique-o de cabeça: se o teste
@@ -48,7 +45,7 @@ quem corrige é o implementador. O orquestrador te passa a branch da issue e a b
    `R<n>: não alcança o diff`. Pronto quando toda regra `revisor` tem a sua linha.
 
 **REPROVADO** quando há violação dura: padrão documentado quebrado (as regras de
-`docs/regras-de-codigo.md` incluídas), teste, typecheck ou validador vermelho (`CI: REPROVADO`), teste que não cobre
+`docs/regras-de-codigo.md` incluídas), teste que não cobre
 o risco que cita, vocabulário fora do `GLOSSARY.md`, ou linha do contrato que o diff não cumpre
 (achado (d)), ou regra `revisor` quebrada (passo 5). Regra que falta no contrato reprova só se o diff a quebra; cumprida, é observação. Achados (b) e (c) são julgamento: entram como observações e só reprovam se você
 explicar o dano concreto que causam nesta issue.

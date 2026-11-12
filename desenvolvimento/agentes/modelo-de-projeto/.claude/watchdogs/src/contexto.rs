@@ -6,7 +6,7 @@
 // Várias palavras viram uma consulta por nome, e as respostas saem juntas: a frase inteira não casa
 // com nada, o nome solto casa com a definição, quem chama e o que muda junto.
 
-use crate::comum::{caminho_eh_livre_sem_issue, ler_ajustes_do_projeto};
+use crate::comum::{caminho_eh_livre_sem_issue, ler_ajustes_do_projeto, AjustesDoProjeto};
 use crate::riscos::{declaracao_padrao, ler_registro, testes_do_arquivo, TESTES_PADRAO};
 use crate::validador::{casa_algum, glob_para_regex};
 use regex::Regex;
@@ -340,11 +340,10 @@ fn montar_contexto_com_arquivos(raiz: &Path, consulta: &str, limite_por_secao: u
     let limite_de_arquivos = limite_por_secao * MULTIPLICADOR_DO_LIMITE_DE_ARQUIVOS;
     let (codigo_dos_termos, testes_dos_termos) = if numero_issue.is_none() && !eh_caminho {
         let termos = termos_da_consulta(&partes);
-        // Código é o que se edita só com issue: docs/, prototipos/, .scratch/ e .claude/ ficam de fora.
         let ajustes = ler_ajustes_do_projeto(raiz);
         let candidatos: Vec<String> = arquivos_do_repositorio
             .iter()
-            .filter(|caminho| !arquivos_em_foco.contains(caminho) && !caminho.starts_with(".claude/") && !caminho_eh_livre_sem_issue(caminho, &ajustes))
+            .filter(|caminho| !arquivos_em_foco.contains(caminho) && eh_codigo(caminho, &ajustes))
             .cloned()
             .collect();
         arquivos_dos_termos(raiz, &candidatos, &termos, limite_de_arquivos)
@@ -805,8 +804,14 @@ fn riscos_ligados(raiz: &Path, arquivos_do_repositorio: &[String], citacoes_proc
         .collect()
 }
 
+// Código é o que se edita só com issue: docs/, prototipos/, .scratch/ e .claude/ ficam de fora.
+fn eh_codigo(caminho_relativo: &str, ajustes: &AjustesDoProjeto) -> bool {
+    !caminho_relativo.starts_with(".claude/") && !caminho_eh_livre_sem_issue(caminho_relativo, ajustes)
+}
+
 fn chamadas(raiz: &Path, simbolo: &str, definicoes: &[Ligacao]) -> Vec<Ligacao> {
     let linhas_de_definicao: BTreeSet<&str> = definicoes.iter().map(|definicao| definicao.local.as_str()).collect();
+    let ajustes = ler_ajustes_do_projeto(raiz);
     let saida = git(raiz, &["grep", "-n", "-w", "--untracked", simbolo]).unwrap_or_default();
     let mut chamadas_encontradas = Vec::new();
     for linha in saida.lines() {
@@ -815,7 +820,7 @@ fn chamadas(raiz: &Path, simbolo: &str, definicoes: &[Ligacao]) -> Vec<Ligacao> 
             continue;
         };
         let local = format!("{caminho}:{numero_linha}");
-        if eh_documento(caminho) || linhas_de_definicao.contains(local.as_str()) || !trecho.contains(&format!("{simbolo}(")) {
+        if eh_documento(caminho) || !eh_codigo(caminho, &ajustes) || linhas_de_definicao.contains(local.as_str()) || !trecho.contains(&format!("{simbolo}(")) {
             continue;
         }
         chamadas_encontradas.push(Ligacao {
