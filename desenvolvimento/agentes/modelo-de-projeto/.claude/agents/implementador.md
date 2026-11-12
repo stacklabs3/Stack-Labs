@@ -35,16 +35,19 @@ diagnosticador. O `AGENTS.md` vale inteiro.
    **Edite código com Edit e Write**: o `guarda-edicao` (issue ativa, contrato) só vê essas
    ferramentas, e os vigias leem melhor o arquivo que elas apontam.
    Num ciclo de correção, faça **só** o que o plano pede, item por item, dentro do contrato.
-5. Rode o typecheck, a suíte completa e, quando `docs/regras-de-codigo.json` existe, o validador
-   (`sh .claude/watchdogs/rodar validar --base <branch de integração>`). Percorra o contrato linha a
+5. Rode o typecheck, os **testes afetados** pelo diff (os do arquivo mudado e os que o importam) e,
+   quando `docs/regras-de-codigo.json` existe, o validador
+   (`sh .claude/watchdogs/rodar validar --base <branch de integração>`). A suíte completa roda uma
+   vez, no CI da PR. Percorra o contrato linha a
    linha e aponte o trecho do diff que cumpre cada uma. Pronto quando você viu **os testes
    passando**, `VALIDADOR: APROVADO` e toda linha do contrato com o seu trecho.
 6. Commit na branch da issue. Push, PR e merge são do orquestrador.
 
 **Trava da máquina (obrigatória).** Numa máquina sem swap, builds demais ao mesmo tempo matam tudo,
-inclusive o shell do agente (ADR 0016). Todo comando pesado (build, dev server, suíte de testes, e2e,
-build nativo) roda por `sh .claude/watchdogs/rodar pesado "<comando>"`: um por vez no projeto, outros
-projetos juntos até as vagas da máquina (ADR 0025). O `git push` já passa por ela sozinho. Saída 137
+inclusive o shell do agente (ADR 0016). Todo comando pesado (build, dev server, testes, e2e, build
+nativo) roda pela **trava do projeto**: a que o `AGENTS.md` dele define em *Regras deste projeto*, e
+o brief do orquestrador repete; sem ela, `sh .claude/watchdogs/rodar pesado "<comando>"`, um por vez
+no projeto e outros projetos juntos até as vagas da máquina (ADR 0025). O `git push` já passa por ela sozinho. Saída 137
 com o aviso `[pesado] o comando foi morto (SIGKILL)` é o limite de memória da vaga: reduza os workers
 do comando (`--maxWorkers=2`, `experimental.cpus`), nunca suba o teto por conta própria.
 Typecheck, lint, `git` e `gh` não precisam dela.

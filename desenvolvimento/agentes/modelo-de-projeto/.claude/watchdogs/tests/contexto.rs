@@ -149,6 +149,21 @@ fn frase_vira_uma_consulta_por_nome() {
     );
 }
 
+// Risco: o "chamado por" manda o agente a um rascunho de .scratch/ ou de .claude/, que não é código.
+#[test]
+fn chamado_por_deixa_de_fora_o_que_nao_e_codigo() {
+    let repositorio = projeto_do_cupom();
+    repositorio.escrever(".scratch/rascunho.rs", "fn teste_de_mao() {\n    aplicar_cupom(1);\n}\n");
+    repositorio.escrever(".claude/ferramenta.rs", "fn ferramenta() {\n    aplicar_cupom(2);\n}\n");
+    let contexto = repositorio.contexto("aplicar_cupom");
+    assert!(contexto.contains("src/pedido.rs:2 · aplicar_cupom(100) + 0"), "{contexto}");
+    assert!(!contexto.contains(".scratch/rascunho.rs"), "rascunho entrou como chamada:\n{contexto}");
+    assert!(
+        !contexto.contains(".claude/ferramenta.rs"),
+        "arquivo do .claude/ entrou como chamada:\n{contexto}"
+    );
+}
+
 // Risco: `#n` volta vazio para a issue que ainda está na branch dela ou numa branch de integração.
 #[test]
 fn issue_acha_a_branch_dela_e_o_merge_fora_da_main() {
