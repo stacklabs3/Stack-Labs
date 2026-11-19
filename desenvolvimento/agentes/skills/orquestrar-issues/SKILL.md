@@ -135,8 +135,8 @@ está gravado.
 
 ### 3. Uma issue por vez, numa sessão própria
 
-**Fronteira:** issues abertas com `ready-for-agent`, sem responsável, sem label `wayfinder:*` nem
-`spec`, sem sub-issues (issue com filhas é um spec, mesmo sem a label) e sem bloqueio aberto, da mais
+**Fronteira:** issues abertas com `ready-for-agent`, sem responsável, sem label `wayfinder:*`, `spec`
+nem a de issue adiada (`docs/agents/triage-labels.md`), sem sub-issues (issue com filhas é um spec, mesmo sem a label) e sem bloqueio aberto, da mais
 antiga para a mais nova. Um bloqueador já `na-integracao` nesta rodada conta
 como resolvido: o código dele já está na branch de integração.
 

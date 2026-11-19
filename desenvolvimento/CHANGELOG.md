@@ -11,6 +11,17 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 4.7.0 (2026-11-19)
+
+Vindo do Excurfly, que separou o que só entra depois do lançamento de um cliente
+(stacklabs3/excurfly#2375).
+
+- **Issue adiada:** um terceiro eixo de label, ao lado da triagem e dos `wayfinder:*`, que marca a
+  issue para depois de um marco do projeto sem trocar o rótulo dela. O nome mora numa tabela nova
+  do `triage-labels.md` (padrão `adiada`); o setup não cria a label, o projeto cria quando precisar.
+- **Fora das fronteiras:** a fronteira do `/orquestrar-issues` e a *Frontier query* do `/wayfinder`
+  pulam a issue adiada, mesmo em `ready-for-agent`. O glossário ganha o termo e a *Fronteira* o cita.
+
 ## 4.6.1 (2026-11-12)
 
 Ajustes vindos da validação da documentação do Excurfly, onde o projeto já roda assim.
