@@ -72,8 +72,14 @@ um tipo: pesquisa, protótipo, grilling ou tarefa. Ticket decide, não implement
 _Evitar_: Tarefa (quando não é do tipo tarefa), card, história
 
 **Fronteira**:
-Os tickets abertos, sem bloqueio e sem responsável de um mapa. São os únicos que se pode pegar agora.
+Os tickets abertos, sem bloqueio, sem responsável e não adiados de um mapa. São os únicos que se pode pegar agora.
 _Evitar_: Próximos passos, fila
+
+**Issue adiada**:
+Uma issue com a label de adiada: só entra depois de um marco que o projeto nomeia (um lançamento,
+uma fase). Mantém o rótulo de triagem ou o `wayfinder:*` dela e fica fora de toda fronteira até a
+label sair. O nome da label vive em `docs/agents/triage-labels.md`.
+_Evitar_: Backlog, congelada
 
 **Névoa**:
 As perguntas que se percebe que virão, mas que ainda não se sabe formular com precisão. Fica na
