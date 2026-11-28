@@ -59,12 +59,17 @@ A linha `VERSÃO` diz de qual versão do método para qual o projeto foi: leia a
   `### Acrescentadas`, e cada regra do modelo que o projeto não segue, para `### Afastadas`, no
   formato da seção. Apague o `.stacklabs-novo`. O que não couber vira pergunta na PR, e ela fica para
   uma pessoa.
+- **`HOMÔNIMA`:** uma skill pessoal encobre a do projeto (ADR 0028). Rode
+  `sh ${CLAUDE_SKILL_DIR}/rodar --mover-homonimas` e repasse ao humano cada `MOVIDA` (o backup fica
+  em `skills-encobertas/`). Com `HOMÔNIMAS NÃO MOVIDAS`, a pasta pessoal é um repositório git: dê a
+  lista ao humano, que resolve nesse repositório.
 - **`FALHA` dos watchdogs:** a fonte não compilou e os watchdogs do projeto ficaram como estavam.
   Mostre o erro ao humano e pare: é defeito do Stack-Labs.
 - **`FALHA` das labels:** sem `origin` no GitHub ou `gh` sem login. Diga o que falta e rode de novo
   depois de resolvido; o instalador só refaz o que falta.
 
-Pronto quando `find . -name '*.stacklabs-novo' -not -path './.git/*'` não lista nada.
+Pronto quando `find . -name '*.stacklabs-novo' -not -path './.git/*'` não lista nada e cada
+`HOMÔNIMA` foi movida ou está com o humano.
 
 ### 5. Verificação
 

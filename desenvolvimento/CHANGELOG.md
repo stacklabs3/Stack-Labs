@@ -11,6 +11,24 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 5.0.0 (2026-11-28)
+
+Maior: um watchdog passa a bloquear algo novo. No Claude Code, a skill pessoal em `~/.claude/skills/`
+vence a de mesmo nome do projeto, e no Excurfly 23 skills do método rodavam de cópias pessoais
+diferentes ([ADR 0028](adr/0028-skills-do-projeto-vencem-as-pessoais.md)).
+
+- **Skill encoberta:** a skill do projeto com homônima pessoal de conteúdo diferente (fora
+  `target/`). As três skills de máquina nunca contam. O glossário ganha o termo e a constituição a
+  regra 25.
+- **Watchdogs:** o `sessao-inicio` lista as encobertas; o `guarda-skill` (PreToolUse `Skill`, novo)
+  e o `vigia-prompt` barram chamar ou digitar uma delas. Na etapa `observacao`, só avisam. O
+  `.claude/settings.json` ganha o hook do `guarda-skill`.
+- **Instalador:** o relatório ganha `HOMÔNIMA <nome>`, e o `--mover-homonimas` move as encobertas
+  para `~/.claude/skills-encobertas/<data>/`, sem apagar. Com a pasta pessoal num repositório git,
+  ele recusa e só lista.
+- **Na atualização:** se o relatório trouxer `HOMÔNIMA`, o agente roda o `--mover-homonimas` (passo
+  4 do `/setup-stacklabs`). Até lá, a skill encoberta fica barrada no projeto.
+
 ## 4.7.0 (2026-11-19)
 
 Vindo do Excurfly, que separou o que só entra depois do lançamento de um cliente

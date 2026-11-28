@@ -240,6 +240,12 @@ Um hook do Claude Code, um hook do git ou um check de CI que transforma uma regr
 bloqueio. Um bloqueio de watchdog é uma informação, não um obstáculo a contornar.
 _Evitar_: Guard-rail, lint (quando é do método)
 
+**Skill encoberta**:
+Uma skill do projeto que uma skill pessoal de mesmo nome e conteúdo diferente, em
+`~/.claude/skills/`, vence na sessão. Os watchdogs a barram e o `--mover-homonimas` a desencobre
+(ADR 0028).
+_Evitar_: Skill duplicada, skill sombreada
+
 **Adoção**:
 A entrada no método de um projeto que já existia antes dele, pela `/adotar-metodo-stack-labs`. Anda
 em etapas e não refaz o trabalho que estava em andamento.

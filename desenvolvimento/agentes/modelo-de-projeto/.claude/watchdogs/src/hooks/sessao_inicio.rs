@@ -2,6 +2,7 @@
 // (inclusive depois de /clear e /compact, quando as regras somem da memória de trabalho).
 
 use crate::comum::*;
+use crate::homonimas::{como_resolver, skills_encobertas};
 
 const ARQUIVOS_DO_SETUP: [&str; 13] = [
     "AGENTS.md",
@@ -99,6 +100,18 @@ pub fn rodar() -> i32 {
         },
         format!("Branch atual: {}", branch_atual(&diretorio_projeto).unwrap_or_else(|| "(desconhecida)".into())),
     ];
+    let encobertas = skills_encobertas(&diretorio_projeto);
+    if !encobertas.is_empty() {
+        let consequencia = if metodo.etapa_de_adocao == "observacao" {
+            "Enquanto isso, chamar uma delas roda a pessoal."
+        } else {
+            "Enquanto isso, o guarda-skill e o vigia-prompt barram chamar uma delas."
+        };
+        linhas_contexto.push(format!(
+            "❌ Skills do projeto encobertas por cópias pessoais (ADR 0028). {} {consequencia}",
+            como_resolver(&encobertas)
+        ));
+    }
     if metodo.etapa_de_adocao != "completo" {
         linhas_contexto.push(format!(
             "🔄 Adoção do método em andamento (desde {}): etapa \"{}\". O que ainda não bloqueia também vale; o próximo passo está em /adotar-metodo-stack-labs (docs/agents/adocao.md).",

@@ -34,6 +34,7 @@ Três camadas barram; o `/auditar-metodo` confere depois.
 | "a PR não fecha a issue da branch" | Acrescente `Closes #<n>` no corpo da PR |
 | "a PR altera os watchdogs" | Atualização do método: o agente roda o `--concluir-pr`. Outra mudança: um sócio revisa e aplica a label `altera-watchdogs` |
 | "tem teste sem valor" (`vigia-teste`) | O agente escreveu teste sem risco do `docs/riscos.md`, sem afirmação ou desligado. Ele corrige; se faltar risco no registro, ele te pergunta, e quem aprova é você |
+| "rodaria a cópia pessoal, não a do projeto" | Uma skill sua em `~/.claude/skills/` tem o nome de uma do projeto e difere dela. O agente roda o `--mover-homonimas`, que a move para `~/.claude/skills-encobertas/`. Se a pasta for um repositório git seu, ele não mexe: resolva lá (apague, renomeie ou atualize a skill) |
 | `VALIDADOR: REPROVADO` | O código quebra uma regra de código; a lista diz qual, onde e de que princípio ela nasceu |
 | "o CI local reprovou" (`pre-push`) | Lint, typecheck ou validador vermelho na sua branch. A saída acima diz qual regra e onde; corrija e suba de novo |
 
