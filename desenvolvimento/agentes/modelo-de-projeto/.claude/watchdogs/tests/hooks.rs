@@ -926,3 +926,36 @@ fn observacao_so_avisa_da_skill_encoberta() {
     let (_, saida, _) = projeto.rodar(&["hook", "sessao-inicio"], r#"{"session_id":"s1"}"#, &[]);
     assert!(saida.contains("chamar uma delas roda a pessoal"), "{saida}");
 }
+
+// Os mesmos casos do instalador (`setup-stacklabs/tests/instalar.rs`): os dois dão a mesma resposta.
+
+#[test]
+fn skill_do_projeto_que_e_link_tambem_conta() {
+    let projeto = Projeto::novo("chore/x");
+    let pasta_real_da_skill = projeto.raiz.with_extension("compartilhada");
+    fs::create_dir_all(&pasta_real_da_skill).unwrap();
+    fs::write(pasta_real_da_skill.join("SKILL.md"), "skill do projeto").unwrap();
+    fs::create_dir_all(projeto.raiz.join(".claude/skills")).unwrap();
+    std::os::unix::fs::symlink(&pasta_real_da_skill, projeto.raiz.join(".claude/skills/minha-skill")).unwrap();
+    projeto.skill_pessoal("minha-skill", "skill pessoal");
+    let (codigo, _, erro) = projeto.chamar_skill("minha-skill");
+    let _ = fs::remove_dir_all(&pasta_real_da_skill);
+    assert_eq!(codigo, 2, "{erro}");
+}
+
+#[test]
+fn link_em_laco_dentro_da_skill_pessoal_nao_derruba_o_watchdog() {
+    let projeto = projeto_com_homonimas();
+    std::os::unix::fs::symlink("..", projeto.pasta_pessoal().join("skills/tdd/acima")).unwrap();
+    let (codigo, _, erro) = projeto.chamar_skill("tdd");
+    assert_eq!(codigo, 2, "{erro}");
+    assert!(erro.contains("/tdd rodaria a cópia pessoal"), "{erro}");
+}
+
+#[test]
+fn sem_a_skill_de_maquina_a_mensagem_diz_como_instalar() {
+    let projeto = projeto_com_homonimas();
+    fs::remove_dir_all(projeto.pasta_pessoal().join("skills/setup-stacklabs")).unwrap();
+    let (_, _, erro) = projeto.chamar_skill("tdd");
+    assert!(erro.contains("não está em") && erro.contains("AGENTS.md do Stack-Labs"), "{erro}");
+}

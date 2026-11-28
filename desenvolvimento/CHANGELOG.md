@@ -11,6 +11,23 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 5.0.2 (2026-11-28)
+
+Correções da revisão da PR 78 nas skills encobertas
+([ADR 0028](adr/0028-skills-do-projeto-vencem-as-pessoais.md)):
+
+- **Mesma regra nos dois lados:** o watchdog e o instalador listam as skills do mesmo jeito. Uma
+  skill do projeto que é link para uma pasta passa a contar nos dois, e o `--mover-homonimas` a
+  enxerga; antes, o watchdog barrava e o instalador dizia que não havia nada a mover. Dentro da
+  skill, link não é seguido: compara-se o alvo dele.
+- **Pasta pessoal ilegível não derruba a instalação:** a skill conta como encoberta e entra no
+  relatório como `HOMÔNIMA`.
+- **`--mover-homonimas`:** o backup fica ao lado da pasta real das skills pessoais, para o rename não
+  cruzar volumes quando `skills` é link. Uma skill que não move vira `NÃO MOVIDA` e as outras seguem.
+- **Watchdog:** compara só a skill chamada, não todas as do projeto. A mensagem diz como instalar a
+  skill de máquina `setup-stacklabs` quando ela falta, e como atualizá-la quando não conhece o
+  `--mover-homonimas`.
+
 ## 5.0.1 (2026-11-28)
 
 - **Endereço novo do Stack-Labs:** o repositório mudou para `stacklabs3/Stack-Labs`. O instalador

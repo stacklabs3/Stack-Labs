@@ -953,7 +953,7 @@ fn instalar(opcoes: &Opcoes) -> Resultado<ResultadoDaInstalacao> {
     remover_pasta(&pasta_de_preparo)?;
 
     if let Some(pasta_pessoal) = pasta_das_skills_pessoais() {
-        for nome_da_skill in skills_encobertas(&pasta_das_skills_do_projeto, &pasta_pessoal)? {
+        for nome_da_skill in skills_encobertas(&pasta_das_skills_do_projeto, &pasta_pessoal) {
             relatorio.push(format!(
                 "HOMÔNIMA  {nome_da_skill}: a cópia em {}/ encobre a do projeto e difere dela; rode --mover-homonimas",
                 texto(&pasta_pessoal)
@@ -1141,59 +1141,101 @@ fn conferir_skills(opcoes: &Opcoes) -> Resultado<()> {
 }
 
 // ---------- skills pessoais homônimas (ADR 0028) ----------
+//
+// A mesma regra mora no watchdog (`modelo-de-projeto/.claude/watchdogs/src/homonimas.rs`), e este
+// crate não pode depender dele. As duas cópias seguem os mesmos casos de teste: mudou aqui, mude lá.
+
+/// Pastas e arquivos que não fazem parte do conteúdo de uma skill.
+const IGNORADOS_NA_COMPARACAO: [&str; 2] = [PASTA_DE_COMPILACAO, ".DS_Store"];
+
+/// O que uma entrada de dentro da skill guarda: os bytes de um arquivo ou o alvo de um link.
+#[derive(PartialEq, PartialOrd, Eq, Ord)]
+enum ConteudoDaEntrada {
+    Arquivo(Vec<u8>),
+    Link(PathBuf),
+}
 
 /// `$CLAUDE_CONFIG_DIR/skills`, ou `$HOME/.claude/skills` sem a variável: a pasta que vence a do projeto.
 fn pasta_das_skills_pessoais() -> Option<PathBuf> {
     if let Some(pasta_de_configuracao) =
-        std::env::var_os("CLAUDE_CONFIG_DIR").filter(|valor| !valor.is_empty())
+        std::env::var_os("CLAUDE_CONFIG_DIR").filter(|caminho_da_configuracao| !caminho_da_configuracao.is_empty())
     {
         return Some(PathBuf::from(pasta_de_configuracao).join("skills"));
     }
     std::env::var_os("HOME")
-        .filter(|valor| !valor.is_empty())
+        .filter(|caminho_do_usuario| !caminho_do_usuario.is_empty())
         .map(|pasta_do_usuario| PathBuf::from(pasta_do_usuario).join(".claude").join("skills"))
 }
 
-/// Mesmos arquivos com os mesmos bytes, fora `target/` e o `.DS_Store` do Finder.
-fn skills_iguais(pasta_a: &Path, pasta_b: &Path) -> Resultado<bool> {
-    let conteudo_da_skill = |pasta: &Path| -> Resultado<Vec<String>> {
-        Ok(listar_arquivos(pasta)?
-            .into_iter()
-            .filter(|caminho_relativo| !caminho_relativo.ends_with(".DS_Store"))
-            .collect())
-    };
-    let arquivos_de_a = conteudo_da_skill(pasta_a)?;
-    Ok(arquivos_de_a == conteudo_da_skill(pasta_b)?
-        && arquivos_de_a.iter().all(|caminho_relativo| {
-            arquivos_iguais(&pasta_a.join(caminho_relativo), &pasta_b.join(caminho_relativo))
-        }))
+/// A pasta da skill é pasta mesmo ou um link para uma pasta: o Claude Code carrega as duas.
+fn eh_pasta_de_skill(caminho_da_skill: &Path) -> bool {
+    fs::metadata(caminho_da_skill).is_ok_and(|dados_da_skill| dados_da_skill.is_dir())
 }
 
-/// As skills do projeto que uma pessoal de mesmo nome e conteúdo diferente encobre. As de máquina
-/// moram na pasta pessoal por design e ficam fora.
-fn skills_encobertas(pasta_das_skills_do_projeto: &Path, pasta_pessoal: &Path) -> Resultado<Vec<String>> {
-    let mut encobertas = Vec::new();
-    if !pasta_das_skills_do_projeto.is_dir() || !pasta_pessoal.is_dir() {
-        return Ok(encobertas);
-    }
-    for pasta_da_skill in subpastas(pasta_das_skills_do_projeto)? {
-        let nome_da_skill = nome_da_pasta(&pasta_da_skill);
-        let pasta_homonima = pasta_pessoal.join(&nome_da_skill);
-        if !SKILLS_DE_MAQUINA.contains(&nome_da_skill.as_str())
-            && pasta_homonima.is_dir()
-            && !skills_iguais(&pasta_da_skill, &pasta_homonima)?
-        {
-            encobertas.push(nome_da_skill);
+/// Os arquivos da skill, sem seguir link de dentro dela (um link para a pasta de cima entraria em laço).
+fn arquivos_da_skill(pasta_da_skill: &Path) -> Option<Vec<(String, ConteudoDaEntrada)>> {
+    fn visitar(pasta_atual: &Path, prefixo: &str, arquivos: &mut Vec<(String, ConteudoDaEntrada)>) -> Option<()> {
+        for entrada in fs::read_dir(pasta_atual).ok()? {
+            let entrada = entrada.ok()?;
+            let nome_da_entrada = entrada.file_name().to_string_lossy().into_owned();
+            if IGNORADOS_NA_COMPARACAO.contains(&nome_da_entrada.as_str()) {
+                continue;
+            }
+            let caminho_relativo = format!("{prefixo}{nome_da_entrada}");
+            let tipo_da_entrada = entrada.file_type().ok()?;
+            if tipo_da_entrada.is_symlink() {
+                arquivos.push((caminho_relativo, ConteudoDaEntrada::Link(fs::read_link(entrada.path()).ok()?)));
+            } else if tipo_da_entrada.is_dir() {
+                visitar(&entrada.path(), &format!("{caminho_relativo}/"), arquivos)?;
+            } else {
+                arquivos.push((caminho_relativo, ConteudoDaEntrada::Arquivo(fs::read(entrada.path()).ok()?)));
+            }
         }
+        Some(())
     }
+    let mut arquivos = Vec::new();
+    visitar(pasta_da_skill, "", &mut arquivos)?;
+    arquivos.sort();
+    Some(arquivos)
+}
+
+/// Iguais quando têm as mesmas entradas com o mesmo conteúdo, fora `target/` e `.DS_Store`.
+/// Ilegível conta como diferente: fica encoberta e o `--mover-homonimas` a tira do caminho.
+fn skills_iguais(pasta_a: &Path, pasta_b: &Path) -> bool {
+    match (arquivos_da_skill(pasta_a), arquivos_da_skill(pasta_b)) {
+        (Some(arquivos_a), Some(arquivos_b)) => arquivos_a == arquivos_b,
+        _ => false,
+    }
+}
+
+fn esta_encoberta(pasta_das_skills_do_projeto: &Path, pasta_pessoal: &Path, nome_da_skill: &str) -> bool {
+    let pasta_do_projeto = pasta_das_skills_do_projeto.join(nome_da_skill);
+    let pasta_homonima = pasta_pessoal.join(nome_da_skill);
+    !SKILLS_DE_MAQUINA.contains(&nome_da_skill)
+        && eh_pasta_de_skill(&pasta_do_projeto)
+        && eh_pasta_de_skill(&pasta_homonima)
+        && !skills_iguais(&pasta_do_projeto, &pasta_homonima)
+}
+
+/// As skills do projeto que uma pessoal de mesmo nome e conteúdo diferente encobre, em ordem. As de
+/// máquina moram na pasta pessoal por design e ficam fora. Pasta ilegível não derruba a instalação.
+fn skills_encobertas(pasta_das_skills_do_projeto: &Path, pasta_pessoal: &Path) -> Vec<String> {
+    let Ok(entradas) = fs::read_dir(pasta_das_skills_do_projeto) else {
+        return Vec::new();
+    };
+    let mut encobertas: Vec<String> = entradas
+        .filter_map(Result::ok)
+        .map(|entrada| entrada.file_name().to_string_lossy().into_owned())
+        .filter(|nome_da_skill| esta_encoberta(pasta_das_skills_do_projeto, pasta_pessoal, nome_da_skill))
+        .collect();
     encobertas.sort();
-    Ok(encobertas)
+    encobertas
 }
 
 fn mover_homonimas(opcoes: &Opcoes) -> Resultado<()> {
     let destino = destino_das_opcoes(opcoes)?;
     let pasta_pessoal = pasta_das_skills_pessoais().ok_or("sem HOME nem CLAUDE_CONFIG_DIR: não sei onde estão as skills pessoais")?;
-    let encobertas = skills_encobertas(&destino.join(".claude").join("skills"), &pasta_pessoal)?;
+    let encobertas = skills_encobertas(&destino.join(".claude").join("skills"), &pasta_pessoal);
     if encobertas.is_empty() {
         println!("HOMÔNIMAS nenhuma skill pessoal encobre as do projeto.");
         return Ok(());
@@ -1209,17 +1251,28 @@ fn mover_homonimas(opcoes: &Opcoes) -> Resultado<()> {
         );
         return Ok(());
     }
-    let pasta_de_configuracao = pasta_pessoal.parent().ok_or("pasta das skills pessoais sem pasta acima")?;
+    // O backup fica ao lado da pasta real: se `skills` é link para outro volume, o rename não cruza volumes.
+    let pasta_pessoal_real = fs::canonicalize(&pasta_pessoal).map_err(|erro| format!("{}: {erro}", texto(&pasta_pessoal)))?;
+    let pasta_de_configuracao = pasta_pessoal_real.parent().ok_or("pasta das skills pessoais sem pasta acima")?;
     let carimbo = agora_em_iso().replace(':', "-");
     let pasta_do_backup = pasta_de_configuracao.join("skills-encobertas").join(&carimbo[..19]);
     criar_pasta(&pasta_do_backup)?;
+    let mut nao_movidas = Vec::new();
     for nome_da_skill in encobertas {
         let pasta_movida = pasta_do_backup.join(&nome_da_skill);
-        fs::rename(pasta_pessoal.join(&nome_da_skill), &pasta_movida)
-            .map_err(|erro| format!("mover {nome_da_skill}: {erro}"))?;
-        println!("MOVIDA    {nome_da_skill} → {}", texto(&pasta_movida));
+        match fs::rename(pasta_pessoal_real.join(&nome_da_skill), &pasta_movida) {
+            Ok(()) => println!("MOVIDA    {nome_da_skill} → {}", texto(&pasta_movida)),
+            Err(erro) => {
+                println!("NÃO MOVIDA {nome_da_skill}: {erro}");
+                nao_movidas.push(nome_da_skill);
+            }
+        }
     }
-    Ok(())
+    if nao_movidas.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("homônimas não movidas: {}", nao_movidas.join(", ")))
+    }
 }
 
 // ---------- verificação ----------

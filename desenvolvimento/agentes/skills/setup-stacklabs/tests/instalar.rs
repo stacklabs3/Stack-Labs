@@ -876,3 +876,43 @@ fn mover_homonimas_nao_mexe_em_pasta_pessoal_que_e_repositorio_git() {
     assert!(pasta_pessoal.join("tdd/SKILL.md").exists());
     assert!(!cenario.configuracao().join("skills-encobertas").exists());
 }
+
+// Os mesmos casos do watchdog (`tests/hooks.rs`): o instalador e o watchdog dão a mesma resposta.
+
+#[test]
+fn mover_homonimas_ve_a_skill_do_projeto_que_e_link() {
+    let cenario = Cenario::novo();
+    cenario.relatorio(&[]);
+    let pasta_real_da_skill = cenario.raiz.join("skill-compartilhada");
+    escrever(&pasta_real_da_skill.join("SKILL.md"), "skill do projeto\n");
+    std::os::unix::fs::symlink(&pasta_real_da_skill, cenario.projeto.join(".claude/skills/minha-skill")).unwrap();
+    escrever(&cenario.configuracao().join("skills/minha-skill/SKILL.md"), "skill pessoal\n");
+    let saida = cenario.relatorio(&["--mover-homonimas"]);
+    assert_eq!(linhas_que_comecam(&saida, "MOVIDA").len(), 1, "{saida}");
+    assert!(linhas_que_comecam(&saida, "MOVIDA")[0].contains("minha-skill"), "{saida}");
+}
+
+#[test]
+fn link_em_laco_dentro_da_skill_pessoal_nao_trava_o_instalador() {
+    let cenario = Cenario::novo();
+    cenario.relatorio(&[]);
+    cenario.com_skills_pessoais();
+    std::os::unix::fs::symlink("..", cenario.configuracao().join("skills/tdd/acima")).unwrap();
+    let homonimas = linhas_que_comecam(&cenario.relatorio(&[]), "HOMÔNIMA");
+    assert_eq!(homonimas.len(), 1, "{homonimas:?}");
+}
+
+#[test]
+fn pasta_pessoal_ilegivel_nao_derruba_a_instalacao() {
+    use std::os::unix::fs::PermissionsExt;
+    let cenario = Cenario::novo();
+    cenario.com_skills_pessoais();
+    let pasta_trancada = cenario.configuracao().join("skills/tdd/privado");
+    fs::create_dir_all(&pasta_trancada).unwrap();
+    fs::set_permissions(&pasta_trancada, fs::Permissions::from_mode(0o000)).unwrap();
+    let saida = cenario.rodar(&[]);
+    fs::set_permissions(&pasta_trancada, fs::Permissions::from_mode(0o755)).unwrap();
+    assert!(saida.status.success(), "{}", String::from_utf8_lossy(&saida.stderr));
+    let relatorio = String::from_utf8(saida.stdout).unwrap();
+    assert!(linhas_que_comecam(&relatorio, "HOMÔNIMA")[0].starts_with("HOMÔNIMA  tdd: "), "{relatorio}");
+}
