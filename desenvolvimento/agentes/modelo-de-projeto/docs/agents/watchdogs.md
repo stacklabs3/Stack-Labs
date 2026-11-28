@@ -13,9 +13,10 @@ instala o Rust (https://rustup.rs). Testes: `cargo test --release --manifest-pat
 
 | Watchdog | Onde | O que garante | Ação |
 |---|---|---|---|
-| `sessao-inicio` | SessionStart | Confere o setup e o pre-push, mostra a branch, a etapa de adoção, a issue ativa, a situação dos **mapas iniciais** e os mapas abertos, e reancora a constituição | Injeta contexto |
-| `vigia-prompt` | UserPromptSubmit | Mede o contexto: avisa em 450k e exige `/nova-sessao` a partir de 550k. Em sessão de grilling, relembra a **linguagem simples** a cada resposta do humano. Com a issue ativa acima do orçamento, relembra o custo | Injeta alerta |
+| `sessao-inicio` | SessionStart | Confere o setup e o pre-push, lista as **skills encobertas**, mostra a branch, a etapa de adoção, a issue ativa, a situação dos **mapas iniciais** e os mapas abertos, e reancora a constituição | Injeta contexto |
+| `vigia-prompt` | UserPromptSubmit | Mede o contexto: avisa em 450k e exige `/nova-sessao` a partir de 550k. Em sessão de grilling, relembra a **linguagem simples** a cada resposta do humano. Com a issue ativa acima do orçamento, relembra o custo. Barra o `/nome` digitado de uma **skill encoberta** (regra 25) | Injeta alerta; **bloqueia** a skill encoberta |
 | `vigia-skill` | PostToolUse `Skill` | Quando uma skill de grilling carrega, marca o grilling na sessão e injeta a regra de linguagem simples (regra 10) | Injeta contexto |
+| `guarda-skill` | PreToolUse `Skill` | Barra a chamada de uma **skill encoberta** (regra 25); na etapa de observação, só avisa | **Bloqueia** |
 | `guarda-edicao` | PreToolUse `Write\|Edit\|NotebookEdit` | Protege os watchdogs, aplica a smart zone e só libera código de produção com issue ativa, fora da `main` e depois do **contrato da fatia** publicado na issue (regra 24, [contrato-da-fatia.md](contrato-da-fatia.md)); os caminhos livres da regra 3 passam. O contrato é procurado uma vez por sessão e por subagente e fica no estado | **Bloqueia** |
 | `guarda-bash` | PreToolUse `Bash` | Protege os watchdogs pelo **alvo da escrita** (o destino de `>`, `>>`, `tee`, `cp`, `mv`, `rm`, `sed -i`, `find -delete`, `sh -c` e da gravação por `python` ou `node`): ler um protegido, gravar no `$TMPDIR` ou citá-lo no texto de um heredoc passa (ADR 0027); ativa issue (uma por sessão ou por subagente, e uma por comando) só com os **cinco mapas iniciais** criados e Protótipo, Arquitetura, Fases e Regras de código fechados, e nunca um `spec`; exige claim antes de comentar ou fechar ticket; exige comentário de resolução **com `## Fontes`** em grilling, tarefa e pesquisa; um ticket de decisão por sessão; barra commit na `main`, push forçado, `--no-verify`, mudança no `core.hooksPath`, `STACKLABS_PERMITIR_PUSH_MAIN`, fonte local do instalador (`STACKLABS_ORIGEM`, `MATT_ORIGEM`), `--permitir-regressao` e a label `altera-watchdogs` aplicada direto | **Bloqueia** |
 | `guarda-contexto` | PreToolUse `Read\|Grep\|Glob`, e o `guarda-bash` para `cat`, `head`, `tail`, `less`, `sed`, `grep` e `rg` | Código só se lê depois de uma consulta `rodar contexto` da sessão ou do subagente; a primeira leitura fora dos citados recebe aviso. Passam livres os caminhos da regra 3, os de `caminhosLivres`, documento e configuração por extensão (`.md`, `.json`, `.yaml`, `.toml`...), `*.config.*` e arquivo oculto | **Bloqueia** |
@@ -55,6 +56,17 @@ guardado, então não envelhece (ADR 0018). Uma consulta cujo texto é o nome de
 traz esses arquivos, inclusive em `.claude/skills/`. Leia a resposta antes de abrir arquivos e abra só
 os trechos citados; `--limite <n>` muda as 5 ligações por seção (código e testes mostram o triplo). A regra 23 torna a consulta
 obrigatória (ADR 0022): resposta vazia ou insuficiente libera a leitura direta.
+
+## Skills encobertas
+
+Uma skill do projeto está **encoberta** quando `~/.claude/skills/<nome>` (ou
+`$CLAUDE_CONFIG_DIR/skills/<nome>`) existe com conteúdo diferente, fora `target/`: o Claude Code roda
+a pessoal (ADR 0028 do método). As três skills de máquina (`setup-stacklabs`,
+`adotar-metodo-stack-labs`, `auditar-metodo`) nunca contam. Diante do bloqueio, rode
+`sh ~/.claude/skills/setup-stacklabs/rodar --mover-homonimas` na raiz do projeto: ele move as
+encobertas para `~/.claude/skills-encobertas/<data>/` e imprime `MOVIDA` para cada uma. Com
+`HOMÔNIMAS NÃO MOVIDAS`, a pasta pessoal é um repositório git: repasse a lista ao humano, que resolve
+nesse repositório. A sessão seguinte já vê a skill do projeto.
 
 ## Ativar uma issue
 

@@ -127,6 +127,8 @@ impl Cenario {
             .args(argumentos)
             .env("STACKLABS_ORIGEM", &self.stacklabs)
             .env("MATT_ORIGEM", &self.matt)
+            // A pasta pessoal das skills é a do cenário, nunca o ~/.claude da máquina.
+            .env("CLAUDE_CONFIG_DIR", self.configuracao())
             .output()
             .unwrap()
     }
@@ -139,6 +141,19 @@ impl Cenario {
             String::from_utf8_lossy(&saida.stderr)
         );
         String::from_utf8(saida.stdout).unwrap()
+    }
+
+    fn configuracao(&self) -> PathBuf {
+        self.raiz.join("configuracao")
+    }
+
+    /// Skills pessoais: `tdd` difere da do projeto, `nova-sessao` é igual e `setup-stacklabs` é de máquina.
+    fn com_skills_pessoais(&self) {
+        let pasta_pessoal = self.configuracao().join("skills");
+        escrever(&pasta_pessoal.join("tdd/SKILL.md"), "tdd pessoal antigo\n");
+        escrever(&pasta_pessoal.join("nova-sessao/SKILL.md"), "nova\n");
+        escrever(&pasta_pessoal.join("nova-sessao/.DS_Store"), "finder");
+        escrever(&pasta_pessoal.join("setup-stacklabs/SKILL.md"), "setup da máquina\n");
     }
 
     fn hooks_path(&self) -> String {
@@ -818,4 +833,46 @@ fn atualizar_os_watchdogs_apaga_a_compilacao_antiga_antes_de_compilar() {
         !binario_do_projeto.exists(),
         "o binário velho saiu; o rodar compila o novo"
     );
+}
+
+#[test]
+fn instalacao_aponta_a_skill_pessoal_que_encobre_a_do_projeto() {
+    let cenario = Cenario::novo();
+    cenario.com_skills_pessoais();
+    let homonimas = linhas_que_comecam(&cenario.relatorio(&[]), "HOMÔNIMA");
+    assert_eq!(homonimas.len(), 1, "{homonimas:?}");
+    assert!(homonimas[0].starts_with("HOMÔNIMA  tdd: ") && homonimas[0].contains("--mover-homonimas"));
+}
+
+#[test]
+fn mover_homonimas_leva_so_a_divergente_para_o_backup() {
+    let cenario = Cenario::novo();
+    cenario.relatorio(&[]);
+    cenario.com_skills_pessoais();
+    let saida = cenario.relatorio(&["--mover-homonimas"]);
+    let movidas = linhas_que_comecam(&saida, "MOVIDA");
+    assert_eq!(movidas.len(), 1, "{saida}");
+    let pasta_pessoal = cenario.configuracao().join("skills");
+    assert!(!pasta_pessoal.join("tdd").exists());
+    assert!(pasta_pessoal.join("nova-sessao").exists() && pasta_pessoal.join("setup-stacklabs").exists());
+    let backups: Vec<PathBuf> = fs::read_dir(cenario.configuracao().join("skills-encobertas"))
+        .unwrap()
+        .map(|entrada| entrada.unwrap().path())
+        .collect();
+    assert_eq!(backups.len(), 1);
+    assert_eq!(fs::read_to_string(backups[0].join("tdd/SKILL.md")).unwrap(), "tdd pessoal antigo\n");
+    assert!(cenario.relatorio(&["--mover-homonimas"]).contains("nenhuma skill pessoal encobre"));
+}
+
+#[test]
+fn mover_homonimas_nao_mexe_em_pasta_pessoal_que_e_repositorio_git() {
+    let cenario = Cenario::novo();
+    cenario.relatorio(&[]);
+    cenario.com_skills_pessoais();
+    let pasta_pessoal = cenario.configuracao().join("skills");
+    assert!(Command::new("git").args(["init", "-q"]).current_dir(&pasta_pessoal).status().unwrap().success());
+    let saida = cenario.relatorio(&["--mover-homonimas"]);
+    assert!(saida.contains("HOMÔNIMAS NÃO MOVIDAS") && saida.contains(": tdd"), "{saida}");
+    assert!(pasta_pessoal.join("tdd/SKILL.md").exists());
+    assert!(!cenario.configuracao().join("skills-encobertas").exists());
 }

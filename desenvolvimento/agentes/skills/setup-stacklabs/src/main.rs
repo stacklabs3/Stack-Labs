@@ -2,7 +2,7 @@
 //! publicadas do Matt Pocock (sempre da versão mais nova do repositório dele).
 //!
 //! Uso: sh rodar [--destino <pasta>] [--versao <x.y.z>] [--simular] [--sem-labels] [--adocao] [--permitir-regressao]
-//!      sh rodar --conferir-skill | --verificar | --concluir-pr <número>
+//!      sh rodar --conferir-skill | --verificar | --concluir-pr <número> | --mover-homonimas
 //!   --destino             raiz do projeto (padrão: a raiz do git da pasta atual)
 //!   --versao              instala a versão marcada (tag v<x.y.z> do Stack-Labs) em vez da main
 //!   --simular             mostra o que faria, sem escrever nada
@@ -13,6 +13,9 @@
 //!   --verificar           confere a instalação do projeto; sai com 1 se algo reprovar
 //!   --concluir-pr         prova que a PR só traz o que a fonte oficial manda, rotula, espera o CI e faz o merge;
 //!                         sai com 3 se a PR ficar para um humano
+//!   --mover-homonimas     tira do caminho as skills pessoais que encobrem as do projeto (ADR 0028):
+//!                         move para <config>/skills-encobertas/<data>/, nunca apaga; recusa se a
+//!                         pasta pessoal estiver num repositório git
 //!
 //! Fontes (opcional, para usar um clone local em vez de baixar):
 //!   STACKLABS_ORIGEM=<clone do Stack-Labs>   MATT_ORIGEM=<clone de mattpocock/skills>
@@ -88,6 +91,7 @@ struct Opcoes {
     conferir_skill: bool,
     verificar: bool,
     concluir_pr: Option<u64>,
+    mover_homonimas: bool,
     pasta_das_skills: Option<String>,
 }
 
@@ -113,6 +117,7 @@ fn ler_argumentos(argumentos_da_linha: &[String]) -> Resultado<Opcoes> {
             "--permitir-regressao" => opcoes.permitir_regressao = true,
             "--conferir-skill" => opcoes.conferir_skill = true,
             "--verificar" => opcoes.verificar = true,
+            "--mover-homonimas" => opcoes.mover_homonimas = true,
             "--concluir-pr" => {
                 opcoes.concluir_pr = Some(
                     argumentos
@@ -947,6 +952,15 @@ fn instalar(opcoes: &Opcoes) -> Resultado<ResultadoDaInstalacao> {
 
     remover_pasta(&pasta_de_preparo)?;
 
+    if let Some(pasta_pessoal) = pasta_das_skills_pessoais() {
+        for nome_da_skill in skills_encobertas(&pasta_das_skills_do_projeto, &pasta_pessoal)? {
+            relatorio.push(format!(
+                "HOMÔNIMA  {nome_da_skill}: a cópia em {}/ encobre a do projeto e difere dela; rode --mover-homonimas",
+                texto(&pasta_pessoal)
+            ));
+        }
+    }
+
     let commit_stacklabs = git_ou_nulo(&[
         "-C",
         &texto(&origem_stacklabs),
@@ -1122,6 +1136,88 @@ fn conferir_skills(opcoes: &Opcoes) -> Resultado<()> {
     }
     for nome_da_skill in atualizadas {
         println!("SKILL ATUALIZADA {nome_da_skill} (método v{versao}).");
+    }
+    Ok(())
+}
+
+// ---------- skills pessoais homônimas (ADR 0028) ----------
+
+/// `$CLAUDE_CONFIG_DIR/skills`, ou `$HOME/.claude/skills` sem a variável: a pasta que vence a do projeto.
+fn pasta_das_skills_pessoais() -> Option<PathBuf> {
+    if let Some(pasta_de_configuracao) =
+        std::env::var_os("CLAUDE_CONFIG_DIR").filter(|valor| !valor.is_empty())
+    {
+        return Some(PathBuf::from(pasta_de_configuracao).join("skills"));
+    }
+    std::env::var_os("HOME")
+        .filter(|valor| !valor.is_empty())
+        .map(|pasta_do_usuario| PathBuf::from(pasta_do_usuario).join(".claude").join("skills"))
+}
+
+/// Mesmos arquivos com os mesmos bytes, fora `target/` e o `.DS_Store` do Finder.
+fn skills_iguais(pasta_a: &Path, pasta_b: &Path) -> Resultado<bool> {
+    let conteudo_da_skill = |pasta: &Path| -> Resultado<Vec<String>> {
+        Ok(listar_arquivos(pasta)?
+            .into_iter()
+            .filter(|caminho_relativo| !caminho_relativo.ends_with(".DS_Store"))
+            .collect())
+    };
+    let arquivos_de_a = conteudo_da_skill(pasta_a)?;
+    Ok(arquivos_de_a == conteudo_da_skill(pasta_b)?
+        && arquivos_de_a.iter().all(|caminho_relativo| {
+            arquivos_iguais(&pasta_a.join(caminho_relativo), &pasta_b.join(caminho_relativo))
+        }))
+}
+
+/// As skills do projeto que uma pessoal de mesmo nome e conteúdo diferente encobre. As de máquina
+/// moram na pasta pessoal por design e ficam fora.
+fn skills_encobertas(pasta_das_skills_do_projeto: &Path, pasta_pessoal: &Path) -> Resultado<Vec<String>> {
+    let mut encobertas = Vec::new();
+    if !pasta_das_skills_do_projeto.is_dir() || !pasta_pessoal.is_dir() {
+        return Ok(encobertas);
+    }
+    for pasta_da_skill in subpastas(pasta_das_skills_do_projeto)? {
+        let nome_da_skill = nome_da_pasta(&pasta_da_skill);
+        let pasta_homonima = pasta_pessoal.join(&nome_da_skill);
+        if !SKILLS_DE_MAQUINA.contains(&nome_da_skill.as_str())
+            && pasta_homonima.is_dir()
+            && !skills_iguais(&pasta_da_skill, &pasta_homonima)?
+        {
+            encobertas.push(nome_da_skill);
+        }
+    }
+    encobertas.sort();
+    Ok(encobertas)
+}
+
+fn mover_homonimas(opcoes: &Opcoes) -> Resultado<()> {
+    let destino = destino_das_opcoes(opcoes)?;
+    let pasta_pessoal = pasta_das_skills_pessoais().ok_or("sem HOME nem CLAUDE_CONFIG_DIR: não sei onde estão as skills pessoais")?;
+    let encobertas = skills_encobertas(&destino.join(".claude").join("skills"), &pasta_pessoal)?;
+    if encobertas.is_empty() {
+        println!("HOMÔNIMAS nenhuma skill pessoal encobre as do projeto.");
+        return Ok(());
+    }
+    // Mover dentro de um clone git deixaria exclusões num repositório alheio ao método.
+    if let Some(raiz_do_git) =
+        git_ou_nulo(&["-C", &texto(&pasta_pessoal), "rev-parse", "--show-toplevel"]).filter(|raiz| !raiz.is_empty())
+    {
+        println!(
+            "HOMÔNIMAS NÃO MOVIDAS: {} está no repositório git {raiz_do_git}. Resolva lá (apague, renomeie ou atualize): {}",
+            texto(&pasta_pessoal),
+            encobertas.join(", ")
+        );
+        return Ok(());
+    }
+    let pasta_de_configuracao = pasta_pessoal.parent().ok_or("pasta das skills pessoais sem pasta acima")?;
+    let carimbo = agora_em_iso().replace(':', "-");
+    let pasta_do_backup = pasta_de_configuracao.join("skills-encobertas").join(&carimbo[..19]);
+    criar_pasta(&pasta_do_backup)?;
+    for nome_da_skill in encobertas {
+        let pasta_movida = pasta_do_backup.join(&nome_da_skill);
+        fs::rename(pasta_pessoal.join(&nome_da_skill), &pasta_movida)
+            .map_err(|erro| format!("mover {nome_da_skill}: {erro}"))?;
+        println!("MOVIDA    {nome_da_skill} → {}", texto(&pasta_movida));
     }
     Ok(())
 }
@@ -1344,6 +1440,8 @@ fn main() {
             conferir_skills(&opcoes)
         } else if opcoes.verificar {
             imprimir_verificacao(&opcoes)
+        } else if opcoes.mover_homonimas {
+            mover_homonimas(&opcoes)
         } else if let Some(numero_da_pr) = opcoes.concluir_pr {
             concluir_pr(&opcoes, numero_da_pr)
         } else {

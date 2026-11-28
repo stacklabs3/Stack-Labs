@@ -134,6 +134,11 @@ ideia grande demais para uma sessão
     regra de código quebrada a cada edição. **Código se edita com Edit e Write**: o `guarda-edicao`
     só vê essas ferramentas.
 
+### 11. Skills do projeto
+25. **[W]** **A sessão roda as skills de `.claude/skills/`.** Uma **skill encoberta** (cópia pessoal
+    diferente em `~/.claude/skills/`) sai do caminho pelo `--mover-homonimas` do `/setup-stacklabs`
+    antes de ser chamada ([docs/agents/watchdogs.md](docs/agents/watchdogs.md#skills-encobertas)).
+
 ## Agent skills
 
 - **Issue tracker:** GitHub Issues deste repositório, via `gh`, com sub-issues e dependências

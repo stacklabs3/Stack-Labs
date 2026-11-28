@@ -69,6 +69,8 @@ impl Projeto {
             .env("CLAUDE_PROJECT_DIR", &self.raiz)
             // As travas dos comandos pesados ficam na pasta do teste, nunca no ~/.stacklabs da máquina.
             .env("STACKLABS_TRAVAS", self.raiz.with_extension("travas"))
+            // A pasta pessoal das skills fica na pasta do teste, nunca o ~/.claude da máquina.
+            .env("CLAUDE_CONFIG_DIR", self.pasta_pessoal())
             .env_remove("STACKLABS_PESADO")
             // Sem a sonda do systemd: o limite de memória tem testes próprios (tests/trava.rs).
             .env("STACKLABS_LIMITE_DE_MEMORIA", "desligado")
@@ -90,6 +92,31 @@ impl Projeto {
             String::from_utf8_lossy(&saida.stdout).into(),
             String::from_utf8_lossy(&saida.stderr).into(),
         )
+    }
+    fn pasta_pessoal(&self) -> PathBuf {
+        self.raiz.with_extension("claude")
+    }
+    // Grava uma skill com um SKILL.md: no projeto (`.claude/skills/`) ou na pasta pessoal.
+    fn skill(&self, pasta_das_skills: &std::path::Path, nome_da_skill: &str, conteudo: &str) {
+        let pasta_da_skill = pasta_das_skills.join(nome_da_skill);
+        fs::create_dir_all(&pasta_da_skill).unwrap();
+        fs::write(pasta_da_skill.join("SKILL.md"), conteudo).unwrap();
+    }
+    fn skill_do_projeto(&self, nome_da_skill: &str, conteudo: &str) {
+        self.skill(&self.raiz.join(".claude/skills"), nome_da_skill, conteudo);
+    }
+    fn skill_pessoal(&self, nome_da_skill: &str, conteudo: &str) {
+        self.skill(&self.pasta_pessoal().join("skills"), nome_da_skill, conteudo);
+    }
+    fn chamar_skill(&self, nome_da_skill: &str) -> (i32, String, String) {
+        self.rodar(
+            &["hook", "guarda-skill"],
+            &json!({ "session_id": "s1", "tool_input": { "skill": nome_da_skill } }).to_string(),
+            &[],
+        )
+    }
+    fn digitar(&self, prompt: &str) -> (i32, String, String) {
+        self.rodar(&["hook", "vigia-prompt"], &json!({ "session_id": "s1", "prompt": prompt }).to_string(), &[])
     }
     fn bash(&self, comando: &str) -> (i32, String, String) {
         self.rodar(
@@ -117,6 +144,7 @@ impl Projeto {
 impl Drop for Projeto {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.raiz);
+        let _ = fs::remove_dir_all(self.pasta_pessoal());
     }
 }
 
@@ -822,4 +850,79 @@ fn etapa_de_observacao_nao_exige_consulta() {
     fs::write(projeto.raiz.join(".claude/metodo.json"), json!({ "etapaDeAdocao": "observacao" }).to_string()).unwrap();
     assert_eq!(projeto.leitura("Read", json!({ "file_path": "src/cupom.rs" })).0, 0);
     assert_eq!(projeto.bash("cat src/cupom.rs").0, 0);
+}
+
+// Skills do projeto encobertas por cópias pessoais (ADR 0028): a sessão rodaria a pessoal.
+fn projeto_com_homonimas() -> Projeto {
+    let projeto = Projeto::novo("chore/x");
+    projeto.skill_do_projeto("tdd", "tdd do método");
+    projeto.skill_pessoal("tdd", "tdd pessoal antigo");
+    projeto.skill_do_projeto("grilling", "grilling do método");
+    projeto.skill_pessoal("grilling", "grilling do método");
+    // Só o binário compilado difere: não conta.
+    fs::create_dir_all(projeto.pasta_pessoal().join("skills/grilling/target")).unwrap();
+    fs::write(projeto.pasta_pessoal().join("skills/grilling/target/binario"), "x").unwrap();
+    projeto.skill_do_projeto("setup-stacklabs", "setup do projeto");
+    projeto.skill_pessoal("setup-stacklabs", "setup da máquina, mais novo");
+    projeto.skill_do_projeto("triage", "triage do método");
+    projeto
+}
+
+#[test]
+fn inicio_lista_so_as_skills_encobertas_que_diferem() {
+    let projeto = projeto_com_homonimas();
+    let (_, saida, _) = projeto.rodar(&["hook", "sessao-inicio"], r#"{"session_id":"s1"}"#, &[]);
+    let contexto: Value = serde_json::from_str(&saida).unwrap();
+    let texto = contexto["hookSpecificOutput"]["additionalContext"].as_str().unwrap();
+    let linha = texto.lines().find(|linha| linha.contains("encobertas")).expect("linha das encobertas");
+    // A lista é só `tdd`: a idêntica (fora do target/), a de máquina e a sem homônima ficam fora.
+    assert!(
+        linha.contains("difere dela: tdd.") && linha.contains("--mover-homonimas") && linha.contains("barram"),
+        "{linha}"
+    );
+}
+
+#[test]
+fn inicio_sem_homonima_nao_fala_de_skills_encobertas() {
+    let projeto = Projeto::novo("chore/x");
+    projeto.skill_do_projeto("tdd", "tdd do método");
+    let (_, saida, _) = projeto.rodar(&["hook", "sessao-inicio"], r#"{"session_id":"s1"}"#, &[]);
+    assert!(!saida.contains("encobertas"), "{saida}");
+}
+
+#[test]
+fn skill_encoberta_e_barrada_e_as_outras_passam() {
+    let projeto = projeto_com_homonimas();
+    let (codigo, _, erro) = projeto.chamar_skill("tdd");
+    assert_eq!(codigo, 2);
+    assert!(erro.contains("guarda-skill") && erro.contains("/tdd rodaria a cópia pessoal"), "{erro}");
+    for nome_que_passa in ["grilling", "setup-stacklabs", "triage", "plugin:tdd", "inexistente"] {
+        let (codigo, saida, erro) = projeto.chamar_skill(nome_que_passa);
+        assert_eq!((codigo, saida.as_str(), erro.as_str()), (0, "", ""), "{nome_que_passa}");
+    }
+}
+
+#[test]
+fn skill_encoberta_digitada_e_barrada_no_prompt() {
+    let projeto = projeto_com_homonimas();
+    let (codigo, saida, _) = projeto.digitar("/tdd escreva o teste do cupom");
+    let resposta: Value = serde_json::from_str(&saida).unwrap();
+    assert_eq!(codigo, 0);
+    assert_eq!(resposta["decision"], "block");
+    assert!(resposta["reason"].as_str().unwrap().contains("/tdd rodaria a cópia pessoal"));
+    let (_, saida, _) = projeto.digitar("/triage a issue nova");
+    assert!(!saida.contains("block"), "{saida}");
+}
+
+#[test]
+fn observacao_so_avisa_da_skill_encoberta() {
+    let projeto = projeto_com_homonimas();
+    fs::write(projeto.raiz.join(".claude/metodo.json"), r#"{"etapaDeAdocao":"observacao"}"#).unwrap();
+    let (codigo, saida, _) = projeto.chamar_skill("tdd");
+    assert_eq!(codigo, 0);
+    assert!(saida.contains("⚠️ [watchdog guarda-skill]"), "{saida}");
+    let (_, saida, _) = projeto.digitar("/tdd escreva o teste");
+    assert!(!saida.contains("\"block\"") && saida.contains("rodaria a cópia pessoal"), "{saida}");
+    let (_, saida, _) = projeto.rodar(&["hook", "sessao-inicio"], r#"{"session_id":"s1"}"#, &[]);
+    assert!(saida.contains("chamar uma delas roda a pessoal"), "{saida}");
 }

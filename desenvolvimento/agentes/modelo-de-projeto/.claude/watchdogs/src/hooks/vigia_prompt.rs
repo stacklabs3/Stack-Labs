@@ -4,6 +4,7 @@
 
 use crate::comum::*;
 use crate::custo::{em_milhares, ler_custo_da_issue, orcamento_por_issue};
+use crate::homonimas::{como_resolver, skill_esta_encoberta};
 use regex::Regex;
 
 pub fn rodar() -> i32 {
@@ -32,6 +33,24 @@ pub fn rodar() -> i32 {
         .expect("regex válida")
         .captures(texto(&entrada_hook["prompt"]))
         .map(|partes| partes[1].to_string());
+    // A skill digitada como /nome também roda a cópia pessoal que a encobre (ADR 0028).
+    if let Some(nome_da_skill) = comando_digitado
+        .as_deref()
+        .and_then(|comando| skill_esta_encoberta(&diretorio_projeto, comando))
+    {
+        let motivo = format!(
+            "[watchdog vigia-prompt] /{nome_da_skill} rodaria a cópia pessoal, não a do projeto. {}",
+            como_resolver(std::slice::from_ref(&nome_da_skill))
+        );
+        if etapa_de_adocao(&diretorio_projeto) != "observacao" {
+            print!(
+                "{}",
+                serde_json::json!({ "decision": "block", "reason": format!("{motivo}\nResolva e digite o comando de novo.") })
+            );
+            return 0;
+        }
+        avisos_do_prompt.push(format!("⚠️ {motivo}"));
+    }
     if !grilling_ativo && comando_digitado.is_some_and(|comando| nome_da_skill_de_grilling(&comando).is_some()) {
         estado_sessao["grillingAtivo"] = true.into();
         gravar_estado_sessao(&diretorio_projeto, id_sessao, &estado_sessao);

@@ -6,6 +6,7 @@ pub mod comum;
 pub mod contexto;
 pub mod custo;
 pub mod escrita_por_bash;
+pub mod homonimas;
 pub mod hooks;
 pub mod pre_push;
 pub mod revisao_por_modelo;
