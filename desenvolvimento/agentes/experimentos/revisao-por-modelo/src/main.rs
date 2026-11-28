@@ -1,4 +1,4 @@
-//! Compara três formas de mostrar um teste à revisao-por-modelo (issue stacklabs1/Stack-Labs#53).
+//! Compara três formas de mostrar um teste à revisao-por-modelo (issue stacklabs3/Stack-Labs#53).
 //!
 //! - `atual`: o trecho que o watchdog envia hoje (cabeçalho colado, declaração e corpo).
 //! - `auxiliares`: o trecho atual, mais as importações, as declarações de topo que ele usa (até 3

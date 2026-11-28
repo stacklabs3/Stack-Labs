@@ -1,6 +1,6 @@
 # Comparação da revisao-por-modelo
 
-Experimento da issue [Stack-Labs#53](https://github.com/stacklabs1/Stack-Labs/issues/53). A pergunta é
+Experimento da issue [Stack-Labs#53](https://github.com/stacklabs3/Stack-Labs/issues/53). A pergunta é
 se o trecho que o watchdog envia ao modelo, sem auxiliares nem `beforeEach`, gera suspeitos falsos, e
 se dar mais contexto deixa RK errado passar.
 

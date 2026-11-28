@@ -11,6 +11,12 @@ Cada versão do método StackLabs, a mais nova primeiro. A versão vive em [VERS
 
 Toda PR que muda `desenvolvimento/agentes/` sobe a versão e acrescenta a entrada aqui.
 
+## 5.0.1 (2026-11-28)
+
+- **Endereço novo do Stack-Labs:** o repositório mudou para `stacklabs3/Stack-Labs`. O instalador
+  baixa de lá e grava esse nome no `ORIGEM.json`, e as instruções de clone apontam para ele. O
+  endereço antigo só funcionava pelo redirecionamento do GitHub.
+
 ## 5.0.0 (2026-11-28)
 
 Maior: um watchdog passa a bloquear algo novo. No Claude Code, a skill pessoal em `~/.claude/skills/`
