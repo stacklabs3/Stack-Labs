@@ -38,4 +38,4 @@ com o `/wayfinder` como porta de entrada, mais as regras da casa.
 9. **Todo nome diz o que é:** `produto = valor - custo`, nunca `x = y - z`; nome de uma letra nunca,
    fora o `_` descartado.
 
-Projeto de referência: [appetito_v2](https://github.com/stacklabs1/appetito_v2).
+Projeto de referência: [appetito_v2](https://github.com/stacklabs3/appetito_v2).

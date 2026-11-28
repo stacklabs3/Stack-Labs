@@ -47,7 +47,7 @@ agentes/
 Uma vez por máquina, instale as skills de entrada:
 
 ```bash
-git clone https://github.com/stacklabs1/Stack-Labs
+git clone https://github.com/stacklabs3/Stack-Labs
 mkdir -p ~/.claude/skills
 cp -R Stack-Labs/desenvolvimento/agentes/skills/setup-stacklabs Stack-Labs/desenvolvimento/agentes/skills/adotar-metodo-stack-labs Stack-Labs/desenvolvimento/agentes/skills/auditar-metodo ~/.claude/skills/
 ```

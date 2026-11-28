@@ -32,7 +32,7 @@ const ARQUIVOS_PARA_MESCLAR: [&str; 2] = ["AGENTS.md", "CLAUDE.md"];
 const ARQUIVOS_MESCLADOS_PELO_INSTALADOR: [&str; 2] = [".gitignore", ".claude/settings.json"];
 /// Skills que moram na máquina e se atualizam pelo --conferir-skill.
 const SKILLS_DE_MAQUINA: [&str; 3] = ["setup-stacklabs", "adotar-metodo-stack-labs", "auditar-metodo"];
-const URL_DO_STACKLABS: &str = "https://github.com/stacklabs1/Stack-Labs";
+const URL_DO_STACKLABS: &str = "https://github.com/stacklabs3/Stack-Labs";
 const LABEL_ALTERA_WATCHDOGS: &str = "altera-watchdogs";
 /// Saída do --concluir-pr quando a PR não pode entrar sem uma pessoa.
 const CODIGO_FICA_PARA_HUMANO: i32 = 3;
@@ -981,7 +981,7 @@ fn instalar(opcoes: &Opcoes) -> Resultado<ResultadoDaInstalacao> {
             dados_do_matt["versao"] = versao.clone();
         }
         let mut dados_do_stacklabs =
-            json!({ "repositorio": "stacklabs1/Stack-Labs", "commit": commit_stacklabs });
+            json!({ "repositorio": "stacklabs3/Stack-Labs", "commit": commit_stacklabs });
         if let Some(versao) = &versao_do_metodo {
             dados_do_stacklabs["versao"] = json!(versao);
         }
