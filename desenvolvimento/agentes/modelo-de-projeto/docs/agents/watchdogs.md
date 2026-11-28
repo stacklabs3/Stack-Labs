@@ -64,7 +64,8 @@ Uma skill do projeto está **encoberta** quando `~/.claude/skills/<nome>` (ou
 a pessoal (ADR 0028 do método). As três skills de máquina (`setup-stacklabs`,
 `adotar-metodo-stack-labs`, `auditar-metodo`) nunca contam. Diante do bloqueio, rode
 `sh ~/.claude/skills/setup-stacklabs/rodar --mover-homonimas` na raiz do projeto: ele move as
-encobertas para `~/.claude/skills-encobertas/<data>/` e imprime `MOVIDA` para cada uma. Com
+encobertas para `~/.claude/skills-encobertas/<data>/` (ao lado da pasta real, se `skills` for link)
+e imprime `MOVIDA` para cada uma. `NÃO MOVIDA <nome>` traz o erro: repasse ao humano. Com
 `HOMÔNIMAS NÃO MOVIDAS`, a pasta pessoal é um repositório git: repasse a lista ao humano, que resolve
 nesse repositório. A sessão seguinte já vê a skill do projeto.
 
